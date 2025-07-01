@@ -5,6 +5,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 
 from bankcleanr.io.pdf import generic
+from bankcleanr.transaction import Transaction
 
 
 def _make_simple_pdf(rows):
@@ -33,8 +34,8 @@ def test_parse_pdf_regex():
         txs = generic.parse_pdf(path)
     finally:
         os.unlink(path)
-    assert txs[0]["description"] == "Coffee"
-    assert txs[1]["amount"] == "-2.00"
+    assert txs[0].description == "Coffee"
+    assert txs[1].amount == "-2.00"
 
 
 def test_parse_pdf_ocr_fallback(monkeypatch):
@@ -53,4 +54,5 @@ def test_parse_pdf_ocr_fallback(monkeypatch):
     monkeypatch.setitem(sys.modules, "bankcleanr.io.pdf.ocr_fallback", fake_mod)
     result = generic.parse_pdf("dummy.pdf")
     assert called.get("ocr")
-    assert result == [{"date": "01 Jan"}]
+    assert isinstance(result[0], Transaction)
+    assert result[0].date == "01 Jan"

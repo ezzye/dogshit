@@ -3,6 +3,7 @@ import re
 PATTERNS = {
     "spotify": re.compile(r"spotify", re.I),
     "netflix": re.compile(r"netflix", re.I),
+    "icloud": re.compile(r"icloud", re.I),
 }
 
 def classify(description: str) -> str:
