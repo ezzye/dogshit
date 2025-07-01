@@ -42,4 +42,4 @@ def parse_file(context):
 @then("the parser returns two transactions")
 def check_transactions(context):
     assert len(context.transactions) == 2
-    assert context.transactions[0]["description"] == "Coffee"
+    assert context.transactions[0].description == "Coffee"
