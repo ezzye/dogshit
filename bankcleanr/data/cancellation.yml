@@ -1,0 +1,12 @@
+spotify:
+  url: "https://support.spotify.com/how-to-cancel"
+  phone: ""
+  email: "support@spotify.com"
+netflix:
+  url: "https://help.netflix.com/en/node/407"
+  phone: ""
+  email: "support@netflix.com"
+icloud:
+  url: "https://support.apple.com/en-us/HT204084"
+  phone: ""
+  email: ""
