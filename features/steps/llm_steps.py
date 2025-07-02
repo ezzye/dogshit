@@ -13,8 +13,8 @@ def transactions_for_llm(context):
     ]
 
 
-@given('the OpenAI adapter is mocked to return "{label}"')
-def mock_adapter(context, label):
+def _mock_adapter(context, provider, label):
+    provider = provider.lower()
     class DummyAdapter(OpenAIAdapter):
         def __init__(self, *args, **kwargs):
             pass
@@ -22,13 +22,25 @@ def mock_adapter(context, label):
         def classify_transactions(self, transactions):
             return [label for _ in transactions]
 
-    context.original = PROVIDERS["openai"]
-    PROVIDERS["openai"] = DummyAdapter
+    context.original = PROVIDERS[provider]
+    context.provider = provider
+    PROVIDERS[provider] = DummyAdapter
+
+
+@given('the OpenAI adapter is mocked to return "{label}"')
+def mock_openai_adapter(context, label):
+    _mock_adapter(context, "openai", label)
+
+
+@given('the {provider} adapter is mocked to return "{label}"')
+def mock_named_adapter(context, provider, label):
+    _mock_adapter(context, provider, label)
 
 
 @when("I classify transactions with the LLM")
 def classify_with_llm(context):
-    context.labels = classify_transactions(context.txs, provider="openai")
+    provider = getattr(context, "provider", "openai")
+    context.labels = classify_transactions(context.txs, provider=provider)
 
 
 @then("the LLM labels are")
@@ -36,7 +48,8 @@ def check_labels(context):
     expected = [row[0] for row in context.table.rows]
     assert context.labels == expected
     if hasattr(context, "original"):
-        PROVIDERS["openai"] = context.original
+        provider = getattr(context, "provider", "openai")
+        PROVIDERS[provider] = context.original
 
 
 @given("a transaction containing account details")
