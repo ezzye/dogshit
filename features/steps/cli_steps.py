@@ -53,6 +53,29 @@ def run_analyse_terminal_option(context, pdf):
     )
 
 
+@when(r'I run the bankcleanr analyse command with "(?P<pdf>[^"]+)" to "(?P<outfile>[^"]+)" with terminal output')
+def run_analyse_output_terminal(context, pdf, outfile):
+    """Run analyse writing to a file and showing terminal output."""
+    root = Path(__file__).resolve().parents[2]
+    context.summary_path = root / outfile
+    if context.summary_path.exists():
+        context.summary_path.unlink()
+    context.result = subprocess.run(
+        [
+            "python",
+            "-m",
+            "bankcleanr",
+            "analyse",
+            str(root / pdf),
+            "--output",
+            outfile,
+            "--terminal",
+        ],
+        capture_output=True,
+        cwd=root,
+    )
+
+
 @then('the summary file exists')
 def summary_exists(context):
     assert context.summary_path.exists()
