@@ -3,7 +3,11 @@ import pytest
 import pdfplumber
 
 from bankcleanr.io.loader import load_transactions
-from bankcleanr.reports.writer import write_summary, write_pdf_summary, format_terminal_summary
+from bankcleanr.reports.writer import (
+    write_summary,
+    write_pdf_summary,
+    format_terminal_summary,
+)
 from bankcleanr.reports.disclaimers import GLOBAL_DISCLAIMER
 
 
@@ -76,4 +80,24 @@ def test_format_terminal_summary():
     text = format_terminal_summary(transactions)
     assert "Coffee" in text
     assert "category" in text.splitlines()[0]
+    assert GLOBAL_DISCLAIMER in text
+
+
+def test_write_summary_pdf(tmp_path):
+    transactions = [{"date": "2023-01-01", "description": "Coffee", "amount": "-1.00", "balance": "99.00"}]
+    output = tmp_path / "out.pdf"
+    path = write_summary(transactions, str(output))
+    assert path == output
+
+    with pdfplumber.open(output) as pdf:
+        text = "".join(page.extract_text() or "" for page in pdf.pages)
+
+    assert "Coffee" in text
+    assert GLOBAL_DISCLAIMER.replace("\n", " ") in text.replace("\n", " ")
+
+
+def test_write_summary_terminal():
+    transactions = [{"date": "2023-01-01", "description": "Coffee", "amount": "-1.00", "balance": "99.00"}]
+    text = write_summary(transactions, "terminal")
+    assert "Coffee" in text
     assert GLOBAL_DISCLAIMER in text
