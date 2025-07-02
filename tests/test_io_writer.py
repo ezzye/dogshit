@@ -1,8 +1,9 @@
 import csv
 import pytest
+import pdfplumber
 
 from bankcleanr.io.loader import load_transactions
-from bankcleanr.reports.writer import write_summary
+from bankcleanr.reports.writer import write_summary, write_pdf_summary, format_terminal_summary
 from bankcleanr.reports.disclaimers import GLOBAL_DISCLAIMER
 
 
@@ -41,3 +42,27 @@ def test_write_summary(tmp_path):
     assert rows[2] == ["2023-01-02", "Tea", "-2.00", "97.00"]
     assert rows[3] == []
     assert rows[4] == [GLOBAL_DISCLAIMER]
+
+
+def test_write_pdf_summary(tmp_path):
+    transactions = [
+        {"date": "2023-01-01", "description": "Coffee", "amount": "-1.00", "balance": "99.00"},
+    ]
+    output = tmp_path / "summary.pdf"
+    path = write_pdf_summary(transactions, str(output))
+    assert path == output
+
+    with pdfplumber.open(output) as pdf:
+        text = "".join(page.extract_text() or "" for page in pdf.pages)
+
+    assert "Coffee" in text
+    assert GLOBAL_DISCLAIMER.replace("\n", " ") in text.replace("\n", " ")
+
+
+def test_format_terminal_summary():
+    transactions = [
+        {"date": "2023-01-01", "description": "Coffee", "amount": "-1.00", "balance": "99.00"},
+    ]
+    text = format_terminal_summary(transactions)
+    assert "Coffee" in text
+    assert GLOBAL_DISCLAIMER in text
