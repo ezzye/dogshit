@@ -27,21 +27,76 @@ def _load_cancellation_data() -> List[List[str]]:
     return rows
 
 
+def _unpack_rec(tx):
+    """Return transaction dict and optional recommendation data."""
+    if hasattr(tx, "transaction") and hasattr(tx, "action"):
+        rec = tx
+        t = rec.transaction
+        if is_dataclass(t):
+            t = asdict(t)
+        info = rec.info or {}
+        return (
+            {
+                "date": t.get("date", ""),
+                "description": t.get("description", ""),
+                "amount": t.get("amount", ""),
+                "balance": t.get("balance", ""),
+            },
+            rec.category,
+            rec.action,
+            info.get("url", ""),
+            info.get("email", ""),
+            info.get("phone", ""),
+        )
+    else:
+        if is_dataclass(tx):
+            tx = asdict(tx)
+        return (
+            {
+                "date": tx.get("date", ""),
+                "description": tx.get("description", ""),
+                "amount": tx.get("amount", ""),
+                "balance": tx.get("balance", ""),
+            },
+            "",
+            "",
+            "",
+            "",
+            "",
+        )
+
+
 def write_pdf_summary(transactions: Iterable, output: str) -> Path:
     """Write a PDF summary with transactions and cancellation info."""
     path = Path(output)
     doc = SimpleDocTemplate(str(path), pagesize=letter)
     styles = getSampleStyleSheet()
 
-    tx_rows: List[List[str]] = [["date", "description", "amount", "balance"]]
+    tx_rows: List[List[str]] = [
+        [
+            "date",
+            "description",
+            "amount",
+            "balance",
+            "category",
+            "action",
+            "url",
+            "email",
+            "phone",
+        ]
+    ]
     for tx in transactions:
-        if is_dataclass(tx):
-            tx = asdict(tx)
+        t, cat, act, url, email, phone = _unpack_rec(tx)
         tx_rows.append([
-            tx.get("date", ""),
-            tx.get("description", ""),
-            tx.get("amount", ""),
-            tx.get("balance", ""),
+            t["date"],
+            t["description"],
+            t["amount"],
+            t["balance"],
+            cat,
+            act,
+            url,
+            email,
+            phone,
         ])
 
     elements = [Paragraph("Transactions", styles["Heading2"])]
@@ -79,16 +134,22 @@ def write_pdf_summary(transactions: Iterable, output: str) -> Path:
 
 def format_terminal_summary(transactions: Iterable) -> str:
     """Return a formatted text summary suitable for terminal output."""
-    lines: List[str] = ["date | description | amount | balance"]
+    lines: List[str] = [
+        "date | description | amount | balance | category | action | url | email | phone"
+    ]
     for tx in transactions:
-        if is_dataclass(tx):
-            tx = asdict(tx)
+        t, cat, act, url, email, phone = _unpack_rec(tx)
         line = " | ".join(
             [
-                str(tx.get("date", "")),
-                str(tx.get("description", "")),
-                str(tx.get("amount", "")),
-                str(tx.get("balance", "")),
+                str(t["date"]),
+                str(t["description"]),
+                str(t["amount"]),
+                str(t["balance"]),
+                cat,
+                act,
+                url,
+                email,
+                phone,
             ]
         )
         lines.append(line)
@@ -118,15 +179,29 @@ def write_summary(transactions: Iterable, output: str):
     path = Path(output)
     with path.open("w", newline="") as f:
         writer = csv.writer(f)
-        writer.writerow(["date", "description", "amount", "balance"])
+        writer.writerow([
+            "date",
+            "description",
+            "amount",
+            "balance",
+            "category",
+            "action",
+            "url",
+            "email",
+            "phone",
+        ])
         for tx in transactions:
-            if is_dataclass(tx):
-                tx = asdict(tx)
+            t, cat, act, url, email, phone = _unpack_rec(tx)
             writer.writerow([
-                tx.get("date"),
-                tx.get("description"),
-                tx.get("amount"),
-                tx.get("balance"),
+                t["date"],
+                t["description"],
+                t["amount"],
+                t["balance"],
+                cat,
+                act,
+                url,
+                email,
+                phone,
             ])
         writer.writerow([])
         writer.writerow([GLOBAL_DISCLAIMER])

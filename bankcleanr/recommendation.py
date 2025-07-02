@@ -43,7 +43,12 @@ def recommend_transactions(
     for tx, label in zip(txs, labels):
         if label in kb:
             action = "Cancel"
-            info = kb[label]
+            details = kb[label]
+            info = {
+                k: v
+                for k, v in details.items()
+                if k in {"url", "email", "phone"} and v
+            }
         elif label == "unknown":
             action = "Investigate"
             info = None
