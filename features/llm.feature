@@ -7,3 +7,8 @@ Feature: LLM classification
       | label   |
       | spotify |
       | coffee  |
+
+  Scenario: Account details are masked before sending to the LLM
+    Given a transaction containing account details
+    When I classify the transaction with a capture adapter
+    Then the adapter received the masked transaction

@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Iterable, List, Dict, Type
 
 from bankcleanr.settings import get_settings
-from bankcleanr.transaction import normalise, Transaction
+from bankcleanr.transaction import normalise, Transaction, mask_transaction
 from bankcleanr.rules import heuristics
 
 from .base import AbstractAdapter
@@ -43,7 +43,8 @@ def classify_transactions(transactions: Iterable, provider: str | None = None) -
 
     if unmatched:
         adapter = get_adapter(provider)
-        llm_labels = adapter.classify_transactions(unmatched)
+        masked = [mask_transaction(tx) for tx in unmatched]
+        llm_labels = adapter.classify_transactions(masked)
         for idx, llm_label in zip(unmatched_indexes, llm_labels):
             labels[idx] = llm_label
 
