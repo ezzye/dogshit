@@ -30,6 +30,29 @@ def run_analyse(context, pdf, outfile=None):
     )
 
 
+@when(r'I run the bankcleanr analyse command with "(?P<pdf>[^"]+)" with pdf "(?P<pdfout>[^"]+)"')
+def run_analyse_pdf_option(context, pdf, pdfout):
+    root = Path(__file__).resolve().parents[2]
+    context.summary_path = root / pdfout
+    if context.summary_path.exists():
+        context.summary_path.unlink()
+    context.result = subprocess.run(
+        ["python", "-m", "bankcleanr", "analyse", str(root / pdf), "--pdf", pdfout],
+        capture_output=True,
+        cwd=root,
+    )
+
+
+@when(r'I run the bankcleanr analyse command with "(?P<pdf>[^"]+)" with terminal output')
+def run_analyse_terminal_option(context, pdf):
+    root = Path(__file__).resolve().parents[2]
+    context.result = subprocess.run(
+        ["python", "-m", "bankcleanr", "analyse", str(root / pdf), "--terminal"],
+        capture_output=True,
+        cwd=root,
+    )
+
+
 @then('the summary file exists')
 def summary_exists(context):
     assert context.summary_path.exists()
@@ -47,3 +70,9 @@ def pdf_summary_contains_disclaimer(context):
     with pdfplumber.open(context.summary_path) as pdf:
         content = "".join(page.extract_text() or "" for page in pdf.pages)
     assert GLOBAL_DISCLAIMER.replace("\n", " ") in content.replace("\n", " ")
+
+
+@then('the terminal output contains the disclaimer')
+def terminal_output_contains_disclaimer(context):
+    output = context.result.stdout.decode()
+    assert GLOBAL_DISCLAIMER in output
