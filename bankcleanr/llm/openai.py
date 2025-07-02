@@ -16,14 +16,22 @@ from bankcleanr.rules.prompts import CATEGORY_PROMPT
 class OpenAIAdapter(AbstractAdapter):
     """Adapter for OpenAI's chat models using LangChain."""
 
-    def __init__(self, model: str = "gpt-3.5-turbo", api_key: str | None = None):
+    def __init__(
+        self,
+        model: str = "gpt-3.5-turbo",
+        api_key: str | None = None,
+        max_concurrency: int = 5,
+    ):
         self.llm = ChatOpenAI(model=model, api_key=api_key)
+        # Limit the number of concurrent API calls
+        self._sem = asyncio.Semaphore(max_concurrency)
 
     @retry(wait=wait_random_exponential(min=1, max=2), stop=stop_after_attempt(3))
     async def _aclassify(self, tx: Transaction) -> Dict[str, Any]:
-        prompt = CATEGORY_PROMPT.render(description=tx.description)
-        message = HumanMessage(content=prompt)
-        result = await self.llm.apredict_messages([message])
+        async with self._sem:
+            prompt = CATEGORY_PROMPT.render(description=tx.description)
+            message = HumanMessage(content=prompt)
+            result = await self.llm.apredict_messages([message])
         try:
             data = json.loads(result.content)
             if not isinstance(data, dict):
