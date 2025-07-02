@@ -1,6 +1,7 @@
 from bankcleanr.llm import classify_transactions, PROVIDERS
 from bankcleanr.transaction import Transaction
 from bankcleanr.llm.openai import OpenAIAdapter
+from bankcleanr.llm.mistral import MistralAdapter
 from bankcleanr.settings import Settings
 from pathlib import Path
 
@@ -53,3 +54,29 @@ def test_llm_masks_before_sending(monkeypatch):
     txs = [Transaction(date="2024-01-01", description="Send 12-34-56 12345678", amount="-9.99")]
     classify_transactions(txs, provider="openai")
     assert captured["descriptions"][0] == "Send ****3456 ****5678"
+
+
+def test_mistral_fallback(monkeypatch):
+    monkeypatch.setitem(PROVIDERS, "mistral", DummyAdapter)
+    txs = [
+        Transaction(date="2024-01-01", description="Spotify premium", amount="-9.99"),
+        Transaction(date="2024-01-02", description="Coffee shop", amount="-2.00"),
+    ]
+    labels = classify_transactions(txs, provider="mistral")
+    assert labels == ["spotify", "remote"]
+
+
+def test_get_mistral_adapter_passes_api_key(monkeypatch):
+    captured = {}
+
+    class CaptureAdapter(MistralAdapter):
+        def __init__(self, *args, **kwargs):
+            captured["api_key"] = kwargs.get("api_key")
+
+    monkeypatch.setitem(PROVIDERS, "mistral", CaptureAdapter)
+    settings = Settings(llm_provider="mistral", api_key="secret", config_path=Path("cfg"))
+    monkeypatch.setattr("bankcleanr.llm.get_settings", lambda: settings)
+    from bankcleanr.llm import get_adapter
+
+    get_adapter()
+    assert captured["api_key"] == "secret"

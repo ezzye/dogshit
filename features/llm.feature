@@ -6,6 +6,15 @@ Feature: LLM classification
     Then the LLM labels are
       | label   |
       | spotify |
+    | coffee  |
+
+  Scenario: Fallback to Mistral adapter for unknown items
+    Given transactions requiring LLM
+    And the Mistral adapter is mocked to return "coffee"
+    When I classify transactions with the LLM
+    Then the LLM labels are
+      | label   |
+      | spotify |
       | coffee  |
 
   Scenario: Account details are masked before sending to the LLM
