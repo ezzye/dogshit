@@ -12,7 +12,13 @@ def test_load_knowledge_base(tmp_path):
 
 
 def test_recommend_transactions(monkeypatch, tmp_path):
-    kb = {"spotify": {"url": "cancel"}}
+    kb = {
+        "spotify": {
+            "url": "cancel-url",
+            "email": "cancel@example.com",
+            "phone": "123",
+        }
+    }
     kb_file = tmp_path / "kb.yml"
     kb_file.write_text(yaml.safe_dump(kb))
 
@@ -25,4 +31,6 @@ def test_recommend_transactions(monkeypatch, tmp_path):
     recs = recommend_transactions(txs, kb_path=kb_file)
     assert recs[0].category == "spotify"
     assert recs[0].action == "Cancel"
-    assert recs[0].info["url"] == "cancel"
+    assert recs[0].info["url"] == "cancel-url"
+    assert recs[0].info["email"] == "cancel@example.com"
+    assert recs[0].info["phone"] == "123"

@@ -37,9 +37,19 @@ def test_write_summary(tmp_path):
     with output.open() as f:
         rows = list(csv.reader(f))
 
-    assert rows[0] == ["date", "description", "amount", "balance"]
-    assert rows[1] == ["2023-01-01", "Coffee", "-1.00", "99.00"]
-    assert rows[2] == ["2023-01-02", "Tea", "-2.00", "97.00"]
+    assert rows[0] == [
+        "date",
+        "description",
+        "amount",
+        "balance",
+        "category",
+        "action",
+        "url",
+        "email",
+        "phone",
+    ]
+    assert rows[1] == ["2023-01-01", "Coffee", "-1.00", "99.00", "", "", "", "", ""]
+    assert rows[2] == ["2023-01-02", "Tea", "-2.00", "97.00", "", "", "", "", ""]
     assert rows[3] == []
     assert rows[4] == [GLOBAL_DISCLAIMER]
 
@@ -65,4 +75,5 @@ def test_format_terminal_summary():
     ]
     text = format_terminal_summary(transactions)
     assert "Coffee" in text
+    assert "category" in text.splitlines()[0]
     assert GLOBAL_DISCLAIMER in text
