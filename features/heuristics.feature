@@ -5,4 +5,6 @@ Feature: Local heuristics classification
     Then the labels are
       | label   |
       | spotify |
+      | amazon prime |
+      | dropbox |
       | unknown |

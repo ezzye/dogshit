@@ -7,7 +7,9 @@ from bankcleanr.rules.heuristics import classify_transactions
 def given_transactions(context):
     context.txs = [
         Transaction(date="2024-01-01", description="Spotify premium", amount="-9.99"),
-        Transaction(date="2024-01-02", description="Coffee", amount="-2.00"),
+        Transaction(date="2024-01-02", description="Amazon Prime membership", amount="-8.99"),
+        Transaction(date="2024-01-03", description="Dropbox yearly", amount="-119.00"),
+        Transaction(date="2024-01-04", description="Coffee", amount="-2.00"),
     ]
 
 
