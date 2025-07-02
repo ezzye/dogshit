@@ -8,6 +8,7 @@ from .reports.writer import (
     format_terminal_summary,
 )
 from .settings import get_settings
+from .reports.disclaimers import GLOBAL_DISCLAIMER
 
 app = typer.Typer(help="BankCleanr CLI")
 
@@ -39,6 +40,7 @@ def analyse(
     if terminal:
         typer.echo(format_terminal_summary(transactions))
     typer.echo("Analysis complete")
+    typer.echo(GLOBAL_DISCLAIMER)
 
 
 @app.command()
