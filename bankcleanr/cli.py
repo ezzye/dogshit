@@ -2,7 +2,11 @@ import typer
 from pathlib import Path
 
 from .io.loader import load_transactions
-from .reports.writer import write_summary
+from .reports.writer import (
+    write_summary,
+    write_pdf_summary,
+    format_terminal_summary,
+)
 from .settings import get_settings
 
 app = typer.Typer(help="BankCleanr CLI")
@@ -19,11 +23,21 @@ SAMPLE_STATEMENT = (
 def analyse(
     file: str = typer.Argument(str(SAMPLE_STATEMENT)),
     output: str = "summary.csv",
+    pdf: str | None = typer.Option(
+        None, "--pdf", help="Write an additional PDF summary to this file"
+    ),
+    terminal: bool = typer.Option(
+        False, "--terminal", help="Display the summary in the terminal"
+    ),
 ):
     """Analyse a statement file and write a summary."""
     typer.echo(f"Analysing {file}")
     transactions = load_transactions(file)
     write_summary(transactions, output)
+    if pdf:
+        write_pdf_summary(transactions, pdf)
+    if terminal:
+        typer.echo(format_terminal_summary(transactions))
     typer.echo("Analysis complete")
 
 
