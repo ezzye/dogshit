@@ -23,9 +23,10 @@ PROVIDERS: Dict[str, Type[AbstractAdapter]] = {
 
 def get_adapter(provider: str | None = None) -> AbstractAdapter:
     """Instantiate the adapter for the configured provider."""
-    provider = provider or get_settings().llm_provider
+    settings = get_settings()
+    provider = provider or settings.llm_provider
     adapter_cls = PROVIDERS.get(provider, OpenAIAdapter)
-    return adapter_cls()
+    return adapter_cls(api_key=settings.api_key)
 
 
 def classify_transactions(transactions: Iterable, provider: str | None = None) -> List[str]:
