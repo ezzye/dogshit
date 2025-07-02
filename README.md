@@ -21,6 +21,18 @@ poetry run pytest
 poetry run behave
 ```
 
+## Configuration
+
+The tool loads settings from `~/.bankcleanr/config.yml`. Set your preferred LLM
+provider and API key in this file:
+
+```yaml
+llm_provider: openai
+api_key: sk-your-key
+```
+
+Run `poetry run bankcleanr config` to see which configuration file is in use.
+
 ## Running the application
 
 You can invoke the CLI through Poetry:
