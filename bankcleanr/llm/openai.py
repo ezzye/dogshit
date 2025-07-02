@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Iterable, List
+import json
+from typing import Iterable, List, Dict, Any
 
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage
@@ -19,16 +20,28 @@ class OpenAIAdapter(AbstractAdapter):
         self.llm = ChatOpenAI(model=model, api_key=api_key)
 
     @retry(wait=wait_random_exponential(min=1, max=2), stop=stop_after_attempt(3))
-    async def _aclassify(self, tx: Transaction) -> str:
+    async def _aclassify(self, tx: Transaction) -> Dict[str, Any]:
         prompt = CATEGORY_PROMPT.render(description=tx.description)
         message = HumanMessage(content=prompt)
         result = await self.llm.apredict_messages([message])
-        return result.content.strip().lower()
+        try:
+            data = json.loads(result.content)
+            if not isinstance(data, dict):
+                raise ValueError
+        except Exception:
+            data = {
+                "category": result.content.strip().lower(),
+                "reasons_to_cancel": [],
+                "checklist": [],
+            }
+        return data
 
-    async def _aclassify_batch(self, txs: Iterable[Transaction]) -> List[str]:
+    async def _aclassify_batch(self, txs: Iterable[Transaction]) -> List[Dict[str, Any]]:
         tasks = [self._aclassify(tx) for tx in txs]
         return await asyncio.gather(*tasks)
 
     def classify_transactions(self, transactions: Iterable) -> List[str]:
         tx_objs = [normalise(tx) for tx in transactions]
-        return asyncio.run(self._aclassify_batch(tx_objs))
+        results = asyncio.run(self._aclassify_batch(tx_objs))
+        self.last_details = results
+        return [res.get("category", "unknown") for res in results]
