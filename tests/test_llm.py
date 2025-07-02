@@ -36,3 +36,20 @@ def test_get_adapter_passes_api_key(monkeypatch):
 
     get_adapter()
     assert captured["api_key"] == "secret"
+
+
+def test_llm_masks_before_sending(monkeypatch):
+    captured = {}
+
+    class CaptureAdapter(OpenAIAdapter):
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def classify_transactions(self, transactions):
+            captured["descriptions"] = [tx.description for tx in transactions]
+            return ["remote"]
+
+    monkeypatch.setitem(PROVIDERS, "openai", CaptureAdapter)
+    txs = [Transaction(date="2024-01-01", description="Send 12-34-56 12345678", amount="-9.99")]
+    classify_transactions(txs, provider="openai")
+    assert captured["descriptions"][0] == "Send ****3456 ****5678"
