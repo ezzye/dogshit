@@ -3,6 +3,8 @@ from behave import given, when, then
 from bankcleanr.transaction import Transaction
 from bankcleanr.llm import classify_transactions, PROVIDERS
 from bankcleanr.llm.openai import OpenAIAdapter
+import bankcleanr.llm.openai as openai_mod
+import asyncio
 
 
 @given("transactions requiring LLM")
@@ -10,6 +12,14 @@ def transactions_for_llm(context):
     context.txs = [
         Transaction(date="2024-01-01", description="Spotify premium", amount="-9.99"),
         Transaction(date="2024-01-02", description="Coffee shop", amount="-2.00"),
+    ]
+
+
+@given("{count:d} transactions requiring LLM")
+def many_transactions_for_llm(context, count):
+    context.txs = [
+        Transaction(date="2024-01-01", description=f"tx {i}", amount="-1.00")
+        for i in range(count)
     ]
 
 
@@ -78,3 +88,37 @@ def classify_with_capture(context):
 @then("the adapter received the masked transaction")
 def check_masked_tx(context):
     assert context.captured_descriptions[0] == "Send ****3456 ****5678"
+
+
+@given("the OpenAI API is replaced with a counting stub")
+def counting_stub(context):
+    class CountingChat:
+        def __init__(self):
+            self.running = 0
+            self.max_running = 0
+
+        async def apredict_messages(self, messages):
+            self.running += 1
+            self.max_running = max(self.max_running, self.running)
+            await asyncio.sleep(0.01)
+            self.running -= 1
+            class R:
+                content = "coffee"
+            return R()
+
+    context.chat = CountingChat()
+    context.original_chat = openai_mod.ChatOpenAI
+    openai_mod.ChatOpenAI = lambda *a, **k: context.chat
+
+
+@when("I classify transactions with the throttled adapter")
+def classify_with_throttled(context):
+    adapter = OpenAIAdapter(api_key="dummy", max_concurrency=5)
+    adapter.classify_transactions(context.txs)
+    context.max_running = context.chat.max_running
+    openai_mod.ChatOpenAI = context.original_chat
+
+
+@then("no more than 5 concurrent requests were sent")
+def check_throttling(context):
+    assert context.max_running <= 5
