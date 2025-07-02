@@ -43,3 +43,17 @@ poetry run bankcleanr analyse path/to/statement.pdf
 ```
 
 The `analyse` command writes a `summary.csv` to the working directory.
+It also prints a reminder to verify each recommendation manually.
+
+## Disclaimer
+
+Every summary includes the following disclaimer:
+
+```
+This tool automates the categorisation of your personal bank transactions.
+It is not regulated financial advice. Results may be incomplete or inaccurate.
+All processing occurs on this computer; only transaction descriptions are sent to the language-model provider you choose.
+Use at your own risk. Always verify recommendations with the original supplier or your bank before cancelling any service.
+```
+
+Always read this disclaimer in your output and verify each recommendation yourself before taking any action.
