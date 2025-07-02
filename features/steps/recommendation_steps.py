@@ -18,6 +18,13 @@ def check_actions(context):
     assert actions == expected
 
 
+@then("the recommendation categories are")
+def check_categories(context):
+    expected = [row[0] for row in context.table.rows]
+    categories = [rec.category for rec in context.recommendations]
+    assert categories == expected
+
+
 @then("the first recommendation includes cancellation info")
 def first_has_info(context):
     assert context.recommendations[0].info is not None

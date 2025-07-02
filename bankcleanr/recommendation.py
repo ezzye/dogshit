@@ -16,8 +16,11 @@ KB_PATH = DATA_DIR / "cancellation.yml"
 @dataclass
 class Recommendation:
     transaction: Transaction
+    category: str
     action: str
     info: Dict[str, str] | None = None
+    reasons: List[str] | None = None
+    checklist: List[str] | None = None
 
 
 def load_knowledge_base(path: Path = KB_PATH) -> Dict[str, Dict[str, str]]:
@@ -47,5 +50,5 @@ def recommend_transactions(
         else:
             action = "Keep"
             info = None
-        results.append(Recommendation(tx, action, info))
+        results.append(Recommendation(tx, label, action, info))
     return results

@@ -7,4 +7,8 @@ Feature: Recommendation engine
       | action |
       | Cancel |
       | Keep   |
+    And the recommendation categories are
+      | category |
+      | spotify  |
+      | coffee   |
     And the first recommendation includes cancellation info

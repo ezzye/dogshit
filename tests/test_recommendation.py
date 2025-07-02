@@ -23,5 +23,6 @@ def test_recommend_transactions(monkeypatch, tmp_path):
 
     monkeypatch.setattr("bankcleanr.recommendation.classify_transactions", dummy_classify)
     recs = recommend_transactions(txs, kb_path=kb_file)
+    assert recs[0].category == "spotify"
     assert recs[0].action == "Cancel"
     assert recs[0].info["url"] == "cancel"
