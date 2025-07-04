@@ -57,3 +57,7 @@ Use at your own risk. Always verify recommendations with the original supplier o
 ```
 
 Always read this disclaimer in your output and verify each recommendation yourself before taking any action.
+
+## Version control
+
+Personal PDF statements should not be committed to the repository. The `.gitignore` file ignores `*.pdf` files while allowing the sample files kept in `Redacted bank statements`.
