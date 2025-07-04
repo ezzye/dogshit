@@ -40,9 +40,12 @@ You can invoke the CLI through Poetry:
 ```bash
 poetry run bankcleanr config
 poetry run bankcleanr analyse path/to/statement.pdf
+# or analyse every PDF in a directory
+poetry run bankcleanr analyse "Redacted bank statements"
 ```
 
 The `analyse` command writes a `summary.csv` to the working directory.
+If you pass a directory, it processes all PDFs inside before writing the file.
 It also prints a reminder to verify each recommendation manually.
 
 ## Disclaimer
@@ -60,4 +63,6 @@ Always read this disclaimer in your output and verify each recommendation yourse
 
 ## Version control
 
-Personal PDF statements should not be committed to the repository. The `.gitignore` file ignores `*.pdf` files while allowing the sample files kept in `Redacted bank statements`.
+Personal PDF statements should not be committed to the repository. The
+`.gitignore` file contains an `*.pdf` rule so your own statements are skipped,
+while allowing the sample files kept in `Redacted bank statements`.
