@@ -1,4 +1,5 @@
 from behave import given, when, then
+import os
 
 from bankcleanr.transaction import Transaction
 from bankcleanr.llm import classify_transactions, PROVIDERS
@@ -122,3 +123,34 @@ def classify_with_throttled(context):
 @then("no more than 5 concurrent requests were sent")
 def check_throttling(context):
     assert context.max_running <= 5
+
+
+@given('a sample transaction "{description}"')
+def sample_transaction(context, description):
+    context.txs = [Transaction(date="2024-01-01", description=description, amount="-1.00")]
+
+
+@when('I classify the transaction with the live "{provider}" adapter')
+def classify_live(context, provider):
+    provider = provider.lower()
+    env_map = {
+        "openai": "OPENAI_API_KEY",
+        "bfl": "BFL_API_KEY",
+        "gemini": "GEMINI_API_KEY",
+    }
+    if provider not in PROVIDERS:
+        context.scenario.skip(f"{provider} adapter not available")
+        return
+    env_var = env_map.get(provider)
+    api_key = os.getenv(env_var) if env_var else None
+    if env_var and not api_key:
+        context.scenario.skip(f"{env_var} not set")
+        return
+    adapter_cls = PROVIDERS[provider]
+    adapter = adapter_cls(api_key=api_key)
+    context.labels = adapter.classify_transactions(context.txs)
+
+
+@then('the returned category is not "unknown"')
+def check_live_category(context):
+    assert context.labels[0] != "unknown"
