@@ -11,6 +11,8 @@ from .openai import OpenAIAdapter
 from .anthropic import AnthropicAdapter
 from .mistral import MistralAdapter
 from .local_ollama import LocalOllamaAdapter
+from .gemini import GeminiAdapter
+from .bfl import BFLAdapter
 
 # Mapping of provider names to adapter classes
 PROVIDERS: Dict[str, Type[AbstractAdapter]] = {
@@ -18,6 +20,8 @@ PROVIDERS: Dict[str, Type[AbstractAdapter]] = {
     "anthropic": AnthropicAdapter,
     "mistral": MistralAdapter,
     "ollama": LocalOllamaAdapter,
+    "gemini": GeminiAdapter,
+    "bfl": BFLAdapter,
 }
 
 

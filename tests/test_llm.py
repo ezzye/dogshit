@@ -2,6 +2,8 @@ from bankcleanr.llm import classify_transactions, PROVIDERS
 from bankcleanr.transaction import Transaction
 from bankcleanr.llm.openai import OpenAIAdapter
 from bankcleanr.llm.mistral import MistralAdapter
+from bankcleanr.llm.gemini import GeminiAdapter
+from bankcleanr.llm.bfl import BFLAdapter
 from bankcleanr.settings import Settings
 from pathlib import Path
 
@@ -66,6 +68,42 @@ def test_mistral_fallback(monkeypatch):
     assert labels == ["spotify", "remote"]
 
 
+def test_gemini_fallback(monkeypatch):
+    monkeypatch.setitem(PROVIDERS, "gemini", DummyAdapter)
+    txs = [
+        Transaction(date="2024-01-01", description="Spotify premium", amount="-9.99"),
+        Transaction(date="2024-01-02", description="Coffee shop", amount="-2.00"),
+    ]
+    labels = classify_transactions(txs, provider="gemini")
+    assert labels == ["spotify", "remote"]
+
+
+def test_bfl_fallback(monkeypatch):
+    monkeypatch.setitem(PROVIDERS, "bfl", DummyAdapter)
+    txs = [
+        Transaction(date="2024-01-01", description="Spotify premium", amount="-9.99"),
+        Transaction(date="2024-01-02", description="Coffee shop", amount="-2.00"),
+    ]
+    labels = classify_transactions(txs, provider="bfl")
+    assert labels == ["spotify", "remote"]
+
+
+def test_get_bfl_adapter_passes_api_key(monkeypatch):
+    captured = {}
+
+    class CaptureAdapter(BFLAdapter):
+        def __init__(self, *args, **kwargs):
+            captured["api_key"] = kwargs.get("api_key")
+
+    monkeypatch.setitem(PROVIDERS, "bfl", CaptureAdapter)
+    settings = Settings(llm_provider="bfl", api_key="secret", config_path=Path("cfg"))
+    monkeypatch.setattr("bankcleanr.llm.get_settings", lambda: settings)
+    from bankcleanr.llm import get_adapter
+
+    get_adapter()
+    assert captured["api_key"] == "secret"
+
+
 def test_get_mistral_adapter_passes_api_key(monkeypatch):
     captured = {}
 
@@ -80,3 +118,21 @@ def test_get_mistral_adapter_passes_api_key(monkeypatch):
 
     get_adapter()
     assert captured["api_key"] == "secret"
+
+
+def test_get_gemini_adapter_passes_api_key(monkeypatch):
+    captured = {}
+
+    class CaptureAdapter(GeminiAdapter):
+        def __init__(self, *args, **kwargs):
+            captured["api_key"] = kwargs.get("api_key")
+
+    monkeypatch.setitem(PROVIDERS, "gemini", CaptureAdapter)
+    settings = Settings(llm_provider="gemini", api_key="secret", config_path=Path("cfg"))
+    monkeypatch.setattr("bankcleanr.llm.get_settings", lambda: settings)
+    from bankcleanr.llm import get_adapter
+
+    get_adapter()
+    assert captured["api_key"] == "secret"
+
+

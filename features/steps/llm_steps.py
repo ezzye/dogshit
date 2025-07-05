@@ -139,13 +139,11 @@ def classify_live(context, provider):
         "gemini": "GEMINI_API_KEY",
     }
     if provider not in PROVIDERS:
-        context.scenario.skip(f"{provider} adapter not available")
-        return
+        raise AssertionError(f"{provider} adapter not available")
     env_var = env_map.get(provider)
     api_key = os.getenv(env_var) if env_var else None
     if env_var and not api_key:
-        context.scenario.skip(f"{env_var} not set")
-        return
+        raise AssertionError(f"{env_var} not set")
     adapter_cls = PROVIDERS[provider]
     adapter = adapter_cls(api_key=api_key)
     context.labels = adapter.classify_transactions(context.txs)

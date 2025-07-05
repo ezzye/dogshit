@@ -24,11 +24,15 @@ poetry run behave
 ## Configuration
 
 The tool loads settings from `~/.bankcleanr/config.yml`. Set your preferred LLM
-provider and API key in this file:
+provider in this file. API keys are taken from environment variables so you
+never need to store them on disk:
 
 ```yaml
 llm_provider: openai
-api_key: sk-your-key
+
+# API keys
+OPENAI_API_KEY=sk-your-openai-key
+GEMINI_API_KEY=your-gemini-key
 ```
 
 Run `poetry run bankcleanr config` to see which configuration file is in use.
@@ -42,7 +46,11 @@ poetry run bankcleanr config
 poetry run bankcleanr analyse path/to/statement.pdf
 # or analyse every PDF in a directory
 poetry run bankcleanr analyse "Redacted bank statements"
+
 ```
+
+The second form accepts a folder path and processes each PDF it finds. The
+combined results are written to `summary.csv` in the current directory.
 
 The `analyse` command writes a `summary.csv` to the working directory.
 If you pass a directory, it processes all PDFs inside before writing the file.
