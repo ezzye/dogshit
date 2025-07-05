@@ -24,16 +24,15 @@ poetry run behave
 ## Configuration
 
 The tool loads settings from `~/.bankcleanr/config.yml`. Set your preferred LLM
-provider in this file. API keys are taken from environment variables so you
-never need to store them on disk:
+provider in this file:
 
 ```yaml
+# ~/.bankcleanr/config.yml
 llm_provider: openai
-
-# API keys
-OPENAI_API_KEY=sk-your-openai-key
-GEMINI_API_KEY=your-gemini-key
 ```
+
+API keys are supplied via environment variables such as `OPENAI_API_KEY` or
+`GEMINI_API_KEY`.
 
 Run `poetry run bankcleanr config` to see which configuration file is in use.
 
