@@ -68,7 +68,8 @@ def analyse(
         for name, total in totals.items():
             typer.echo(f"- {name}: {total:.2f}")
     typer.echo("Analysis complete")
-    typer.echo(GLOBAL_DISCLAIMER)
+    if not terminal:
+        typer.echo(GLOBAL_DISCLAIMER)
 
 
 @app.command()
