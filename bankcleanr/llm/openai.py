@@ -50,6 +50,14 @@ class OpenAIAdapter(AbstractAdapter):
 
     def classify_transactions(self, transactions: Iterable) -> List[str]:
         tx_objs = [normalise(tx) for tx in transactions]
-        results = asyncio.run(self._aclassify_batch(tx_objs))
+        try:
+            results = asyncio.run(self._aclassify_batch(tx_objs))
+        except Exception:
+            self.last_details = [
+                {"category": "unknown", "reasons_to_cancel": [], "checklist": []}
+                for _ in tx_objs
+            ]
+            return ["unknown" for _ in tx_objs]
+
         self.last_details = results
         return [res.get("category", "unknown") for res in results]

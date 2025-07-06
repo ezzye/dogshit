@@ -142,8 +142,12 @@ def classify_live(context, provider):
         raise AssertionError(f"{provider} adapter not available")
     env_var = env_map.get(provider)
     api_key = os.getenv(env_var) if env_var else None
-    if env_var and not api_key:
-        raise AssertionError(f"{env_var} not set")
+    placeholders = {"dummy", "your-openai-api-key", "your-api-key", "your-gemini-api-key"}
+    if env_var and (
+        api_key is None or api_key.lower() in placeholders
+    ):
+        context.scenario.skip(f"{env_var} not set or placeholder")
+        return
     adapter_cls = PROVIDERS[provider]
     adapter = adapter_cls(api_key=api_key)
     context.labels = adapter.classify_transactions(context.txs)
