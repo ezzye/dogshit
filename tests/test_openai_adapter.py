@@ -44,3 +44,16 @@ def test_aclassify_throttles_concurrency(monkeypatch):
     ]
     adapter.classify_transactions(txs)
     assert chat.max_running <= 5
+
+
+class FailingChat:
+    async def apredict_messages(self, messages):
+        raise RuntimeError("network down")
+
+
+def test_classify_returns_unknown_on_failure(monkeypatch):
+    monkeypatch.setattr("bankcleanr.llm.openai.ChatOpenAI", lambda *a, **k: FailingChat())
+    adapter = OpenAIAdapter(api_key="dummy")
+    tx = Transaction(date="2024-01-01", description="Coffee", amount="-1")
+    labels = adapter.classify_transactions([tx])
+    assert labels == ["unknown"]
