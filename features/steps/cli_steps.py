@@ -101,6 +101,13 @@ def terminal_output_contains_disclaimer(context):
     assert GLOBAL_DISCLAIMER in output
 
 
+@then('the terminal output contains the disclaimer once')
+def terminal_output_contains_disclaimer_once(context):
+    """Ensure the disclaimer appears exactly once in terminal output."""
+    output = context.result.stdout.decode()
+    assert output.count(GLOBAL_DISCLAIMER) == 1
+
+
 @then('the terminal output shows savings')
 def terminal_output_shows_savings(context):
     output = context.result.stdout.decode().lower()
