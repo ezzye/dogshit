@@ -27,6 +27,11 @@ Feature: Command-line interface
     Then the exit code is 0
     And the terminal output contains the disclaimer
 
+  Scenario: Show savings summary in terminal output
+    When I run the bankcleanr analyse command with "Redacted bank statements/22b583f5-4060-44eb-a844-945cd612353c (1).pdf" with terminal output
+    Then the exit code is 0
+    And the terminal output shows savings
+
   Scenario: Analyse a PDF statement to PDF output with terminal output
     When I run the bankcleanr analyse command with "Redacted bank statements/22b583f5-4060-44eb-a844-945cd612353c (1).pdf" to "combo.pdf" with terminal output
     Then the exit code is 0

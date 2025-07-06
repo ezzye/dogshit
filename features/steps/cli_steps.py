@@ -99,3 +99,9 @@ def pdf_summary_contains_disclaimer(context):
 def terminal_output_contains_disclaimer(context):
     output = context.result.stdout.decode()
     assert GLOBAL_DISCLAIMER in output
+
+
+@then('the terminal output shows savings')
+def terminal_output_shows_savings(context):
+    output = context.result.stdout.decode().lower()
+    assert "potential savings" in output
