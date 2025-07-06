@@ -3,6 +3,8 @@ import csv
 from typing import Iterable, List
 from dataclasses import asdict, is_dataclass
 import yaml
+
+from bankcleanr.analytics import calculate_savings, totals_by_type
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
@@ -137,6 +139,18 @@ def write_pdf_summary(transactions: Iterable, output: str, categories: Iterable[
     )
     elements.append(cancel_table)
 
+    # Summary figures
+    savings = calculate_savings(transactions)
+    totals = totals_by_type(transactions)
+    elements.append(Spacer(1, 0.25 * inch))
+    elements.append(
+        Paragraph(f"Potential savings if cancelled: {savings:.2f}", styles["Normal"])
+    )
+    if totals:
+        elements.append(Paragraph("Totals by type:", styles["Heading3"]))
+        for name, total in totals.items():
+            elements.append(Paragraph(f"- {name}: {total:.2f}", styles["Normal"]))
+
     elements.append(Spacer(1, 0.5 * inch))
     elements.append(Paragraph(GLOBAL_DISCLAIMER, styles["Normal"]))
 
@@ -179,6 +193,16 @@ def format_terminal_summary(transactions: Iterable, categories: Iterable[str] | 
         service, url, phone, email = row
         info = ", ".join(filter(None, [url, phone, email]))
         lines.append(f"- {service}: {info}")
+
+    savings = calculate_savings(transactions)
+    totals = totals_by_type(transactions)
+
+    lines.append("")
+    lines.append(f"Potential savings if cancelled: {savings:.2f}")
+    if totals:
+        lines.append("Totals by type:")
+        for name, total in totals.items():
+            lines.append(f"- {name}: {total:.2f}")
 
     lines.append("")
     lines.append(GLOBAL_DISCLAIMER)
