@@ -1,6 +1,8 @@
 import csv
 import pytest
 import pdfplumber
+from bankcleanr.recommendation import Recommendation
+from bankcleanr.transaction import Transaction
 
 from bankcleanr.io.loader import load_transactions
 from bankcleanr.reports.writer import (
@@ -63,7 +65,7 @@ def test_write_pdf_summary(tmp_path):
         {"date": "2023-01-01", "description": "Coffee", "amount": "-1.00", "balance": "99.00"},
     ]
     output = tmp_path / "summary.pdf"
-    path = write_pdf_summary(transactions, str(output))
+    path = write_pdf_summary(transactions, str(output), [])
     assert path == output
 
     with pdfplumber.open(output) as pdf:
@@ -77,7 +79,7 @@ def test_format_terminal_summary():
     transactions = [
         {"date": "2023-01-01", "description": "Coffee", "amount": "-1.00", "balance": "99.00"},
     ]
-    text = format_terminal_summary(transactions)
+    text = format_terminal_summary(transactions, [])
     assert "Coffee" in text
     assert "category" in text.splitlines()[0]
     assert GLOBAL_DISCLAIMER in text
@@ -101,3 +103,24 @@ def test_write_summary_terminal():
     text = write_summary(transactions, "terminal")
     assert "Coffee" in text
     assert GLOBAL_DISCLAIMER in text
+
+
+def test_cancellation_filtering(tmp_path):
+    recs = [
+        Recommendation(
+            transaction=Transaction(date="2024-01-01", description="Spotify", amount="-9.99"),
+            category="spotify",
+            action="Cancel",
+            info={"url": "cancel-url"},
+        )
+    ]
+    output = tmp_path / "cancel.pdf"
+    write_pdf_summary(recs, str(output))
+    with pdfplumber.open(output) as pdf:
+        text = "".join(page.extract_text() or "" for page in pdf.pages).lower()
+    assert "spotify" in text
+    assert "netflix" not in text
+
+    term = format_terminal_summary(recs)
+    assert "- spotify:" in term.lower()
+    assert "netflix" not in term.lower()

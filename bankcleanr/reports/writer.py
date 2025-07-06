@@ -12,12 +12,19 @@ from reportlab.lib.units import inch
 from .disclaimers import GLOBAL_DISCLAIMER
 
 
-def _load_cancellation_data() -> List[List[str]]:
-    """Return cancellation instructions as a table."""
+def _load_cancellation_data(categories: Iterable[str] | None = None) -> List[List[str]]:
+    """Return cancellation instructions as a table filtered by ``categories``."""
     data_path = Path(__file__).resolve().parents[1] / "data" / "cancellation.yml"
-    info = yaml.safe_load(data_path.read_text())
+    info = yaml.safe_load(data_path.read_text()) or {}
     rows = [["Service", "URL", "Phone", "Email"]]
+
+    wanted = None
+    if categories:
+        wanted = {c.lower() for c in categories}
+
     for service, details in info.items():
+        if wanted is not None and service.lower() not in wanted:
+            continue
         rows.append([
             service,
             details.get("url", ""),
@@ -66,7 +73,7 @@ def _unpack_rec(tx):
         )
 
 
-def write_pdf_summary(transactions: Iterable, output: str) -> Path:
+def write_pdf_summary(transactions: Iterable, output: str, categories: Iterable[str] | None = None) -> Path:
     """Write a PDF summary with transactions and cancellation info."""
     path = Path(output)
     doc = SimpleDocTemplate(str(path), pagesize=letter)
@@ -85,8 +92,11 @@ def write_pdf_summary(transactions: Iterable, output: str) -> Path:
             "phone",
         ]
     ]
+    gathered_cats: set[str] = set()
     for tx in transactions:
         t, cat, act, url, email, phone = _unpack_rec(tx)
+        if categories is None and cat:
+            gathered_cats.add(cat)
         tx_rows.append([
             t["date"],
             t["description"],
@@ -98,6 +108,8 @@ def write_pdf_summary(transactions: Iterable, output: str) -> Path:
             email,
             phone,
         ])
+    if categories is None:
+        categories = sorted(gathered_cats)
 
     elements = [Paragraph("Transactions", styles["Heading2"])]
     table = Table(tx_rows)
@@ -114,7 +126,7 @@ def write_pdf_summary(transactions: Iterable, output: str) -> Path:
 
     # Cancellation appendix
     elements.append(Paragraph("How to cancel", styles["Heading2"]))
-    cancel_table = Table(_load_cancellation_data())
+    cancel_table = Table(_load_cancellation_data(categories))
     cancel_table.setStyle(
         TableStyle(
             [
@@ -132,13 +144,17 @@ def write_pdf_summary(transactions: Iterable, output: str) -> Path:
     return path
 
 
-def format_terminal_summary(transactions: Iterable) -> str:
+def format_terminal_summary(transactions: Iterable, categories: Iterable[str] | None = None) -> str:
     """Return a formatted text summary suitable for terminal output."""
     lines: List[str] = [
         "date | description | amount | balance | category | action | url | email | phone"
     ]
+
+    gathered_cats: set[str] = set()
     for tx in transactions:
         t, cat, act, url, email, phone = _unpack_rec(tx)
+        if categories is None and cat:
+            gathered_cats.add(cat)
         line = " | ".join(
             [
                 str(t["date"]),
@@ -154,9 +170,12 @@ def format_terminal_summary(transactions: Iterable) -> str:
         )
         lines.append(line)
 
+    if categories is None:
+        categories = sorted(gathered_cats)
+
     lines.append("")
     lines.append("How to cancel:")
-    for row in _load_cancellation_data()[1:]:
+    for row in _load_cancellation_data(categories)[1:]:
         service, url, phone, email = row
         info = ", ".join(filter(None, [url, phone, email]))
         lines.append(f"- {service}: {info}")
@@ -168,12 +187,15 @@ def format_terminal_summary(transactions: Iterable) -> str:
 
 def write_summary(transactions: Iterable, output: str):
     """Write a summary in CSV or PDF format or return terminal text."""
+    txs = list(transactions)
+    cats = [c for _, c, _, _, _, _ in map(_unpack_rec, txs) if c]
+
     if output == "terminal":
-        return format_terminal_summary(transactions)
+        return format_terminal_summary(txs, cats)
 
     ext = Path(output).suffix.lower()
     if ext == ".pdf":
-        return write_pdf_summary(transactions, output)
+        return write_pdf_summary(txs, output, cats)
 
     # default to CSV
     path = Path(output)
@@ -190,7 +212,7 @@ def write_summary(transactions: Iterable, output: str):
             "email",
             "phone",
         ])
-        for tx in transactions:
+        for tx in txs:
             t, cat, act, url, email, phone = _unpack_rec(tx)
             writer.writerow([
                 t["date"],
