@@ -31,8 +31,9 @@ provider in this file:
 llm_provider: openai
 ```
 
-API keys are supplied via environment variables such as `OPENAI_API_KEY` or
-`GEMINI_API_KEY`.
+API keys are supplied via environment variables. Use `OPENAI_API_KEY` for the
+OpenAI adapter or `GEMINI_API_KEY` for Gemini. The BFL adapter checks
+`BFL_API_KEY` and falls back to `OPENAI_API_KEY` if the former is not set.
 
 Run `poetry run bankcleanr config` to see which configuration file is in use.
 

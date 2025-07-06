@@ -136,3 +136,49 @@ def test_get_gemini_adapter_passes_api_key(monkeypatch):
     assert captured["api_key"] == "secret"
 
 
+def test_get_bfl_adapter_uses_env(monkeypatch, tmp_path):
+    """BFL adapter should read API key from BFL_API_KEY."""
+    cfg = tmp_path / "config.yml"
+    cfg.write_text("llm_provider: bfl")
+    monkeypatch.setenv("BFL_API_KEY", "bfl-env")
+    monkeypatch.setenv("OPENAI_API_KEY", "should-not-be-used")
+
+    from bankcleanr.settings import load_settings
+    monkeypatch.setattr("bankcleanr.llm.get_settings", lambda: load_settings(cfg))
+
+    captured = {}
+
+    class CaptureAdapter(BFLAdapter):
+        def __init__(self, *args, **kwargs):
+            captured["api_key"] = kwargs.get("api_key")
+
+    monkeypatch.setitem(PROVIDERS, "bfl", CaptureAdapter)
+    from bankcleanr.llm import get_adapter
+
+    get_adapter()
+    assert captured["api_key"] == "bfl-env"
+
+
+def test_get_bfl_adapter_falls_back_to_openai(monkeypatch, tmp_path):
+    """If BFL_API_KEY is not set, fall back to OPENAI_API_KEY."""
+    cfg = tmp_path / "config.yml"
+    cfg.write_text("llm_provider: bfl")
+    monkeypatch.delenv("BFL_API_KEY", raising=False)
+    monkeypatch.setenv("OPENAI_API_KEY", "openai-env")
+
+    from bankcleanr.settings import load_settings
+    monkeypatch.setattr("bankcleanr.llm.get_settings", lambda: load_settings(cfg))
+
+    captured = {}
+
+    class CaptureAdapter(BFLAdapter):
+        def __init__(self, *args, **kwargs):
+            captured["api_key"] = kwargs.get("api_key")
+
+    monkeypatch.setitem(PROVIDERS, "bfl", CaptureAdapter)
+    from bankcleanr.llm import get_adapter
+
+    get_adapter()
+    assert captured["api_key"] == "openai-env"
+
+

@@ -22,10 +22,15 @@ def load_settings(path: Path = CONFIG_PATH) -> Settings:
         "gemini": "GEMINI_API_KEY",
         "mistral": "MISTRAL_API_KEY",
         "anthropic": "ANTHROPIC_API_KEY",
+        "bfl": "BFL_API_KEY",
     }
-    env_var = env_map.get(settings.llm_provider.lower())
+    provider = settings.llm_provider.lower()
+    env_var = env_map.get(provider)
     if env_var and os.getenv(env_var):
         settings.api_key = os.getenv(env_var)
+    elif provider == "bfl" and os.getenv("OPENAI_API_KEY"):
+        # Fall back to OpenAI credentials when BFL key is missing
+        settings.api_key = os.getenv("OPENAI_API_KEY")
     return settings
 
 
