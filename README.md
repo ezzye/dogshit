@@ -6,17 +6,23 @@ command line interface and a small test-suite.
 ## Setup with Poetry
 
 1. [Install Poetry](https://python-poetry.org/docs/#installation).
-2. Create the virtual environment and install dependencies:
+2. Create the virtual environment and install all dependencies (including test
+   requirements):
 
    ```bash
-   poetry install
+   poetry install --with dev
    ```
+
+   Alternatively, run `make install` if you prefer using the new Makefile.
 
 ## Running the tests
 
-Run the unit tests with `pytest` and the behaviour driven tests with `behave`:
+Run the unit tests with `pytest` and the behaviour driven tests with `behave`.
+You can run them directly or via the `Makefile`:
 
 ```bash
+make test
+# or run them manually
 poetry run pytest
 poetry run behave
 ```
