@@ -34,6 +34,11 @@ def analyse(
     pdf: Optional[str] = typer.Option(
         None, "--pdf", help="Write an additional PDF summary to this file"
     ),
+    outdir: Optional[str] = typer.Option(
+        None,
+        "--outdir",
+        help="Directory to write summary.csv and PDF outputs",
+    ),
     terminal: bool = typer.Option(
         False, "--terminal", help="Display the summary in the terminal"
     ),
@@ -55,9 +60,21 @@ def analyse(
             info = None
         recs.append(Recommendation(tx, label, action, info))
 
-    write_summary(recs, output)
+    outdir_path: Path | None = None
+    if outdir:
+        outdir_path = Path(outdir)
+        outdir_path.mkdir(parents=True, exist_ok=True)
+
+    output_path = Path(output)
+    if outdir_path:
+        output_path = outdir_path / output_path.name
+    write_summary(recs, str(output_path))
+
     if pdf:
-        write_pdf_summary(recs, pdf)
+        pdf_path = Path(pdf)
+        if outdir_path:
+            pdf_path = outdir_path / pdf_path.name
+        write_pdf_summary(recs, str(pdf_path))
     if terminal:
         typer.echo(format_terminal_summary(recs))
 
