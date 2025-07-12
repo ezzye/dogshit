@@ -101,7 +101,7 @@ def write_pdf_summary(transactions: Iterable, output: str, categories: Iterable[
             gathered_cats.add(cat)
         tx_rows.append([
             t["date"],
-            t["description"],
+            Paragraph(str(t["description"]), styles["Normal"]),
             t["amount"],
             t["balance"],
             cat,
@@ -114,7 +114,20 @@ def write_pdf_summary(transactions: Iterable, output: str, categories: Iterable[
         categories = sorted(gathered_cats)
 
     elements = [Paragraph("Transactions", styles["Heading2"])]
-    table = Table(tx_rows)
+
+    col_widths = [
+        doc.width * 0.1,  # date
+        doc.width * 0.35,  # description
+        doc.width * 0.08,  # amount
+        doc.width * 0.08,  # balance
+        doc.width * 0.1,  # category
+        doc.width * 0.06,  # action
+        doc.width * 0.1,  # url
+        doc.width * 0.1,  # email
+        doc.width * 0.13,  # phone
+    ]
+
+    table = Table(tx_rows, colWidths=col_widths)
     table.setStyle(
         TableStyle(
             [

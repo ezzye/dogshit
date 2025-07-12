@@ -75,6 +75,21 @@ def test_write_pdf_summary(tmp_path):
     assert GLOBAL_DISCLAIMER.replace("\n", " ") in text.replace("\n", " ")
 
 
+def test_write_pdf_summary_long_description(tmp_path):
+    long_desc = "Very long description " * 10
+    transactions = [
+        {"date": "2023-01-01", "description": long_desc, "amount": "-1.00", "balance": "99.00"},
+    ]
+    output = tmp_path / "long.pdf"
+    write_pdf_summary(transactions, str(output), [])
+
+    with pdfplumber.open(output) as pdf:
+        text = " ".join(page.extract_text() or "" for page in pdf.pages)
+
+    extracted = "".join(text.split())
+    assert extracted.count("Verylongdescription") >= 10
+
+
 def test_format_terminal_summary():
     transactions = [
         {"date": "2023-01-01", "description": "Coffee", "amount": "-1.00", "balance": "99.00"},
