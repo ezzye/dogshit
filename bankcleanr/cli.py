@@ -2,6 +2,7 @@ import typer
 from pathlib import Path
 
 from .io.loader import load_from_path
+from typing import Optional
 from .reports.writer import (
     write_summary,
     write_pdf_summary,
@@ -30,7 +31,7 @@ def analyse(
         help="Path to a PDF file or directory containing PDF files",
     ),
     output: str = "summary.csv",
-    pdf: str | None = typer.Option(
+    pdf: Optional[str] = typer.Option(
         None, "--pdf", help="Write an additional PDF summary to this file"
     ),
     terminal: bool = typer.Option(
