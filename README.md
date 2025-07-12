@@ -52,8 +52,13 @@ poetry run bankcleanr config
 poetry run bankcleanr analyse path/to/statement.pdf
 # or analyse every PDF in a directory
 poetry run bankcleanr analyse "Redacted bank statements"
+# write results to a separate directory
+poetry run bankcleanr analyse path/to/statement.pdf --outdir results/run1
 
 ```
+Using `--outdir` keeps your work organised. Test runs can write to something
+like `results/tests` while real analyses store their summaries in another
+folder.
 
 The second form accepts a folder path and processes each PDF it finds. The
 combined results are written to `summary.csv` in the current directory.

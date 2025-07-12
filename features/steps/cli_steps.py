@@ -49,6 +49,21 @@ def run_analyse_directory_pdf_option(context, dir, pdfout):
     run_analyse_pdf_option(context, dir, pdfout)
 
 
+@when(r'I run the bankcleanr analyse command with "(?P<pdf>[^"]+)" in outdir "(?P<dir>[^"]+)"')
+def run_analyse_outdir(context, pdf, dir):
+    root = Path(__file__).resolve().parents[2]
+    out = root / dir
+    context.summary_path = out / "summary.csv"
+    if context.summary_path.exists():
+        context.summary_path.unlink()
+    out.mkdir(exist_ok=True)
+    context.result = subprocess.run(
+        ["python", "-m", "bankcleanr", "analyse", str(root / pdf), "--outdir", dir],
+        capture_output=True,
+        cwd=root,
+    )
+
+
 @when(r'I run the bankcleanr analyse command with "(?P<pdf>[^"]+)" with terminal output')
 def run_analyse_terminal_option(context, pdf):
     root = Path(__file__).resolve().parents[2]
