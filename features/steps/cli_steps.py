@@ -43,6 +43,12 @@ def run_analyse_pdf_option(context, pdf, pdfout):
     )
 
 
+@when(r'I run the bankcleanr analyse command on directory "(?P<dir>[^"]+)" with pdf "(?P<pdfout>[^"]+)"')
+def run_analyse_directory_pdf_option(context, dir, pdfout):
+    """Analyse a directory of statements writing the results to a PDF."""
+    run_analyse_pdf_option(context, dir, pdfout)
+
+
 @when(r'I run the bankcleanr analyse command with "(?P<pdf>[^"]+)" with terminal output')
 def run_analyse_terminal_option(context, pdf):
     root = Path(__file__).resolve().parents[2]

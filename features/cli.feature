@@ -45,3 +45,9 @@ Feature: Command-line interface
     And the summary file exists
     And the summary contains the disclaimer
     And the terminal output contains the disclaimer
+
+  Scenario: Analyse a directory of PDF statements to PDF output
+    When I run the bankcleanr analyse command with "Redacted bank statements" with pdf "dir_summary.pdf"
+    Then the exit code is 0
+    And the summary file exists
+    And the PDF summary contains the disclaimer
