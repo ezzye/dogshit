@@ -57,3 +57,14 @@ def totals_by_type(recommendations: Iterable[Recommendation]) -> Dict[str, Decim
         amt = _parse_amount(amt_str)
         totals[group] = totals.get(group, Decimal("0")) + abs(amt)
     return totals
+
+
+def summarize_by_description(transactions: Iterable) -> Dict[str, Decimal]:
+    """Group transactions by description and total their amounts."""
+    totals: Dict[str, Decimal] = {}
+    for tx in transactions:
+        desc = _get_attr(tx, "description", "")
+        amt_str = _get_attr(tx, "amount", "0")
+        amt = _parse_amount(amt_str)
+        totals[desc] = totals.get(desc, Decimal("0")) + abs(amt)
+    return totals

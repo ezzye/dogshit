@@ -1,7 +1,7 @@
 from decimal import Decimal
 from bankcleanr.transaction import Transaction
 from bankcleanr.recommendation import Recommendation
-from bankcleanr.analytics import calculate_savings, totals_by_type
+from bankcleanr.analytics import calculate_savings, totals_by_type, summarize_by_description
 
 
 def test_calculate_savings():
@@ -22,3 +22,15 @@ def test_totals_by_type():
     assert totals["entertainment"] == Decimal("9.99")
     assert totals["cloud"] == Decimal("5.00")
     assert totals["other"] == Decimal("2.50")
+
+
+def test_summarize_by_description():
+    txs = [
+        Transaction(date="2024-01-01", description="Coffee", amount="-2.00"),
+        Transaction(date="2024-01-02", description="Coffee", amount="-1.50"),
+        Transaction(date="2024-01-03", description="Groceries", amount="-5.00"),
+        Transaction(date="2024-01-04", description="Coffee", amount="1.00"),
+    ]
+    totals = summarize_by_description(txs)
+    assert totals["Coffee"] == Decimal("4.50")
+    assert totals["Groceries"] == Decimal("5.00")
