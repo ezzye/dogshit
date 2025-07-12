@@ -1,8 +1,9 @@
-from behave import when, then
+from behave import given, when, then
 import subprocess
 from pathlib import Path
 import re
 from behave import use_step_matcher
+import os
 from bankcleanr.reports.disclaimers import GLOBAL_DISCLAIMER
 
 use_step_matcher("re")
@@ -133,3 +134,18 @@ def terminal_output_contains_disclaimer_once(context):
 def terminal_output_shows_savings(context):
     output = context.result.stdout.decode().lower()
     assert "potential savings" in output
+
+
+@given("an API key is configured")
+def api_key_configured(context):
+    context._orig_key = os.getenv("OPENAI_API_KEY")
+    os.environ["OPENAI_API_KEY"] = "dummy"
+
+
+@then(r'the summary actions include "(?P<label>[^"]+)"')
+def summary_actions_include(context, label):
+    import csv
+    with open(context.summary_path) as f:
+        reader = csv.DictReader(f)
+        acts = [row["action"] for row in reader]
+    assert label in acts
