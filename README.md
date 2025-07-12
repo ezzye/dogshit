@@ -37,11 +37,27 @@ provider in this file:
 llm_provider: openai
 ```
 
-API keys are supplied via environment variables. Use `OPENAI_API_KEY` for the
-OpenAI adapter or `GEMINI_API_KEY` for Gemini. The BFL adapter checks
-`BFL_API_KEY` and falls back to `OPENAI_API_KEY` if the former is not set.
+API keys are supplied via environment variables. Set the one matching your chosen
+provider:
+
+- `OPENAI_API_KEY`
+- `GEMINI_API_KEY`
+- `MISTRAL_API_KEY`
+- `ANTHROPIC_API_KEY`
+- `BFL_API_KEY` (falls back to `OPENAI_API_KEY` if unset)
+
+Export the appropriate variable before running the CLI so the adapter can talk
+to the LLM service.
 
 Run `poetry run bankcleanr config` to see which configuration file is in use.
+
+### LLM workflow
+
+1. Transactions are parsed and labelled with regex heuristics.
+2. Any remaining `unknown` items are sent to the configured LLM adapter using
+   the API key you provided.
+3. Recommendations are generated from these labels and written to the summary
+   file.
 
 ## Running the application
 
@@ -60,12 +76,11 @@ Using `--outdir` keeps your work organised. Test runs can write to something
 like `results/tests` while real analyses store their summaries in another
 folder.
 
-The second form accepts a folder path and processes each PDF it finds. The
-combined results are written to `summary.csv` in the current directory.
-
-The `analyse` command writes a `summary.csv` to the working directory.
-If you pass a directory, it processes all PDFs inside before writing the file.
-It also prints a reminder to verify each recommendation manually.
+The second form accepts a folder path and processes each PDF it finds. By
+default `summary.csv` is written to the current directory.
+PDF output is only produced when you pass `--pdf` or give an `--output`
+filename ending in `.pdf`. The command always reminds you to verify each
+recommendation manually.
 
 ## Disclaimer
 
