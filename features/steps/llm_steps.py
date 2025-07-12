@@ -150,6 +150,10 @@ def classify_live(context, provider):
         return
     adapter_cls = PROVIDERS[provider]
     adapter = adapter_cls(api_key=api_key)
+    client = getattr(adapter, "client", getattr(adapter, "delegate", None))
+    if client is None:
+        context.scenario.skip("provider not available")
+        return
     context.labels = adapter.classify_transactions(context.txs)
 
 
