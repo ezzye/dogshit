@@ -8,7 +8,7 @@ from .reports.writer import (
     write_pdf_summary,
     format_terminal_summary,
 )
-from .recommendation import Recommendation, load_knowledge_base
+from . import recommendation
 from .rules import heuristics
 from .analytics import calculate_savings, totals_by_type
 from .settings import get_settings
@@ -47,18 +47,25 @@ def analyse(
     typer.echo(f"Analysing {path}")
     transactions = load_from_path(path)
 
-    # build simple recommendations using heuristics only
-    labels = heuristics.classify_transactions(transactions)
-    kb = load_knowledge_base()
-    recs: list[Recommendation] = []
-    for tx, label in zip(transactions, labels):
-        if label in kb:
-            action = "Cancel"
-            info = kb[label]
-        else:
-            action = "Keep"
-            info = None
-        recs.append(Recommendation(tx, label, action, info))
+    settings = get_settings()
+    if settings.api_key:
+        # use heuristics with LLM fallback when API key is available
+        recs = recommendation.recommend_transactions(
+            transactions, provider=settings.llm_provider
+        )
+    else:
+        # fall back to heuristics only
+        labels = heuristics.classify_transactions(transactions)
+        kb = recommendation.load_knowledge_base()
+        recs: list[recommendation.Recommendation] = []
+        for tx, label in zip(transactions, labels):
+            if label in kb:
+                action = "Cancel"
+                info = kb[label]
+            else:
+                action = "Keep"
+                info = None
+            recs.append(recommendation.Recommendation(tx, label, action, info))
 
     outdir_path: Path | None = None
     if outdir:
