@@ -37,6 +37,7 @@ def classify_transactions(transactions: Iterable, provider: str | None = None) -
     """Classify transactions using heuristics and an optional LLM provider."""
     tx_objs = [normalise(tx) for tx in transactions]
     labels = heuristics.classify_transactions(tx_objs)
+    print(f"[classify_transactions] heuristic labels: {labels}")
 
     unmatched: List[Transaction] = []
     unmatched_indexes: List[int] = []
@@ -46,9 +47,12 @@ def classify_transactions(transactions: Iterable, provider: str | None = None) -
             unmatched_indexes.append(idx)
 
     if unmatched:
+        print(f"[classify_transactions] {len(unmatched)} unmatched -> provider {provider or get_settings().llm_provider}")
         adapter = get_adapter(provider)
         masked = [mask_transaction(tx) for tx in unmatched]
+        print(f"[classify_transactions] masked: {[tx.description for tx in masked]}")
         llm_labels = adapter.classify_transactions(masked)
+        print(f"[classify_transactions] llm labels: {llm_labels}")
         for idx, llm_label in zip(unmatched_indexes, llm_labels):
             labels[idx] = llm_label
 
