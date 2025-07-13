@@ -42,10 +42,15 @@ def analyse(
     terminal: bool = typer.Option(
         False, "--terminal", help="Display the summary in the terminal"
     ),
+    verbose: bool = typer.Option(
+        False,
+        "--verbose",
+        help="Show each file as it is processed",
+    ),
 ):
     """Analyse a statement file or directory and write a summary."""
     typer.echo(f"Analysing {path}")
-    transactions = load_from_path(path)
+    transactions = load_from_path(path, verbose=verbose)
 
     settings = get_settings()
     if settings.api_key:

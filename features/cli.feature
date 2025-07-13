@@ -63,3 +63,8 @@ Feature: Command-line interface
     When I run the bankcleanr analyse command with "Redacted bank statements/22b583f5-4060-44eb-a844-945cd612353c (1).pdf"
     Then the exit code is 0
     And the summary actions include "Investigate"
+
+  Scenario: Analyse a PDF statement with verbose output
+    When I run the bankcleanr analyse command with "Redacted bank statements/22b583f5-4060-44eb-a844-945cd612353c (1).pdf" with verbose output
+    Then the exit code is 0
+    And the terminal output contains "22b583f5-4060-44eb-a844-945cd612353c (1).pdf"
