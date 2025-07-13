@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 from typing import Iterable, List, Dict, Any
 
 from langchain_openai import ChatOpenAI
@@ -11,6 +12,9 @@ from tenacity import retry, wait_random_exponential, stop_after_attempt
 from .base import AbstractAdapter
 from bankcleanr.transaction import normalise, Transaction
 from bankcleanr.rules.prompts import CATEGORY_PROMPT
+
+
+logger = logging.getLogger(__name__)
 
 
 class OpenAIAdapter(AbstractAdapter):
@@ -30,8 +34,10 @@ class OpenAIAdapter(AbstractAdapter):
     async def _aclassify(self, tx: Transaction) -> Dict[str, Any]:
         async with self._sem:
             prompt = CATEGORY_PROMPT.render(description=tx.description)
+            logger.debug("Rendered prompt: %s", prompt)
             message = HumanMessage(content=prompt)
             result = await self.llm.ainvoke([message])
+        logger.debug("LLM response: %s", result.content)
         try:
             data = json.loads(result.content)
             if not isinstance(data, dict):
@@ -52,7 +58,8 @@ class OpenAIAdapter(AbstractAdapter):
         tx_objs = [normalise(tx) for tx in transactions]
         try:
             results = asyncio.run(self._aclassify_batch(tx_objs))
-        except Exception:
+        except Exception as exc:
+            logger.error("Failed to classify transactions: %s", exc)
             self.last_details = [
                 {"category": "unknown", "reasons_to_cancel": [], "checklist": []}
                 for _ in tx_objs
