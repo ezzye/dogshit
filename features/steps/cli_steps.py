@@ -75,6 +75,19 @@ def run_analyse_terminal_option(context, pdf):
     )
 
 
+@when(r'I run the bankcleanr analyse command with "(?P<pdf>[^"]+)" with verbose output')
+def run_analyse_verbose_option(context, pdf):
+    root = Path(__file__).resolve().parents[2]
+    context.summary_path = root / "summary.csv"
+    if context.summary_path.exists():
+        context.summary_path.unlink()
+    context.result = subprocess.run(
+        ["python", "-m", "bankcleanr", "analyse", str(root / pdf), "--verbose"],
+        capture_output=True,
+        cwd=root,
+    )
+
+
 @when(r'I run the bankcleanr analyse command with "(?P<pdf>[^"]+)" to "(?P<outfile>[^"]+)" with terminal output')
 def run_analyse_output_terminal(context, pdf, outfile):
     """Run analyse writing to a file and showing terminal output."""
@@ -128,6 +141,12 @@ def terminal_output_contains_disclaimer_once(context):
     """Ensure the disclaimer appears exactly once in terminal output."""
     output = context.result.stdout.decode()
     assert output.count(GLOBAL_DISCLAIMER) == 1
+
+
+@then(r'the terminal output contains "(?P<text>[^"]+)"')
+def terminal_output_contains_text(context, text):
+    output = context.result.stdout.decode()
+    assert text in output
 
 
 @then('the terminal output shows savings')
