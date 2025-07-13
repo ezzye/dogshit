@@ -31,7 +31,7 @@ class OpenAIAdapter(AbstractAdapter):
         async with self._sem:
             prompt = CATEGORY_PROMPT.render(description=tx.description)
             message = HumanMessage(content=prompt)
-            result = await self.llm.apredict_messages([message])
+            result = await self.llm.ainvoke([message])
         try:
             data = json.loads(result.content)
             if not isinstance(data, dict):
