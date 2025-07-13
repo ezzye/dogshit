@@ -98,7 +98,7 @@ def counting_stub(context):
             self.running = 0
             self.max_running = 0
 
-        async def apredict_messages(self, messages):
+        async def ainvoke(self, messages):
             self.running += 1
             self.max_running = max(self.max_running, self.running)
             await asyncio.sleep(0.01)

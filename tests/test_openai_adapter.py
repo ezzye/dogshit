@@ -3,7 +3,7 @@ from bankcleanr.llm.openai import OpenAIAdapter
 from bankcleanr.transaction import Transaction
 
 class DummyChat:
-    async def apredict_messages(self, messages):
+    async def ainvoke(self, messages):
         class R:
             content = '{"category": "coffee", "reasons_to_cancel": ["expensive"], "checklist": ["call bank"]}'
         return R()
@@ -24,7 +24,7 @@ class SlowChat:
         self.running = 0
         self.max_running = 0
 
-    async def apredict_messages(self, messages):
+    async def ainvoke(self, messages):
         self.running += 1
         self.max_running = max(self.max_running, self.running)
         await asyncio.sleep(0.01)
@@ -47,7 +47,7 @@ def test_aclassify_throttles_concurrency(monkeypatch):
 
 
 class FailingChat:
-    async def apredict_messages(self, messages):
+    async def ainvoke(self, messages):
         raise RuntimeError("network down")
 
 
@@ -57,3 +57,17 @@ def test_classify_returns_unknown_on_failure(monkeypatch):
     tx = Transaction(date="2024-01-01", description="Coffee", amount="-1")
     labels = adapter.classify_transactions([tx])
     assert labels == ["unknown"]
+
+
+def test_classify_transactions_parses_json(monkeypatch):
+    """Ensure classify_transactions stores parsed JSON."""
+    monkeypatch.setattr("bankcleanr.llm.openai.ChatOpenAI", lambda *a, **k: DummyChat())
+    adapter = OpenAIAdapter(api_key="dummy")
+    tx = Transaction(date="2024-01-01", description="Coffee", amount="-1")
+    labels = adapter.classify_transactions([tx])
+    assert labels == ["coffee"]
+    assert adapter.last_details[0] == {
+        "category": "coffee",
+        "reasons_to_cancel": ["expensive"],
+        "checklist": ["call bank"],
+    }
