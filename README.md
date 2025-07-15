@@ -49,6 +49,11 @@ provider:
 Export the appropriate variable before running the CLI so the adapter can talk
 to the LLM service.
 
+When running the behaviour tests, the live classification steps verify that the
+API key isn't a placeholder and perform a short connectivity check. If this
+probe fails the scenario is skipped so the suite can run without valid
+credentials or network access.
+
 Run `poetry run bankcleanr config` to see which configuration file is in use.
 
 ### LLM workflow

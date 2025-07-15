@@ -138,17 +138,11 @@ def classify_live(context, provider):
         "bfl": "BFL_API_KEY",
         "gemini": "GEMINI_API_KEY",
     }
-    print("****env_map**")
-    print(env_map)
-    print("**********************************************************************")
 
     if provider not in PROVIDERS:
         raise AssertionError(f"{provider} adapter not available")
     env_var = env_map.get(provider)
     api_key = os.getenv(env_var) if env_var else None
-    print("**********************api_key***********************************")
-    print(api_key)
-    print("**********************************************************************")
     placeholders = {"dummy", "your-openai-api-key", "your-api-key", "your-gemini-api-key"}
     if env_var and (
         api_key is None or api_key.lower() in placeholders
@@ -157,17 +151,17 @@ def classify_live(context, provider):
         return
     adapter_cls = PROVIDERS[provider]
     adapter = adapter_cls(api_key=api_key)
-    print("**************************adapter**********************************")
-    print(adapter)
-    print("**********************************************************************")
     client = getattr(adapter, "client", getattr(adapter, "delegate", None))
     if client is None:
         context.scenario.skip("provider not available")
         return
+    try:
+        from bankcleanr.llm.utils import probe_adapter
+        probe_adapter(adapter, timeout=5)
+    except Exception as exc:
+        context.scenario.skip(f"connectivity check failed: {exc}")
+        return
     context.labels = adapter.classify_transactions(context.txs)
-    print("*************************context.labels********************************")
-    print(context.labels)
-    print("**********************************************************************")
 
 
 
