@@ -87,6 +87,13 @@ PDF output is only produced when you pass `--pdf` or give an `--output`
 filename ending in `.pdf`. The command always reminds you to verify each
 recommendation manually.
 
+### Updating heuristics
+
+Regex patterns for the local classifier live in `bankcleanr/data/heuristics.yml`.
+After LLM classification the tool asks if newly labelled descriptions should be
+added to this file. Confirm with `y` to store the pattern so future runs
+recognise it. You can also edit the YAML manually if needed.
+
 ## Disclaimer
 
 Every summary includes the following disclaimer:

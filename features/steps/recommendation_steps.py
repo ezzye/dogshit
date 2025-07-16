@@ -6,7 +6,9 @@ from bankcleanr import recommendation
 
 @when("I generate recommendations")
 def generate_recommendations(context):
-    context.recommendations = recommendation.recommend_transactions(context.txs, provider="openai")
+    context.recommendations = recommendation.recommend_transactions(
+        context.txs, provider="openai", confirm=lambda _: "n"
+    )
     if hasattr(context, "original"):
         PROVIDERS["openai"] = context.original
 

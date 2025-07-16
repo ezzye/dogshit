@@ -51,7 +51,9 @@ def mock_named_adapter(context, provider, label):
 @when("I classify transactions with the LLM")
 def classify_with_llm(context):
     provider = getattr(context, "provider", "openai")
-    context.labels = classify_transactions(context.txs, provider=provider)
+    context.labels = classify_transactions(
+        context.txs, provider=provider, confirm=lambda _: "n"
+    )
 
 
 @then("the LLM labels are")
@@ -82,7 +84,7 @@ def classify_with_capture(context):
 
     context.original = PROVIDERS["openai"]
     PROVIDERS["openai"] = CaptureAdapter
-    classify_transactions(context.txs, provider="openai")
+    classify_transactions(context.txs, provider="openai", confirm=lambda _: "n")
     PROVIDERS["openai"] = context.original
 
 
