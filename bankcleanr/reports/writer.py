@@ -80,6 +80,8 @@ def write_pdf_summary(transactions: Iterable, output: str, categories: Iterable[
     path = Path(output)
     doc = SimpleDocTemplate(str(path), pagesize=letter)
     styles = getSampleStyleSheet()
+    wrap_style = styles["Normal"].clone("wrapped")
+    wrap_style.wordWrap = "CJK"
 
     tx_rows: List[List[str]] = [
         [
@@ -101,14 +103,14 @@ def write_pdf_summary(transactions: Iterable, output: str, categories: Iterable[
             gathered_cats.add(cat)
         tx_rows.append([
             t["date"],
-            Paragraph(str(t["description"]), styles["Normal"]),
+            Paragraph(str(t["description"]), wrap_style),
             t["amount"],
             t["balance"],
             cat,
             act,
-            url,
-            email,
-            phone,
+            Paragraph(str(url), wrap_style),
+            Paragraph(str(email), wrap_style),
+            Paragraph(str(phone), wrap_style),
         ])
     if categories is None:
         categories = sorted(gathered_cats)
@@ -117,14 +119,14 @@ def write_pdf_summary(transactions: Iterable, output: str, categories: Iterable[
 
     col_widths = [
         doc.width * 0.1,  # date
-        doc.width * 0.35,  # description
-        doc.width * 0.08,  # amount
-        doc.width * 0.08,  # balance
-        doc.width * 0.1,  # category
-        doc.width * 0.06,  # action
-        doc.width * 0.1,  # url
-        doc.width * 0.1,  # email
-        doc.width * 0.13,  # phone
+        doc.width * 0.5,  # description
+        doc.width * 0.07,  # amount
+        doc.width * 0.07,  # balance
+        doc.width * 0.08,  # category
+        doc.width * 0.05,  # action
+        doc.width * 0.05,  # url
+        doc.width * 0.04,  # email
+        doc.width * 0.04,  # phone
     ]
 
     table = Table(tx_rows, colWidths=col_widths)
