@@ -8,10 +8,16 @@ from .recommendation import Recommendation
 # Map transaction categories to high level types
 CATEGORY_TYPES = {
     "spotify": "entertainment",
-    "netflix": "entertainment",
-    "amazon prime": "entertainment",
+    "netflix": "tv subscription",
+    "amazon prime": "tv subscription",
     "icloud": "cloud",
     "dropbox": "cloud",
+    "tesco": "grocery",
+    "walmart": "grocery",
+    "openai": "ai",
+    "midjourney": "ai",
+    "bus": "transport",
+    "uber": "transport",
 }
 
 

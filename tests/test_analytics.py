@@ -29,7 +29,7 @@ def test_totals_by_type():
     totals = totals_by_type(recs)
     assert totals["entertainment"] == Decimal("9.99")
     assert totals["cloud"] == Decimal("5.00")
-    assert totals["other"] == Decimal("2.50")
+    assert totals["transport"] == Decimal("2.50")
 
 
 def test_totals_by_type_ignores_income():
@@ -38,7 +38,19 @@ def test_totals_by_type_ignores_income():
         Recommendation(Transaction(date="2024-01-02", description="Bus", amount="-2.50"), "bus", "Keep"),
     ]
     totals = totals_by_type(recs)
-    assert totals["other"] == Decimal("2.50")
+    assert totals["transport"] == Decimal("2.50")
+
+
+def test_totals_by_type_new_groups():
+    recs = [
+        Recommendation(Transaction(date="2024-01-01", description="Tesco", amount="-15.00"), "tesco", "Keep"),
+        Recommendation(Transaction(date="2024-01-02", description="OpenAI", amount="-20.00"), "openai", "Keep"),
+        Recommendation(Transaction(date="2024-01-03", description="Netflix", amount="-7.00"), "netflix", "Keep"),
+    ]
+    totals = totals_by_type(recs)
+    assert totals["grocery"] == Decimal("15.00")
+    assert totals["ai"] == Decimal("20.00")
+    assert totals["tv subscription"] == Decimal("7.00")
 
 
 def test_summarize_by_description():
