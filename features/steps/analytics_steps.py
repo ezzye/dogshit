@@ -23,4 +23,4 @@ def total_by_type(context):
 @then("income amounts are excluded from totals")
 def check_totals(context):
     assert context.totals["entertainment"] == Decimal("9.99")
-    assert context.totals["other"] == Decimal("2.50")
+    assert context.totals["transport"] == Decimal("2.50")
