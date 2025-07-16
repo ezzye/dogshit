@@ -40,7 +40,8 @@ def calculate_savings(recommendations: Iterable[Recommendation]) -> Decimal:
             else:
                 amt_str = _get_attr(rec, "amount", "0")
             amt = _parse_amount(amt_str)
-            total += abs(amt)
+            if amt < 0:
+                total += abs(amt)
     return total
 
 
@@ -55,7 +56,8 @@ def totals_by_type(recommendations: Iterable[Recommendation]) -> Dict[str, Decim
         else:
             amt_str = _get_attr(rec, "amount", "0")
         amt = _parse_amount(amt_str)
-        totals[group] = totals.get(group, Decimal("0")) + abs(amt)
+        if amt < 0:
+            totals[group] = totals.get(group, Decimal("0")) + abs(amt)
     return totals
 
 

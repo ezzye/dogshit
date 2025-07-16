@@ -12,6 +12,14 @@ def test_calculate_savings():
     assert calculate_savings(recs) == Decimal("9.99")
 
 
+def test_calculate_savings_ignores_income():
+    recs = [
+        Recommendation(Transaction(date="2024-01-01", description="Refund", amount="5.00"), "refund", "Cancel"),
+        Recommendation(Transaction(date="2024-01-02", description="Spotify", amount="-9.99"), "spotify", "Cancel"),
+    ]
+    assert calculate_savings(recs) == Decimal("9.99")
+
+
 def test_totals_by_type():
     recs = [
         Recommendation(Transaction(date="2024-01-01", description="Spotify", amount="-9.99"), "spotify", "Cancel"),
@@ -21,6 +29,15 @@ def test_totals_by_type():
     totals = totals_by_type(recs)
     assert totals["entertainment"] == Decimal("9.99")
     assert totals["cloud"] == Decimal("5.00")
+    assert totals["other"] == Decimal("2.50")
+
+
+def test_totals_by_type_ignores_income():
+    recs = [
+        Recommendation(Transaction(date="2024-01-01", description="Salary", amount="1000.00"), "salary", "Keep"),
+        Recommendation(Transaction(date="2024-01-02", description="Bus", amount="-2.50"), "bus", "Keep"),
+    ]
+    totals = totals_by_type(recs)
     assert totals["other"] == Decimal("2.50")
 
 

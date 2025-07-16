@@ -38,6 +38,21 @@ def test_parse_pdf_regex():
     assert txs[1].amount == "-2.00"
 
 
+def test_parse_money_in_out_columns():
+    rows = [
+        ["Date", "Description", "Money out", "Money in", "Balance"],
+        ["01 Jan", "Coffee", "1.00", "0.00", "99.00"],
+        ["02 Jan", "Salary", "0.00", "100.00", "199.00"],
+    ]
+    path = _make_simple_pdf(rows)
+    try:
+        txs = generic.parse_pdf(path)
+    finally:
+        os.unlink(path)
+    assert txs[0].amount == "-1.00"
+    assert txs[1].amount == "100.00"
+
+
 def test_parse_pdf_ocr_fallback(monkeypatch):
     called = {}
 

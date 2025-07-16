@@ -43,3 +43,19 @@ def parse_file(context):
 def check_transactions(context):
     assert len(context.transactions) == 2
     assert context.transactions[0].description == "Coffee"
+
+
+@given("a statement PDF with Money in and out columns")
+def given_in_out_pdf(context):
+    rows = [
+        ["Date", "Description", "Money out", "Money in", "Balance"],
+        ["01 Jan", "Coffee", "1.00", "0.00", "99.00"],
+        ["02 Jan", "Salary", "0.00", "100.00", "199.00"],
+    ]
+    context.pdf_path = _create_pdf(rows)
+
+
+@then("the amounts reflect income and expenses")
+def check_amount_signs(context):
+    assert context.transactions[0].amount == "-1.00"
+    assert context.transactions[1].amount == "100.00"
