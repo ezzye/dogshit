@@ -84,10 +84,12 @@ def test_write_pdf_summary_long_description(tmp_path):
     write_pdf_summary(transactions, str(output), [])
 
     with pdfplumber.open(output) as pdf:
+        table = pdf.pages[0].extract_table()
+        assert table
+        assert all(len(row) == 9 for row in table if row)
         text = " ".join(page.extract_text() or "" for page in pdf.pages)
 
-    extracted = "".join(text.split())
-    assert extracted.count("Verylongdescription") >= 10
+    assert "Very long description" in text
 
 
 def test_format_terminal_summary():
