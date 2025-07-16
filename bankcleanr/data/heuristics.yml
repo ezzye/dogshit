@@ -1,0 +1,5 @@
+spotify: 'spotify'
+netflix: 'netflix'
+icloud: 'icloud'
+amazon prime: 'amazon\s+prime'
+dropbox: 'dropbox'

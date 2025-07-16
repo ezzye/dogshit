@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterable, List, Dict, Type
+from typing import Iterable, List, Dict, Type, Callable
 
 from bankcleanr.settings import get_settings
 from bankcleanr.transaction import normalise, Transaction, mask_transaction
@@ -33,7 +33,11 @@ def get_adapter(provider: str | None = None) -> AbstractAdapter:
     return adapter_cls(api_key=settings.api_key)
 
 
-def classify_transactions(transactions: Iterable, provider: str | None = None) -> List[str]:
+def classify_transactions(
+    transactions: Iterable,
+    provider: str | None = None,
+    confirm: Callable[[str], str] | None = None,
+) -> List[str]:
     """Classify transactions using heuristics and an optional LLM provider."""
     tx_objs = [normalise(tx) for tx in transactions]
     labels = heuristics.classify_transactions(tx_objs)
@@ -55,5 +59,7 @@ def classify_transactions(transactions: Iterable, provider: str | None = None) -
         print(f"[classify_transactions] llm labels: {llm_labels}")
         for idx, llm_label in zip(unmatched_indexes, llm_labels):
             labels[idx] = llm_label
+
+    heuristics.learn_new_patterns(tx_objs, labels, confirm=confirm)
 
     return labels

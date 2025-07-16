@@ -21,7 +21,7 @@ def test_llm_fallback(monkeypatch):
         Transaction(date="2024-01-01", description="Spotify premium", amount="-9.99"),
         Transaction(date="2024-01-02", description="Coffee shop", amount="-2.00"),
     ]
-    labels = classify_transactions(txs, provider="openai")
+    labels = classify_transactions(txs, provider="openai", confirm=lambda _: "n")
     assert labels == ["spotify", "remote"]
 
 
@@ -54,7 +54,7 @@ def test_llm_masks_before_sending(monkeypatch):
 
     monkeypatch.setitem(PROVIDERS, "openai", CaptureAdapter)
     txs = [Transaction(date="2024-01-01", description="Send 12-34-56 12345678", amount="-9.99")]
-    classify_transactions(txs, provider="openai")
+    classify_transactions(txs, provider="openai", confirm=lambda _: "n")
     assert captured["descriptions"][0] == "Send ****3456 ****5678"
 
 
@@ -64,7 +64,7 @@ def test_mistral_fallback(monkeypatch):
         Transaction(date="2024-01-01", description="Spotify premium", amount="-9.99"),
         Transaction(date="2024-01-02", description="Coffee shop", amount="-2.00"),
     ]
-    labels = classify_transactions(txs, provider="mistral")
+    labels = classify_transactions(txs, provider="mistral", confirm=lambda _: "n")
     assert labels == ["spotify", "remote"]
 
 
@@ -74,7 +74,7 @@ def test_gemini_fallback(monkeypatch):
         Transaction(date="2024-01-01", description="Spotify premium", amount="-9.99"),
         Transaction(date="2024-01-02", description="Coffee shop", amount="-2.00"),
     ]
-    labels = classify_transactions(txs, provider="gemini")
+    labels = classify_transactions(txs, provider="gemini", confirm=lambda _: "n")
     assert labels == ["spotify", "remote"]
 
 
@@ -84,7 +84,7 @@ def test_bfl_fallback(monkeypatch):
         Transaction(date="2024-01-01", description="Spotify premium", amount="-9.99"),
         Transaction(date="2024-01-02", description="Coffee shop", amount="-2.00"),
     ]
-    labels = classify_transactions(txs, provider="bfl")
+    labels = classify_transactions(txs, provider="bfl", confirm=lambda _: "n")
     assert labels == ["spotify", "remote"]
 
 
