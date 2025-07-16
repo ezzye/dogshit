@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re
 import logging
 from typing import Iterable, List, Dict, Any
 
@@ -39,7 +40,11 @@ class OpenAIAdapter(AbstractAdapter):
             result = await self.llm.ainvoke([message])
         logger.debug("LLM response: %s", result.content)
         try:
-            data = json.loads(result.content)
+            content = result.content.strip()
+            if content.startswith("```") and content.endswith("```"):
+                content = content[3:-3].strip()
+                content = re.sub(r"^json\s*", "", content, flags=re.IGNORECASE)
+            data = json.loads(content)
             if not isinstance(data, dict):
                 raise ValueError
         except Exception:

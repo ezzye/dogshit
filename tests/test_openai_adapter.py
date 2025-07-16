@@ -71,3 +71,21 @@ def test_classify_transactions_parses_json(monkeypatch):
         "reasons_to_cancel": ["expensive"],
         "checklist": ["call bank"],
     }
+
+
+class FencedChat:
+    async def ainvoke(self, messages):
+        class R:
+            content = "```json\n{\"category\": \"coffee\"}\n```"
+
+        return R()
+
+
+def test_aclassify_handles_json_fences(monkeypatch):
+    monkeypatch.setattr(
+        "bankcleanr.llm.openai.ChatOpenAI", lambda *a, **k: FencedChat()
+    )
+    adapter = OpenAIAdapter(api_key="dummy")
+    tx = Transaction(date="2024-01-01", description="Coffee", amount="-1")
+    result = asyncio.run(adapter._aclassify(tx))
+    assert result == {"category": "coffee"}
