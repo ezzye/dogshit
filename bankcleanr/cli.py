@@ -1,4 +1,6 @@
 import typer
+import logging
+import os
 from pathlib import Path
 
 from .io.loader import load_from_path
@@ -15,6 +17,14 @@ from .settings import get_settings
 from .reports.disclaimers import GLOBAL_DISCLAIMER
 
 app = typer.Typer(help="BankCleanr CLI")
+
+LOG_LEVEL_ENV = "BANKCLEANR_LOG_LEVEL"
+
+
+@app.callback()
+def main(log_level: str = typer.Option(None, help="Set log verbosity (e.g. DEBUG)")):
+    level = (log_level or os.getenv(LOG_LEVEL_ENV, "WARNING")).upper()
+    logging.basicConfig(level=getattr(logging, level, logging.WARNING))
 
 # Path to a sample statement used for demonstrations
 SAMPLE_STATEMENT = (
