@@ -18,7 +18,9 @@ command line interface and a small test-suite.
 ## Running the tests
 
 Run the unit tests with `pytest` and the behaviour driven tests with `behave`.
-You can run them directly or via the `Makefile`:
+Make sure the development dependencies were installed first:
+`poetry install --with dev`.
+You can run the tests directly or via the `Makefile`:
 
 ```bash
 make test
