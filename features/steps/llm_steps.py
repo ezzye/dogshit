@@ -10,6 +10,8 @@ from bankcleanr.llm.openai import OpenAIAdapter
 import bankcleanr.llm.openai as openai_mod
 from bankcleanr.rules import regex, heuristics
 import asyncio
+import io
+import contextlib
 
 
 @given("transactions requiring LLM")
@@ -25,6 +27,14 @@ def many_transactions_for_llm(context, count):
     context.txs = [
         Transaction(date="2024-01-01", description=f"tx {i}", amount="-1.00")
         for i in range(count)
+    ]
+
+
+@given("duplicate transactions requiring LLM")
+def duplicate_transactions(context):
+    context.txs = [
+        Transaction(date="2024-01-01", description="Coffee shop", amount="-1.00"),
+        Transaction(date="2024-01-02", description="Coffee shop", amount="-1.00"),
     ]
 
 
@@ -151,6 +161,21 @@ def classify_with_llm_accept(context):
     )
 
 
+@when("I classify transactions with the LLM summarising new patterns")
+def classify_with_llm_summary(context):
+    provider = getattr(context, "provider", "openai")
+    context.prompts = []
+    buf = io.StringIO()
+    def _confirm(prompt: str) -> str:
+        context.prompts.append(prompt)
+        return "n"
+    with contextlib.redirect_stdout(buf):
+        context.labels = classify_transactions(
+            context.txs, provider=provider, confirm=_confirm
+        )
+    context.output = buf.getvalue()
+
+
 @given('a sample transaction "{description}"')
 def sample_transaction(context, description):
     context.txs = [Transaction(date="2024-01-01", description=description, amount="-1.00")]
@@ -194,3 +219,14 @@ def classify_live(context, provider):
 @then('the returned category is not "unknown"')
 def check_live_category(context):
     assert context.labels[0] != "unknown"
+
+
+@then('the summary output lists "{description}" {count:d} times')
+def summary_lists(context, description, count):
+    assert f"{description} ({count})" in context.output
+
+
+@then('the user is prompted once for "{description}"')
+def prompted_once(context, description):
+    matches = [p for p in context.prompts if description in p]
+    assert len(matches) == 1

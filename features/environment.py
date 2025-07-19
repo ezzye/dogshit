@@ -1,5 +1,8 @@
 import os
+from pathlib import Path
 from bankcleanr.rules import regex
+
+ORIG_HEURISTICS = (regex.DATA_DIR / "heuristics.yml").read_text()
 
 def after_scenario(context, scenario):
     if "_orig_key" in context.__dict__:
@@ -12,7 +15,11 @@ def after_scenario(context, scenario):
         except Exception:
             pass
     if hasattr(context, "heuristics_path"):
-        regex.HEURISTICS_PATH = getattr(context, "orig_heuristics", regex.DATA_DIR / "heuristics.yml")
+        regex.HEURISTICS_PATH = getattr(
+            context, "orig_heuristics", regex.DATA_DIR / "heuristics.yml"
+        )
+        # restore original heuristics file contents
+        regex.HEURISTICS_PATH.write_text(ORIG_HEURISTICS)
         regex.reload_patterns()
         delattr(context, "heuristics_path")
         if hasattr(context, "orig_heuristics"):
