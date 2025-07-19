@@ -27,3 +27,12 @@ Feature: LLM classification
     And the OpenAI API is replaced with a counting stub
     When I classify transactions with the throttled adapter
     Then no more than 5 concurrent requests were sent
+
+  Scenario: Learned patterns are applied immediately
+    Given an empty heuristics file
+    And a transaction "Coffee shop"
+    And the OpenAI adapter is mocked to return "coffee"
+    When I classify transactions with the LLM accepting new patterns
+    Then the LLM labels are
+      | label |
+      | coffee |

@@ -72,4 +72,9 @@ def classify_transactions(
 
     heuristics.learn_new_patterns(tx_objs, labels, confirm=confirm)
 
+    refreshed = heuristics.classify_transactions(tx_objs)
+    for idx in unmatched_indexes:
+        if refreshed[idx] != "unknown":
+            labels[idx] = refreshed[idx]
+
     return labels

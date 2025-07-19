@@ -1,4 +1,6 @@
 from bankcleanr.llm import classify_transactions, PROVIDERS
+import bankcleanr.llm as llm_mod
+from bankcleanr.rules import heuristics
 from bankcleanr.transaction import Transaction
 from bankcleanr.llm.openai import OpenAIAdapter
 from bankcleanr.llm.mistral import MistralAdapter
@@ -180,5 +182,33 @@ def test_get_bfl_adapter_falls_back_to_openai(monkeypatch, tmp_path):
 
     get_adapter()
     assert captured["api_key"] == "openai-env"
+
+
+def test_reclassification_after_learning(monkeypatch):
+    call_count = {"n": 0}
+
+    def classify_stub(txs):
+        call_count["n"] += 1
+        return ["unknown"] if call_count["n"] == 1 else ["coffee"]
+
+    monkeypatch.setattr(heuristics, "classify_transactions", classify_stub)
+    monkeypatch.setattr(heuristics, "learn_new_patterns", lambda *a, **k: None)
+
+    class CaptureAdapter(OpenAIAdapter):
+        def __init__(self, *a, **k):
+            self.last_details = [{"category": "coffee"}]
+
+        def classify_transactions(self, txs):
+            return ["coffee"]
+
+    adapter = CaptureAdapter()
+    monkeypatch.setattr(llm_mod, "get_adapter", lambda *a, **k: adapter)
+
+    txs = [Transaction(date="2024-01-01", description="Coffee shop", amount="-1")]
+    labels = llm_mod.classify_transactions(txs, provider="openai")
+
+    assert labels == ["coffee"]
+    assert call_count["n"] == 2
+    assert adapter.last_details == [{"category": "coffee"}]
 
 

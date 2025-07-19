@@ -1,10 +1,14 @@
 from behave import given, when, then
 import os
+from pathlib import Path
+import tempfile
+import importlib
 
 from bankcleanr.transaction import Transaction
 from bankcleanr.llm import classify_transactions, PROVIDERS
 from bankcleanr.llm.openai import OpenAIAdapter
 import bankcleanr.llm.openai as openai_mod
+from bankcleanr.rules import regex, heuristics
 import asyncio
 
 
@@ -125,6 +129,26 @@ def classify_with_throttled(context):
 @then("no more than 5 concurrent requests were sent")
 def check_throttling(context):
     assert context.max_running <= 5
+
+
+@given("an empty heuristics file")
+def empty_heuristics_file(context):
+    tmp = tempfile.NamedTemporaryFile(delete=False)
+    tmp.write(b"")
+    tmp.close()
+    context.heuristics_path = Path(tmp.name)
+    context.orig_heuristics = regex.HEURISTICS_PATH
+    regex.HEURISTICS_PATH = Path(tmp.name)
+    regex.reload_patterns(Path(tmp.name))
+    importlib.reload(heuristics)
+
+
+@when("I classify transactions with the LLM accepting new patterns")
+def classify_with_llm_accept(context):
+    provider = getattr(context, "provider", "openai")
+    context.labels = classify_transactions(
+        context.txs, provider=provider, confirm=lambda _: "y"
+    )
 
 
 @given('a sample transaction "{description}"')
