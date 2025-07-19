@@ -1,7 +1,7 @@
 from pathlib import Path
 from typer.testing import CliRunner
 
-from bankcleanr.cli import app, SAMPLE_STATEMENT
+from bankcleanr.cli import app, SAMPLE_STATEMENT, DEFAULT_OUTDIR
 from bankcleanr.reports.disclaimers import GLOBAL_DISCLAIMER
 
 
@@ -42,3 +42,23 @@ def test_analyse_verbose_outputs_paths(tmp_path):
     csv = tmp_path / "summary.csv"
     assert csv.exists()
     assert str(SAMPLE_STATEMENT) in result.stdout
+
+
+def test_analyse_default_outdir(tmp_path):
+    runner = CliRunner()
+    with runner.isolated_filesystem(temp_dir=tmp_path):
+        result = runner.invoke(
+            app,
+            [
+                "analyse",
+                str(SAMPLE_STATEMENT),
+                "--pdf",
+                "report.pdf",
+            ],
+        )
+        assert result.exit_code == 0
+        csv = Path(DEFAULT_OUTDIR) / "summary.csv"
+        pdf = Path(DEFAULT_OUTDIR) / "report.pdf"
+        assert csv.exists()
+        assert pdf.exists()
+        assert GLOBAL_DISCLAIMER in csv.read_text()

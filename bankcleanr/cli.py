@@ -20,6 +20,9 @@ app = typer.Typer(help="BankCleanr CLI")
 
 LOG_LEVEL_ENV = "BANKCLEANR_LOG_LEVEL"
 
+# Default directory for CLI outputs
+DEFAULT_OUTDIR = Path("results")
+
 
 @app.callback()
 def main(log_level: str = typer.Option(None, help="Set log verbosity (e.g. DEBUG)")):
@@ -82,20 +85,14 @@ def analyse(
                 info = None
             recs.append(recommendation.Recommendation(tx, label, action, info))
 
-    outdir_path: Path | None = None
-    if outdir:
-        outdir_path = Path(outdir)
-        outdir_path.mkdir(parents=True, exist_ok=True)
+    outdir_path = Path(outdir) if outdir else DEFAULT_OUTDIR
+    outdir_path.mkdir(parents=True, exist_ok=True)
 
-    output_path = Path(output)
-    if outdir_path:
-        output_path = outdir_path / output_path.name
+    output_path = outdir_path / Path(output).name
     write_summary(recs, str(output_path))
 
     if pdf:
-        pdf_path = Path(pdf)
-        if outdir_path:
-            pdf_path = outdir_path / pdf_path.name
+        pdf_path = outdir_path / Path(pdf).name
         write_pdf_summary(recs, str(pdf_path))
     if terminal:
         typer.echo(format_terminal_summary(recs))

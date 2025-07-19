@@ -5,6 +5,7 @@ import re
 from behave import use_step_matcher
 import os
 from bankcleanr.reports.disclaimers import GLOBAL_DISCLAIMER
+from bankcleanr.cli import DEFAULT_OUTDIR
 
 use_step_matcher("re")
 
@@ -20,7 +21,7 @@ def check_exit(context):
 @when(r'I run the bankcleanr analyse command with "(?P<pdf>[^\"]+)"(?: to "(?P<outfile>[^\"]+)")?')
 def run_analyse(context, pdf, outfile=None):
     root = Path(__file__).resolve().parents[2]
-    context.summary_path = root / (outfile or "summary.csv")
+    context.summary_path = root / DEFAULT_OUTDIR / (outfile or "summary.csv")
     if context.summary_path.exists():
         context.summary_path.unlink()
     context.result = subprocess.run(
@@ -34,7 +35,7 @@ def run_analyse(context, pdf, outfile=None):
 @when(r'I run the bankcleanr analyse command with "(?P<pdf>[^"]+)" with pdf "(?P<pdfout>[^"]+)"')
 def run_analyse_pdf_option(context, pdf, pdfout):
     root = Path(__file__).resolve().parents[2]
-    context.summary_path = root / pdfout
+    context.summary_path = root / DEFAULT_OUTDIR / pdfout
     if context.summary_path.exists():
         context.summary_path.unlink()
     context.result = subprocess.run(
@@ -78,7 +79,7 @@ def run_analyse_terminal_option(context, pdf):
 @when(r'I run the bankcleanr analyse command with "(?P<pdf>[^"]+)" with verbose output')
 def run_analyse_verbose_option(context, pdf):
     root = Path(__file__).resolve().parents[2]
-    context.summary_path = root / "summary.csv"
+    context.summary_path = root / DEFAULT_OUTDIR / "summary.csv"
     if context.summary_path.exists():
         context.summary_path.unlink()
     context.result = subprocess.run(
@@ -92,7 +93,7 @@ def run_analyse_verbose_option(context, pdf):
 def run_analyse_output_terminal(context, pdf, outfile):
     """Run analyse writing to a file and showing terminal output."""
     root = Path(__file__).resolve().parents[2]
-    context.summary_path = root / outfile
+    context.summary_path = root / DEFAULT_OUTDIR / outfile
     if context.summary_path.exists():
         context.summary_path.unlink()
     context.result = subprocess.run(
