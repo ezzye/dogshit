@@ -118,5 +118,5 @@ def config():
 
 @app.command()
 def gui():
-    """Launch the GUI (not implemented)."""
+    """Launch the graphical interface (currently a stub)."""
     typer.echo("GUI not implemented yet")
