@@ -5,6 +5,7 @@ import json
 import re
 import logging
 from typing import Iterable, List, Dict, Any
+from pathlib import Path
 
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage
@@ -13,6 +14,8 @@ from tenacity import retry, wait_random_exponential, stop_after_attempt
 from .base import AbstractAdapter
 from bankcleanr.transaction import normalise, Transaction
 from bankcleanr.rules.prompts import CATEGORY_PROMPT
+
+DATA_DIR = Path(__file__).resolve().parents[1] / "data"
 
 
 logger = logging.getLogger(__name__)
@@ -26,15 +29,27 @@ class OpenAIAdapter(AbstractAdapter):
         model: str = "gpt-3.5-turbo",
         api_key: str | None = None,
         max_concurrency: int = 5,
+        heuristics_path: Path = DATA_DIR / "heuristics.yml",
+        cancellation_path: Path = DATA_DIR / "cancellation.yml",
     ):
         self.llm = ChatOpenAI(model=model, api_key=api_key)
         # Limit the number of concurrent API calls
         self._sem = asyncio.Semaphore(max_concurrency)
+        self.heuristics_text = (
+            heuristics_path.read_text() if heuristics_path.exists() else ""
+        )
+        self.cancellation_text = (
+            cancellation_path.read_text() if cancellation_path.exists() else ""
+        )
 
     @retry(wait=wait_random_exponential(min=1, max=2), stop=stop_after_attempt(3))
     async def _aclassify(self, tx: Transaction) -> Dict[str, Any]:
         async with self._sem:
-            prompt = CATEGORY_PROMPT.render(description=tx.description)
+            prompt = CATEGORY_PROMPT.render(
+                description=tx.description,
+                heuristics=self.heuristics_text,
+                cancellation=self.cancellation_text,
+            )
             logger.debug("Rendered prompt: %s", prompt)
             message = HumanMessage(content=prompt)
             result = await self.llm.ainvoke([message])

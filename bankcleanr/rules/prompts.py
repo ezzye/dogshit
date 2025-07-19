@@ -9,6 +9,12 @@ CATEGORY_PROMPT = Template(
       "reasons_to_cancel"   - list explaining why a user might cancel
       "checklist"           - step-by-step cancellation checklist
 
+    Known heuristics (label: pattern):
+    {{ heuristics }}
+
+    Known cancellation paths:
+    {{ cancellation }}
+
     Transaction: {{ description }}
     """
 )

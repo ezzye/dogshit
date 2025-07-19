@@ -1,4 +1,5 @@
 import asyncio
+from pathlib import Path
 from bankcleanr.llm.openai import OpenAIAdapter
 from bankcleanr.transaction import Transaction
 
@@ -89,3 +90,27 @@ def test_aclassify_handles_json_fences(monkeypatch):
     tx = Transaction(date="2024-01-01", description="Coffee", amount="-1")
     result = asyncio.run(adapter._aclassify(tx))
     assert result == {"category": "coffee"}
+
+
+class CaptureChat:
+    def __init__(self):
+        self.messages = []
+
+    async def ainvoke(self, messages):
+        self.messages.extend(messages)
+        class R:
+            content = '{"category": "coffee"}'
+        return R()
+
+
+def test_prompt_includes_data(monkeypatch):
+    chat = CaptureChat()
+    monkeypatch.setattr("bankcleanr.llm.openai.ChatOpenAI", lambda *a, **k: chat)
+    adapter = OpenAIAdapter(api_key="dummy")
+    tx = Transaction(date="2024-01-01", description="Coffee", amount="-1")
+    asyncio.run(adapter._aclassify(tx))
+    prompt = chat.messages[0].content
+    heur = Path("bankcleanr/data/heuristics.yml").read_text().strip()
+    cancel = Path("bankcleanr/data/cancellation.yml").read_text().strip()
+    assert heur in prompt
+    assert cancel in prompt
