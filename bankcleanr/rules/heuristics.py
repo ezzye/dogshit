@@ -31,15 +31,22 @@ def learn_new_patterns(
             except (EOFError, OSError):
                 return "n"
 
+    unique: list[tuple[str, str]] = []
+    seen: set[tuple[str, str]] = set()
     for tx, label in zip(transactions, labels):
         if label == "unknown":
             continue
-        current = regex.classify(tx.description)
-        if current == "unknown":
-            prompt = f"Add pattern for '{label}' matching '{tx.description}'? [y/N] "
-            answer = confirm(prompt)
-            if answer and answer.lower().startswith("y"):
-                regex.add_pattern(label, tx.description)
-                regex.reload_patterns()
+        if regex.classify(tx.description) == "unknown":
+            pair = (label, tx.description)
+            if pair not in seen:
+                seen.add(pair)
+                unique.append(pair)
+
+    for label, description in unique:
+        prompt = f"Add pattern for '{label}' matching '{description}'? [y/N] "
+        answer = confirm(prompt)
+        if answer and answer.lower().startswith("y"):
+            regex.add_pattern(label, description)
+            regex.reload_patterns()
 
 
