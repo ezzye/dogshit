@@ -33,3 +33,26 @@ def test_patterns_loaded_from_yaml(tmp_path, monkeypatch):
     # restore default patterns
     importlib.reload(regex)
     importlib.reload(heuristics)
+
+
+def test_learn_new_patterns_prompts_once(monkeypatch):
+    prompts: list[str] = []
+
+    monkeypatch.setattr(regex, "classify", lambda d: "unknown")
+
+    added: list[tuple[str, str]] = []
+    monkeypatch.setattr(regex, "add_pattern", lambda l, p: added.append((l, p)))
+    monkeypatch.setattr(regex, "reload_patterns", lambda: None)
+
+    txs = [
+        Transaction(date="2024-01-01", description="Coffee shop", amount="-1"),
+        Transaction(date="2024-01-02", description="Coffee shop", amount="-1"),
+    ]
+    labels = ["coffee", "coffee"]
+
+    heuristics.learn_new_patterns(
+        txs, labels, confirm=lambda prompt: prompts.append(prompt) or "y"
+    )
+
+    assert prompts == ["Add pattern for 'coffee' matching 'Coffee shop'? [y/N] "]
+    assert added == [("coffee", "Coffee shop")]
