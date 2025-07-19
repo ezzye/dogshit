@@ -37,7 +37,12 @@ def _load_cancellation_data(categories: Iterable[str] | None = None) -> List[Lis
 
 
 def _unpack_rec(tx):
-    """Return transaction dict and optional recommendation data."""
+    """Return the transaction fields and recommendation info for ``tx``.
+
+    ``tx`` may be a :class:`Recommendation` instance or a raw mapping
+    containing transaction data. The returned tuple is
+    ``(trans_dict, category, action, url, email, phone)``.
+    """
     if hasattr(tx, "transaction") and hasattr(tx, "action"):
         rec = tx
         t = rec.transaction
@@ -83,6 +88,7 @@ def write_pdf_summary(transactions: Iterable, output: str, categories: Iterable[
     wrap_style = styles["Normal"].clone("wrapped")
     wrap_style.wordWrap = "CJK"
 
+    # Build the rows for the transactions table
     tx_rows: List[List[str]] = [
         [
             "date",
@@ -129,6 +135,7 @@ def write_pdf_summary(transactions: Iterable, output: str, categories: Iterable[
         doc.width * 0.04,  # phone
     ]
 
+    # Create the table with column widths calibrated to the page width
     table = Table(tx_rows, colWidths=col_widths)
     table.setStyle(
         TableStyle(
@@ -143,6 +150,7 @@ def write_pdf_summary(transactions: Iterable, output: str, categories: Iterable[
 
     # Cancellation appendix
     elements.append(Paragraph("How to cancel", styles["Heading2"]))
+    # Add an appendix with details on how to cancel each service
     cancel_table = Table(_load_cancellation_data(categories))
     cancel_table.setStyle(
         TableStyle(

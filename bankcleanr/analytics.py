@@ -30,6 +30,8 @@ def _parse_amount(amount: str) -> Decimal:
 
 
 def _get_attr(obj, name, default=""):
+    """Return attribute *name* from ``obj`` supporting dicts."""
+
     if isinstance(obj, dict):
         return obj.get(name, default)
     return getattr(obj, name, default)

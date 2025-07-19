@@ -39,6 +39,7 @@ def normalise(tx: Any) -> 'Transaction':
 # Helpers
 # ---------------------------------------------------------------------------
 
+# Match account numbers (eight digits) and sort codes with optional hyphens
 _MASK_RE = re.compile(r"\b(?:\d{2}-?\d{2}-?\d{2}|\d{6}|\d{8})\b")
 
 
@@ -52,6 +53,7 @@ def mask_account_and_sort_codes(text: str) -> str:
 
     def repl(match: re.Match) -> str:
         digits = re.sub(r"\D", "", match.group(0))
+        # Keep only the last four digits and prefix with asterisks
         return "****" + digits[-4:]
 
     return _MASK_RE.sub(repl, text)
