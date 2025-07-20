@@ -63,16 +63,20 @@ def analyse(
 ):
     """Analyse a statement file or directory and write a summary."""
     typer.echo(f"Analysing {path}")
+    typer.echo("Reading statements...")
     transactions = load_from_path(path, verbose=verbose)
+    typer.echo(f"Loaded {len(transactions)} transactions")
 
     settings = get_settings()
     if settings.api_key:
         # use heuristics with LLM fallback when API key is available
+        typer.echo(f"Classifying with {settings.llm_provider} LLM...")
         recs = recommendation.recommend_transactions(
             transactions, provider=settings.llm_provider
         )
     else:
         # fall back to heuristics only
+        typer.echo("Classifying using heuristics...")
         labels = heuristics.classify_transactions(transactions)
         kb = recommendation.load_knowledge_base()
         recs: list[recommendation.Recommendation] = []
@@ -85,6 +89,7 @@ def analyse(
                 info = None
             recs.append(recommendation.Recommendation(tx, label, action, info))
 
+    typer.echo("Writing results...")
     outdir_path = Path(outdir) if outdir else DEFAULT_OUTDIR
     outdir_path.mkdir(parents=True, exist_ok=True)
 
