@@ -4,6 +4,11 @@ from bankcleanr.rules import regex
 
 ORIG_HEURISTICS = (regex.DATA_DIR / "heuristics.yml").read_text()
 
+
+def before_scenario(context, scenario):
+    context._orig_auto_confirm = os.getenv("BANKCLEANR_AUTO_CONFIRM")
+    os.environ["BANKCLEANR_AUTO_CONFIRM"] = ""
+
 def after_scenario(context, scenario):
     if "_orig_key" in context.__dict__:
         if context._orig_key is None:
@@ -24,3 +29,9 @@ def after_scenario(context, scenario):
         delattr(context, "heuristics_path")
         if hasattr(context, "orig_heuristics"):
             delattr(context, "orig_heuristics")
+    if hasattr(context, "_orig_auto_confirm"):
+        if context._orig_auto_confirm is None:
+            os.environ.pop("BANKCLEANR_AUTO_CONFIRM", None)
+        else:
+            os.environ["BANKCLEANR_AUTO_CONFIRM"] = context._orig_auto_confirm
+        delattr(context, "_orig_auto_confirm")
