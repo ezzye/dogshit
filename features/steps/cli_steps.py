@@ -159,7 +159,8 @@ def terminal_output_shows_savings(context):
 @given("an API key is configured")
 def api_key_configured(context):
     context._orig_key = os.getenv("OPENAI_API_KEY")
-    os.environ["OPENAI_API_KEY"] = "dummy"
+    if context._orig_key is None or context._orig_key.lower() == "dummy":
+        os.environ["OPENAI_API_KEY"] = "dummy"
 
 
 @then(r'the summary actions include "(?P<label>[^"]+)"')
