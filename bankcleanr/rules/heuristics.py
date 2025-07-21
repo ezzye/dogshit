@@ -2,6 +2,7 @@
 
 from typing import Iterable, List, Callable, Optional, Tuple
 import sys
+import os
 from collections import OrderedDict
 
 from bankcleanr.transaction import Transaction, normalise
@@ -39,13 +40,17 @@ def learn_new_patterns(
 ) -> None:
     """Ask to store new regex patterns derived from LLM labels."""
     if confirm is None:
+        env_resp = os.getenv("BANKCLEANR_AUTO_CONFIRM")
+
         def confirm(prompt: str) -> str:
+            if env_resp is not None:
+                return env_resp
             if not sys.stdin.isatty():
-                return "n"
+                return ""
             try:
                 return input(prompt)
             except (EOFError, OSError):
-                return "n"
+                return ""
 
     groups = group_unmatched_transactions(transactions, labels)
     if groups:

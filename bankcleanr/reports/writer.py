@@ -85,6 +85,7 @@ def write_pdf_summary(transactions: Iterable, output: str, categories: Iterable[
     path = Path(output)
     doc = SimpleDocTemplate(str(path), pagesize=letter)
     styles = getSampleStyleSheet()
+    styles["Normal"].fontSize = 8
     wrap_style = styles["Normal"].clone("wrapped")
     wrap_style.wordWrap = "CJK"
 
@@ -124,15 +125,15 @@ def write_pdf_summary(transactions: Iterable, output: str, categories: Iterable[
     elements = [Paragraph("Transactions", styles["Heading2"])]
 
     col_widths = [
-        doc.width * 0.1,  # date
-        doc.width * 0.5,  # description
+        doc.width * 0.08,  # date
+        doc.width * 0.4,   # description
         doc.width * 0.07,  # amount
         doc.width * 0.07,  # balance
-        doc.width * 0.08,  # category
-        doc.width * 0.05,  # action
-        doc.width * 0.05,  # url
-        doc.width * 0.04,  # email
-        doc.width * 0.04,  # phone
+        doc.width * 0.12,  # category
+        doc.width * 0.08,  # action
+        doc.width * 0.08,  # url
+        doc.width * 0.05,  # email
+        doc.width * 0.05,  # phone
     ]
 
     # Create the table with column widths calibrated to the page width
@@ -142,6 +143,7 @@ def write_pdf_summary(transactions: Iterable, output: str, categories: Iterable[
             [
                 ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
                 ("GRID", (0, 0), (-1, -1), 0.25, colors.black),
+                ("FONTSIZE", (0, 0), (-1, -1), 8),
             ]
         )
     )
@@ -157,6 +159,7 @@ def write_pdf_summary(transactions: Iterable, output: str, categories: Iterable[
             [
                 ("BACKGROUND", (0, 0), (-1, 0), colors.lightgrey),
                 ("GRID", (0, 0), (-1, -1), 0.25, colors.black),
+                ("FONTSIZE", (0, 0), (-1, -1), 8),
             ]
         )
     )

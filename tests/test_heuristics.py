@@ -63,6 +63,18 @@ def test_learn_new_patterns_prompts_once(monkeypatch):
     assert added == [("coffee", "Coffee shop")]
 
 
+def test_learn_new_patterns_env(monkeypatch):
+    monkeypatch.setattr(regex, "classify", lambda d: "unknown")
+    monkeypatch.setattr(regex, "add_pattern", lambda l, p: (_ for _ in ()).throw(RuntimeError("should not add")))
+    monkeypatch.setattr(regex, "reload_patterns", lambda: None)
+    monkeypatch.setenv("BANKCLEANR_AUTO_CONFIRM", "")
+
+    txs = [Transaction(date="2024-01-01", description="Coffee shop", amount="-1")]
+    labels = ["coffee"]
+
+    heuristics.learn_new_patterns(txs, labels)
+
+
 def test_group_unmatched_transactions(monkeypatch):
     monkeypatch.setattr(regex, "classify", lambda d: "unknown")
 
