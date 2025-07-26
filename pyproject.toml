@@ -26,6 +26,7 @@ behave = "^1.2.6"
 reportlab = "^4.4.2"
 ruff = "^0.12.5"
 jsonschema = "^4.21.1"
+pyinstaller = {version = "^6.14", markers = "python_version < '3.14'"}
 
 [tool.poetry.scripts]
 bankcleanr = "bankcleanr.cli:app"
