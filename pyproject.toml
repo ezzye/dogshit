@@ -24,6 +24,7 @@ google-generativeai = "^0.5.1"
 pytest = "^8.1.1"
 behave = "^1.2.6"
 reportlab = "^4.4.2"
+ruff = "^0.12.5"
 
 [tool.poetry.scripts]
 bankcleanr = "bankcleanr.cli:app"

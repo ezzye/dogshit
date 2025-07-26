@@ -1,4 +1,4 @@
-.PHONY: install test unit behave
+.PHONY: install test unit behave lint
 
 install:
 	poetry install --with dev
@@ -10,3 +10,5 @@ behave:
 	poetry run behave
 
 test: unit behave
+lint:
+       poetry run ruff check .
