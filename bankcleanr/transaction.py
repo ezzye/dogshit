@@ -1,5 +1,6 @@
 from dataclasses import dataclass, asdict, is_dataclass
 from typing import Mapping, Any
+import warnings
 import re
 
 @dataclass
@@ -61,6 +62,17 @@ def mask_account_and_sort_codes(text: str) -> str:
 
 def mask_transaction(tx: 'Transaction') -> 'Transaction':
     """Return a copy of *tx* with sensitive fields masked."""
+
+    warnings.warn(
+        "mask_transaction is deprecated; use mask_sensitive_fields instead",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return mask_sensitive_fields(tx)
+
+
+def mask_sensitive_fields(tx: 'Transaction') -> 'Transaction':
+    """Return a copy of *tx* with account and sort code numbers masked."""
 
     tx = normalise(tx)
     return Transaction(

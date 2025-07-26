@@ -4,7 +4,7 @@ from typing import Iterable, List, Dict, Type, Callable
 import logging
 
 from bankcleanr.settings import get_settings
-from bankcleanr.transaction import normalise, Transaction, mask_transaction
+from bankcleanr.transaction import normalise, Transaction, mask_sensitive_fields
 from bankcleanr.rules import heuristics
 
 from .base import AbstractAdapter
@@ -60,7 +60,7 @@ def classify_transactions(
             provider or get_settings().llm_provider,
         )
         adapter = get_adapter(provider)
-        masked = [mask_transaction(tx) for tx in unmatched]
+        masked = [mask_sensitive_fields(tx) for tx in unmatched]
         logger.debug(
             "[classify_transactions] masked: %s",
             [tx.description for tx in masked],
