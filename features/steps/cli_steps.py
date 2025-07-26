@@ -27,6 +27,19 @@ def run_parse(context, pdf):
     )
 
 
+@when(r'I run the bankcleanr parse command with "(?P<pdf>[^"]+)" to jsonl "(?P<outfile>[^"]+)"')
+def run_parse_jsonl(context, pdf, outfile):
+    root = Path(__file__).resolve().parents[2]
+    context.jsonl_path = root / outfile
+    if context.jsonl_path.exists():
+        context.jsonl_path.unlink()
+    context.result = subprocess.run(
+        ["python", "-m", "bankcleanr", "parse", str(root / pdf), "--jsonl", outfile],
+        capture_output=True,
+        cwd=root,
+    )
+
+
 @when(r'I run the bankcleanr analyse command with "(?P<pdf>[^\"]+)"(?: to "(?P<outfile>[^\"]+)")?')
 def run_analyse(context, pdf, outfile=None):
     root = Path(__file__).resolve().parents[2]
@@ -157,6 +170,17 @@ def terminal_output_contains_disclaimer_once(context):
 def terminal_output_contains_text(context, text):
     output = context.result.stdout.decode()
     assert text in output
+
+
+@then('the jsonl file exists')
+def jsonl_file_exists(context):
+    assert context.jsonl_path.exists()
+
+
+@then(r'the jsonl output contains "(?P<text>[^"]+)"')
+def jsonl_output_contains(context, text):
+    content = context.jsonl_path.read_text()
+    assert text in content
 
 
 @then('the terminal output shows savings')

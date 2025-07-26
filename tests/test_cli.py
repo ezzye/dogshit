@@ -1,4 +1,6 @@
 from pathlib import Path
+import json
+import jsonschema
 from typer.testing import CliRunner
 
 from bankcleanr.cli import app, SAMPLE_STATEMENT, DEFAULT_OUTDIR
@@ -62,3 +64,20 @@ def test_analyse_default_outdir(tmp_path):
         assert csv.exists()
         assert pdf.exists()
         assert GLOBAL_DISCLAIMER in csv.read_text()
+
+
+def test_parse_jsonl_option(tmp_path):
+    runner = CliRunner()
+    out = tmp_path / "tx.jsonl"
+    result = runner.invoke(
+        app,
+        ["parse", str(SAMPLE_STATEMENT), "--jsonl", str(out)],
+    )
+    assert result.exit_code == 0
+    assert out.exists()
+    lines = out.read_text().splitlines()
+    assert lines
+    schema = json.loads((Path(__file__).resolve().parents[1] / "schemas" / "transaction_v1.json").read_text())
+    for line in lines:
+        data = json.loads(line)
+        jsonschema.validate(data, schema)
