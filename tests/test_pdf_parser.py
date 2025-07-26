@@ -6,6 +6,8 @@ from reportlab.pdfgen import canvas
 
 from bankcleanr.io.pdf import generic
 from bankcleanr.transaction import Transaction
+from bankcleanr.io.pdf import barclays
+from pathlib import Path
 
 
 def _make_simple_pdf(rows):
@@ -71,3 +73,10 @@ def test_parse_pdf_ocr_fallback(monkeypatch):
     assert called.get("ocr")
     assert isinstance(result[0], Transaction)
     assert result[0].date == "01 Jan"
+
+
+def test_barclays_sample_parse():
+    sample = Path("Redacted bank statements/22b583f5-4060-44eb-a844-945cd612353c (1).pdf")
+    txs = barclays.parse_pdf(str(sample))
+    assert len(txs) >= 5
+    assert any("paypal" in tx.description.lower() for tx in txs)

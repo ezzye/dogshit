@@ -2,9 +2,11 @@ import typer
 import logging
 import os
 from pathlib import Path
+import csv
+import json
 
 from .io.loader import load_from_path
-from typing import Optional
+from typing import Optional, Mapping
 from .reports.writer import (
     write_summary,
     write_pdf_summary,
@@ -112,6 +114,52 @@ def analyse(
     typer.echo("Analysis complete")
     if not terminal:
         typer.echo(GLOBAL_DISCLAIMER)
+
+
+@app.command()
+def parse(
+    path: str = typer.Argument(
+        str(SAMPLE_STATEMENT),
+        help="Path to a PDF file or directory containing PDF files",
+    ),
+    output: Optional[str] = typer.Option(
+        None, "--output", "-o", help="Write parsed transactions to this CSV file"
+    ),
+    verbose: bool = typer.Option(
+        False,
+        "--verbose",
+        help="Show each file as it is processed",
+    ),
+):
+    """Parse statements and return transactions without recommendations."""
+    transactions = load_from_path(path, verbose=verbose)
+
+    rows = [
+        (
+            tx["date"] if isinstance(tx, Mapping) else tx.date,
+            tx["description"] if isinstance(tx, Mapping) else tx.description,
+            tx["amount"] if isinstance(tx, Mapping) else tx.amount,
+            tx.get("balance", "") if isinstance(tx, Mapping) else tx.balance,
+        )
+        for tx in transactions
+    ]
+
+    if output:
+        with open(output, "w", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow(["date", "description", "amount", "balance"])
+            writer.writerows(rows)
+        typer.echo(output)
+    else:
+        print(json.dumps([
+            {
+                "date": r[0],
+                "description": r[1],
+                "amount": r[2],
+                "balance": r[3],
+            }
+            for r in rows
+        ], indent=2))
 
 
 @app.command()
