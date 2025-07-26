@@ -2,6 +2,7 @@ from behave import when, then
 from pathlib import Path
 import subprocess
 import shutil
+import os
 
 @when("I run the build script")
 def run_build_script(context):
@@ -10,12 +11,14 @@ def run_build_script(context):
     context.build_dir = root / "dist" / "linux"
     if context.build_dir.exists():
         shutil.rmtree(context.build_dir)
+    env = os.environ.copy()
+    env["TARGETS"] = "linux"
     context.build_result = subprocess.run([
         "poetry",
         "run",
         "bash",
         str(script),
-    ], cwd=root, capture_output=True)
+    ], cwd=root, capture_output=True, env=env)
 
 @then("the build succeeds")
 def build_succeeds(context):

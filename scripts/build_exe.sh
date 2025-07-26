@@ -14,12 +14,12 @@ build_linux() {
 
 build_macos() {
   pyinstaller --clean --onefile -n "$APP" -p . bankcleanr/__main__.py \
-    --distpath "$OUTDIR/macos" --target-arch universal2 || true
+    --distpath "$OUTDIR/macos" --target-arch universal2
 }
 
 build_windows() {
   pyinstaller --clean --onefile -n "$APP.exe" -p . bankcleanr/__main__.py \
-    --distpath "$OUTDIR/windows" --windowed || true
+    --distpath "$OUTDIR/windows" --windowed
 }
 
 for t in $TARGETS; do
