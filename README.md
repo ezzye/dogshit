@@ -96,6 +96,19 @@ After LLM classification the tool asks if newly labelled descriptions should be
 added to this file. Confirm with `y` to store the pattern so future runs
 recognise it. You can also edit the YAML manually if needed.
 
+## Building standalone executables
+
+Run `scripts/build_exe.sh` to create single-file binaries for Linux, macOS and
+Windows. The script requires `pyinstaller` (installed with the development
+dependencies) and writes the results to the `dist/` directory.
+
+To verify a build you can run the Linux binary on the included sample PDF:
+
+```bash
+./dist/linux/bankcleanr parse "Redacted bank statements/22b583f5-4060-44eb-a844-945cd612353c (1).pdf" --jsonl tx.jsonl
+```
+This command produces a `tx.jsonl` file containing the parsed transactions.
+
 ## Disclaimer
 
 Every summary includes the following disclaimer:
