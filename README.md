@@ -99,8 +99,10 @@ recognise it. You can also edit the YAML manually if needed.
 ## Building standalone executables
 
 Run `scripts/build_exe.sh` to create single-file binaries for Linux, macOS and
-Windows. The script requires `pyinstaller` (installed with the development
-dependencies) and writes the results to the `dist/` directory.
+Windows. Install `pyinstaller` first (either via `pip install pyinstaller` or
+`poetry install --with dev`). Because PyInstaller cannot cross compile you must
+execute the script on the operating system you want to target. The resulting
+files are written to the `dist/` directory.
 
 To verify a build you can run the Linux binary on the included sample PDF:
 
@@ -108,6 +110,18 @@ To verify a build you can run the Linux binary on the included sample PDF:
 ./dist/linux/bankcleanr parse "Redacted bank statements/22b583f5-4060-44eb-a844-945cd612353c (1).pdf" --jsonl tx.jsonl
 ```
 This command produces a `tx.jsonl` file containing the parsed transactions.
+
+macOS users can verify the universal binary in the same way:
+
+```bash
+./dist/macos/bankcleanr parse "Redacted bank statements/22b583f5-4060-44eb-a844-945cd612353c (1).pdf" --jsonl tx.jsonl
+```
+
+On Windows use the `.exe` produced in the `dist/windows` directory:
+
+```cmd
+dist\windows\bankcleanr.exe parse "Redacted bank statements\22b583f5-4060-44eb-a844-945cd612353c (1).pdf" --jsonl tx.jsonl
+```
 
 ## Disclaimer
 
