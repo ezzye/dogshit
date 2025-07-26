@@ -1,5 +1,26 @@
-spotify: 'spotify'
-netflix: 'netflix'
-icloud: 'icloud'
-amazon prime: 'amazon\s+prime'
-dropbox: 'dropbox'
+Bank: THE CO-OP BANK
+Banking: CCC GBP
+Cafe: CAFE KAM 46 LTD
+Cafe: COSTA COFFEE
+Convenience Store: RAMA MINI MARKET
+Digital Music: PAYPAL *7DIGITAL
+Food & Beverage: Crussh Retail
+Grocery: SAINSBURYS S/MKTS
+Internet Service Provider: COMMUNITYFIBRE LTD
+Movie Theater: Vue Entertainment
+Music Streaming: SoundCloud
+Online Education: COURSERA.ORG
+Online Music Store: PAYPAL *7DIGITAL
+Online Services: CURSOR, AI POWERED
+Online retail: amazon.co.uk
+Peer-to-peer lending platform: RATESETTER
+Refund: Refund CCC
+Restaurant: Chiya Restaurant
+Subscription: CLAUDE.AI SUBSCRIP
+Transportation: TFL TRAVEL CH
+Unknown: MR E ELLIOTT
+amazon prime: amazon\s+prime
+dropbox: dropbox
+icloud: icloud
+netflix: netflix
+spotify: spotify
