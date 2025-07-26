@@ -18,6 +18,16 @@ def check_exit(context):
     assert context.result.returncode == 0
 
 
+@when(r'I run the bankcleanr parse command with "(?P<pdf>[^"]+)"')
+def run_parse(context, pdf):
+    root = Path(__file__).resolve().parents[2]
+    context.result = subprocess.run(
+        ["python", "-m", "bankcleanr", "parse", str(root / pdf)],
+        capture_output=True,
+        cwd=root,
+    )
+
+
 @when(r'I run the bankcleanr analyse command with "(?P<pdf>[^\"]+)"(?: to "(?P<outfile>[^\"]+)")?')
 def run_analyse(context, pdf, outfile=None):
     root = Path(__file__).resolve().parents[2]
