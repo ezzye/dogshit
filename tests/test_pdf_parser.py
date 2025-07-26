@@ -66,7 +66,8 @@ def test_parse_pdf_ocr_fallback(monkeypatch):
         return [{"date": "01 Jan"}]
 
     monkeypatch.setattr(generic, "pdfplumber", type("X", (), {"open": fake_open}))
-    import types, sys
+    import types
+    import sys
     fake_mod = types.SimpleNamespace(parse_pdf=fake_ocr)
     monkeypatch.setitem(sys.modules, "bankcleanr.io.pdf.ocr_fallback", fake_mod)
     result = generic.parse_pdf("dummy.pdf")

@@ -1,7 +1,4 @@
-import os
 from pathlib import Path
-
-import pytest
 
 from bankcleanr.io import loader
 

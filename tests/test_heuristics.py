@@ -43,7 +43,7 @@ def test_learn_new_patterns_prompts_once(monkeypatch):
     monkeypatch.setattr(regex, "classify", lambda d: "unknown")
 
     added: list[tuple[str, str]] = []
-    monkeypatch.setattr(regex, "add_pattern", lambda l, p: added.append((l, p)))
+    monkeypatch.setattr(regex, "add_pattern", lambda label, p: added.append((label, p)))
     monkeypatch.setattr(regex, "reload_patterns", lambda: None)
 
     txs = [
@@ -65,7 +65,7 @@ def test_learn_new_patterns_prompts_once(monkeypatch):
 
 def test_learn_new_patterns_env(monkeypatch):
     monkeypatch.setattr(regex, "classify", lambda d: "unknown")
-    monkeypatch.setattr(regex, "add_pattern", lambda l, p: (_ for _ in ()).throw(RuntimeError("should not add")))
+    monkeypatch.setattr(regex, "add_pattern", lambda label, p: (_ for _ in ()).throw(RuntimeError("should not add")))
     monkeypatch.setattr(regex, "reload_patterns", lambda: None)
     monkeypatch.setenv("BANKCLEANR_AUTO_CONFIRM", "")
 

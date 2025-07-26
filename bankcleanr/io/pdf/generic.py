@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from typing import List, Mapping
+from typing import List
 
 from bankcleanr.transaction import Transaction
 

@@ -1,5 +1,4 @@
 import os
-from pathlib import Path
 from bankcleanr.rules import regex
 
 ORIG_HEURISTICS = (regex.DATA_DIR / "heuristics.yml").read_text()
