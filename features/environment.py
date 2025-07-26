@@ -30,8 +30,12 @@ def after_scenario(context, scenario):
         if hasattr(context, "orig_heuristics"):
             delattr(context, "orig_heuristics")
     if hasattr(context, "_orig_auto_confirm"):
-        if context._orig_auto_confirm is None:
+        orig = getattr(context, "_orig_auto_confirm", None)
+        if orig is None:
             os.environ.pop("BANKCLEANR_AUTO_CONFIRM", None)
         else:
-            os.environ["BANKCLEANR_AUTO_CONFIRM"] = context._orig_auto_confirm
-        delattr(context, "_orig_auto_confirm")
+            os.environ["BANKCLEANR_AUTO_CONFIRM"] = orig
+        try:
+            delattr(context, "_orig_auto_confirm")
+        except AttributeError:
+            pass
