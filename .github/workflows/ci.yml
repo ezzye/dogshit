@@ -18,7 +18,9 @@ jobs:
           pip install poetry
           poetry install --with dev
       - name: Install coverage
-        run: pip install coverage
+        run: poetry run pip install coverage
+      - name: Install pytest
+        run: poetry run pip install pytest
       - name: Lint
         run: make lint
       - name: Test
