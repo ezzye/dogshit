@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
-from typing import Iterable
 
 from bankcleanr.transaction import Transaction
 from .base import AbstractAdapter

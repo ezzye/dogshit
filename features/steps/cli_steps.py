@@ -1,7 +1,6 @@
 from behave import given, when, then
 import subprocess
 from pathlib import Path
-import re
 from behave import use_step_matcher
 import os
 from bankcleanr.reports.disclaimers import GLOBAL_DISCLAIMER

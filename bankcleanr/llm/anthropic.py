@@ -6,7 +6,7 @@ from typing import Iterable, List
 from pathlib import Path
 
 from .base import AbstractAdapter
-from bankcleanr.transaction import normalise, Transaction
+from bankcleanr.transaction import normalise
 from bankcleanr.rules.prompts import CATEGORY_PROMPT
 
 DATA_DIR = Path(__file__).resolve().parents[1] / "data"
