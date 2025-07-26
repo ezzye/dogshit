@@ -125,6 +125,9 @@ def parse(
     output: Optional[str] = typer.Option(
         None, "--output", "-o", help="Write parsed transactions to this CSV file"
     ),
+    jsonl: Optional[str] = typer.Option(
+        None, "--jsonl", help="Write parsed transactions to this JSON Lines file"
+    ),
     verbose: bool = typer.Option(
         False,
         "--verbose",
@@ -144,7 +147,11 @@ def parse(
         for tx in transactions
     ]
 
-    if output:
+    if jsonl:
+        from .io.jsonl import write_jsonl
+        write_jsonl(transactions, jsonl)
+        typer.echo(jsonl)
+    elif output:
         with open(output, "w", newline="") as f:
             writer = csv.writer(f)
             writer.writerow(["date", "description", "amount", "balance"])

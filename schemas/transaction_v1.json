@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "transaction_v1.json",
+  "title": "Transaction",
+  "type": "object",
+  "properties": {
+    "date": {"type": "string"},
+    "description": {"type": "string"},
+    "amount": {"type": "string"},
+    "balance": {"type": ["string", "null"]}
+  },
+  "required": ["date", "description", "amount"],
+  "additionalProperties": false
+}

@@ -8,6 +8,12 @@ Feature: Command-line interface
     Then the exit code is 0
     And the terminal output contains "PAYPAL"
 
+  Scenario: Parse a PDF statement to JSONL
+    When I run the bankcleanr parse command with "Redacted bank statements/22b583f5-4060-44eb-a844-945cd612353c (1).pdf" to jsonl "tx.jsonl"
+    Then the exit code is 0
+    And the jsonl file exists
+    And the jsonl output contains "PAYPAL"
+
   Scenario: Analyse a PDF statement
     When I run the bankcleanr analyse command with "Redacted bank statements/22b583f5-4060-44eb-a844-945cd612353c (1).pdf"
     Then the exit code is 0
