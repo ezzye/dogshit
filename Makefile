@@ -11,4 +11,4 @@ behave:
 
 test: unit behave
 lint:
-	poetry run ruff bankcleanr
+       poetry run ruff check .
