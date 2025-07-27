@@ -39,6 +39,10 @@ npm install
 sudo apt-get update && sudo apt-get install -y xvfb
 xvfb-run -a npm run test:e2e
 ```
+Alternatively run the tests inside Docker:
+```bash
+docker compose run --rm e2e
+```
 
 This starts Cypress in a virtual display so the browser can run in headless
 mode. Use `cypress run --browser chrome --headed` if you prefer a visible
