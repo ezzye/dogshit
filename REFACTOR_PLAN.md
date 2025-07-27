@@ -1,4 +1,3 @@
-```markdown
 # file: REFACTOR_PLAN.md
 # Bankcleanr — Guided Refactor & Feature-Growth Plan
 *A step-by-step playbook for an AI coding agent (e.g. Codex) to transform the current “bankcleanr” prototype into a polished two-part product for everyday consumers.*
@@ -154,4 +153,4 @@ REFACTOR\_PLAN.md   ← this file
 ---
 
 *Work through each numbered stage, committing only when all tests (unit + BDD + E2E) pass and coverage ≥ 90 %.*
-```
+
