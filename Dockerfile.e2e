@@ -1,0 +1,6 @@
+FROM cypress/included:13.7.3
+WORKDIR /app
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+COPY frontend .
+CMD ["npx", "cypress", "run"]

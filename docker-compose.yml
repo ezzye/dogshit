@@ -6,3 +6,11 @@ services:
       - APP_ENV=prod
     ports:
       - "8000:8000"
+  e2e:
+    build:
+      context: .
+      dockerfile: Dockerfile.e2e
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    entrypoint: ["npx", "cypress", "run"]
