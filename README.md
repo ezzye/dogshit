@@ -104,6 +104,23 @@ Windows. Install `pyinstaller` first (either via `pip install pyinstaller` or
 execute the script on the operating system you want to target. The resulting
 files are written to the `dist/` directory.
 
+For macOS builds the architecture can be customised by setting the
+`MACOS_ARCH` environment variable (defaults to `universal2`). For example to
+produce an ARM64-only binary run:
+
+```bash
+MACOS_ARCH=arm64 poetry run bash scripts/build_exe.sh --target macos
+```
+
+Ensure your Python interpreter matches the requested architecture. A universal
+Python can be checked with:
+
+```bash
+file $(pyenv which python3)
+```
+The output should mention both `arm64` and `x86_64` when using
+`MACOS_ARCH=universal2`.
+
 To verify a build you can run the Linux binary on the included sample PDF:
 
 ```bash
