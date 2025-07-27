@@ -39,3 +39,20 @@ async def test_upload_and_summary():
         assert resp.status_code == 200
         resp = await client.get("/summary", params={"token": token})
         assert resp.json()["transactions"] == 2
+
+
+@pytest.mark.asyncio
+async def test_add_heuristic():
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        await client.post("/auth/request", params={"email": "u@test"})
+        with get_session() as s:
+            user = s.exec(select(User).where(User.email == "u@test")).first()
+            token = user.token
+        await client.post("/auth/verify", params={"token": token})
+        payload = {"label": "coffee", "pattern": "Coffee shop"}
+        resp = await client.post("/heuristics", json=payload, params={"token": token})
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["label"] == "coffee"
+        assert data["pattern"] == "Coffee shop"

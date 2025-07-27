@@ -3,7 +3,7 @@ from sqlmodel import Session, select
 import secrets
 
 from .db import init_db, get_session
-from .models import User, UploadedTransaction, Heuristic
+from .models import User, UploadedTransaction, Heuristic, NewHeuristic
 from bankcleanr.rules import heuristics as heuristics_mod
 from bankcleanr.transaction import Transaction
 
@@ -69,12 +69,13 @@ def list_heuristics(user: User = Depends(get_current_user), session: Session = D
     return rows
 
 
-@app.post("/heuristics")
-def add_heuristic(label: str, pattern: str, user: User = Depends(get_current_user), session: Session = Depends(get_session)):
-    row = Heuristic(user_id=user.id, label=label, pattern=pattern)
+@app.post("/heuristics", response_model=Heuristic)
+def add_heuristic(new_rule: NewHeuristic, user: User = Depends(get_current_user), session: Session = Depends(get_session)):
+    row = Heuristic(user_id=user.id, label=new_rule.label, pattern=new_rule.pattern)
     session.add(row)
     session.commit()
-    return row
+    session.refresh(row)
+    return row.model_dump()
 
 
 @app.post("/classify")
