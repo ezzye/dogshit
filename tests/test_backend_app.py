@@ -56,3 +56,33 @@ async def test_add_heuristic():
         data = resp.json()
         assert data["label"] == "coffee"
         assert data["pattern"] == "Coffee shop"
+
+
+@pytest.mark.asyncio
+async def test_heuristic_crud():
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        await client.post("/auth/request", params={"email": "u@test"})
+        with get_session() as s:
+            user = s.exec(select(User).where(User.email == "u@test")).first()
+            token = user.token
+        await client.post("/auth/verify", params={"token": token})
+
+        # initially empty
+        resp = await client.get("/heuristics", params={"token": token})
+        assert resp.status_code == 200
+        assert resp.json() == []
+
+        payload = {"label": "coffee", "pattern": "Coffee shop"}
+        resp = await client.post("/heuristics", json=payload, params={"token": token})
+        assert resp.status_code == 200
+        rule_id = resp.json()["id"]
+
+        resp = await client.get("/heuristics", params={"token": token})
+        assert len(resp.json()) == 1
+
+        resp = await client.delete(f"/heuristics/{rule_id}", params={"token": token})
+        assert resp.status_code == 200
+
+        resp = await client.get("/heuristics", params={"token": token})
+        assert resp.json() == []
