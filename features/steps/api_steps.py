@@ -2,13 +2,25 @@ from behave import given, when, then
 from httpx import AsyncClient, ASGITransport
 import asyncio
 
+import os
+import tempfile
+from importlib import reload
+from pathlib import Path
+
 from backend.app import app
-from sqlmodel import select
+from sqlmodel import select, create_engine
 
 
 @given("an authenticated client")
 def given_client(context):
     context.email = "user@example.com"
+    # use a fresh database per scenario
+    os.environ["APP_ENV"] = "test"
+    context.db_file = tempfile.NamedTemporaryFile(delete=False)
+    import backend.db as db
+    reload(db)
+    db.DB_PATH = Path(context.db_file.name)
+    db.engine = create_engine(f"sqlite:///{context.db_file.name}", echo=False)
     transport = ASGITransport(app=app)
     context.client = AsyncClient(transport=transport, base_url="http://test")
     context.loop = asyncio.new_event_loop()
@@ -48,3 +60,4 @@ def check_summary(context):
         assert resp.json()["transactions"] == 2
     context.loop.run_until_complete(check())
     context.loop.run_until_complete(context.client.aclose())
+    os.unlink(context.db_file.name)
