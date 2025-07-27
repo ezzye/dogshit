@@ -1,4 +1,5 @@
 from typing import Optional
+from pydantic import BaseModel
 from sqlmodel import SQLModel, Field
 
 
@@ -20,5 +21,10 @@ class UploadedTransaction(SQLModel, table=True):
 class Heuristic(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: int
+    label: str
+    pattern: str
+
+
+class NewHeuristic(BaseModel):
     label: str
     pattern: str
