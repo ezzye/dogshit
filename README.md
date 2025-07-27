@@ -39,8 +39,11 @@ npm install
 sudo apt-get update && sudo apt-get install -y xvfb
 xvfb-run -a npm run test:e2e
 ```
-Alternatively run the tests inside Docker:
+Alternatively run the tests inside Docker. Ensure the Vite dev server is running
+at `http://localhost:5173` before launching the Cypress container:
 ```bash
+cd frontend
+npm run dev &
 docker compose run --rm e2e
 ```
 
