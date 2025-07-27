@@ -52,6 +52,28 @@ def post_transactions(context):
     context.loop.run_until_complete(action())
 
 
+@when('I save a heuristic labeled "{label}" matching "{pattern}"')
+def save_heuristic(context, label, pattern):
+    context.saved_label = label
+    context.saved_pattern = pattern
+    payload = {"label": label, "pattern": pattern}
+    async def action():
+        resp = await context.client.post("/heuristics", json=payload, params={"token": context.token})
+        context.heuristic_resp = resp
+    context.loop.run_until_complete(action())
+
+
+@then('the heuristic save response confirms the rule')
+def confirm_save(context):
+    async def check():
+        resp = context.heuristic_resp
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["label"] == context.saved_label
+        assert data["pattern"] == context.saved_pattern
+    context.loop.run_until_complete(check())
+
+
 @then('the summary endpoint reports 2 transactions')
 def check_summary(context):
     async def check():
