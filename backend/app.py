@@ -78,6 +78,16 @@ def add_heuristic(new_rule: NewHeuristic, user: User = Depends(get_current_user)
     return row.model_dump()
 
 
+@app.delete("/heuristics/{rule_id}")
+def delete_heuristic(rule_id: int, user: User = Depends(get_current_user), session: Session = Depends(get_session)):
+    row = session.get(Heuristic, rule_id)
+    if not row or row.user_id != user.id:
+        raise HTTPException(status_code=404, detail="not found")
+    session.delete(row)
+    session.commit()
+    return {"detail": "deleted"}
+
+
 @app.post("/classify")
 def classify(transactions: list[Transaction]):
     labels = heuristics_mod.classify_transactions(transactions)
