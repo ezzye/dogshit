@@ -13,8 +13,18 @@ build_linux() {
 }
 
 build_macos() {
+  local arch="${MACOS_ARCH:-universal2}"
+  if [[ "$arch" == "universal2" ]]; then
+    local pybin
+    pybin=$(command -v python3)
+    if ! file "$pybin" | grep -q "arm64" || ! file "$pybin" | grep -q "x86_64"; then
+      echo "Error: python3 at $pybin is not a universal build" >&2
+      echo "Install the universal macOS installer from python.org or set MACOS_ARCH=arm64" >&2
+      exit 1
+    fi
+  fi
   pyinstaller --clean --onefile -n "$APP" -p . bankcleanr/__main__.py \
-    --distpath "$OUTDIR/macos" --target-arch universal2
+    --distpath "$OUTDIR/macos" --target-arch "$arch"
 }
 
 build_windows() {
