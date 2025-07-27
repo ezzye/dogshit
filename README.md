@@ -48,6 +48,33 @@ This starts Cypress in a virtual display so the browser can run in headless
 mode. Use `cypress run --browser chrome --headed` if you prefer a visible
 browser.
 
+### Docker on macOS
+
+The `docker` command is required to run the Cypress container above. If the
+command is missing, install [Docker Desktop for Mac](https://www.docker.com/products/docker-desktop/)
+and then launch the application once so it can finish configuring the CLI. The
+`docker` and `docker compose` commands will then be available in your terminal.
+
+You can verify the installation with:
+
+```bash
+docker --version
+docker compose version
+```
+
+As an alternative you can use [Podman](https://podman.io/). Install it via
+Homebrew and create the default virtual machine:
+
+```bash
+brew install podman
+podman machine init
+podman machine start
+```
+
+Installing the `podman-docker` package provides drop-in replacements for the
+`docker` and `docker compose` commands so the rest of the instructions remain the
+same.
+
 ## Configuration
 
 The tool loads settings from `~/.bankcleanr/config.yml`. Set your preferred LLM
