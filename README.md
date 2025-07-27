@@ -29,6 +29,21 @@ poetry run pytest
 poetry run behave
 ```
 
+### Frontend end-to-end tests
+
+Install the JavaScript dependencies and Xvfb before running Cypress:
+
+```bash
+cd frontend
+npm install
+sudo apt-get update && sudo apt-get install -y xvfb
+xvfb-run -a npm run test:e2e
+```
+
+This starts Cypress in a virtual display so the browser can run in headless
+mode. Use `cypress run --browser chrome --headed` if you prefer a visible
+browser.
+
 ## Configuration
 
 The tool loads settings from `~/.bankcleanr/config.yml`. Set your preferred LLM
