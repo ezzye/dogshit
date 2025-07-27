@@ -112,14 +112,22 @@ produce an ARM64-only binary run:
 MACOS_ARCH=arm64 poetry run bash scripts/build_exe.sh --target macos
 ```
 
-Ensure your Python interpreter matches the requested architecture. A universal
-Python can be checked with:
+Ensure your Python interpreter matches the requested architecture. First locate
+the active interpreter:
+
+```bash
+pyenv which python3
+```
+
+Then inspect the binary to confirm it is universal:
 
 ```bash
 file $(pyenv which python3)
 ```
+
 The output should mention both `arm64` and `x86_64` when using
-`MACOS_ARCH=universal2`.
+`MACOS_ARCH=universal2`. Installing Python from
+[python.org](https://www.python.org) provides such a universal build.
 
 To verify a build you can run the Linux binary on the included sample PDF:
 
