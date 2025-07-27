@@ -210,3 +210,6 @@ summary.csv
 # Ignore PDF statements
 *.pdf
 !Redacted bank statements/*.pdf
+# Node
+frontend/node_modules/
+frontend/dist/
