@@ -1,4 +1,4 @@
-.PHONY: install test unit behave lint
+.PHONY: install test unit behave component lint
 
 install:
 	poetry install --with dev
@@ -9,6 +9,9 @@ unit:
 behave:
 	poetry run behave
 
-test: unit behave
+component:
+	poetry run pytest tests/test_backend_app.py
+
+test: unit component behave
 lint:
 	poetry run ruff check .
