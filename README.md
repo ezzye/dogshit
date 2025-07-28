@@ -91,7 +91,10 @@ Then start the Vite dev server and run the tests inside the containers:
 
 ```bash
 podman compose up --build frontend e2e
+make e2e
 ```
+The `make e2e` command automatically uses Podman when available and falls back
+to Docker otherwise.
 
 ## Configuration
 
