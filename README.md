@@ -74,9 +74,14 @@ podman machine init
 podman machine start
 ```
 
-Installing the `podman-docker` package provides drop-in replacements for the
-`docker` and `docker compose` commands so the rest of the instructions remain the
-same.
+After the machine is running you can run the end-to-end tests with:
+
+```bash
+make e2e
+```
+
+
+Installing the `podman-docker` package provides `docker` command compatibility so the rest of the instructions remain the same.
 
 ### Running end-to-end tests with Podman/Docker
 
