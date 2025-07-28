@@ -9,7 +9,7 @@ services:
   frontend:
     image: node:20
     working_dir: /app
-    command: npm run dev
+    command: sh -c "npm ci && npm run dev -- --host"
     volumes:
       - ./frontend:/app
     ports:
