@@ -44,6 +44,8 @@ with a single command:
 ```bash
 docker compose up frontend e2e
 ```
+The `e2e` service now runs entirely inside the container and no longer mounts the
+`frontend` directory from the host.
 
 This starts Cypress in a virtual display so the browser can run in headless
 mode. Use `cypress run --browser chrome --headed` if you prefer a visible
