@@ -78,6 +78,21 @@ Installing the `podman-docker` package provides drop-in replacements for the
 `docker` and `docker compose` commands so the rest of the instructions remain the
 same.
 
+### Running end-to-end tests with Podman/Docker
+
+Rebuild the Cypress container whenever the test files or their dependencies
+change:
+
+```bash
+podman compose build e2e  # or: docker compose build e2e
+```
+
+Then start the Vite dev server and run the tests inside the containers:
+
+```bash
+podman compose up --build frontend e2e
+```
+
 ## Configuration
 
 The tool loads settings from `~/.bankcleanr/config.yml`. Set your preferred LLM
