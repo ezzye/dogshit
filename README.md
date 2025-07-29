@@ -54,6 +54,8 @@ When running the dev server inside Docker or a CI environment set the
 CI=1 npm run dev
 ```
 Local development does not require this variable.
+The `docker-compose.yml` already sets `CI=1` for the `frontend` service so
+requests from the `e2e` container are allowed.
 
 This starts Cypress in a virtual display so the browser can run in headless
 mode. Use `cypress run --browser chrome --headed` if you prefer a visible
