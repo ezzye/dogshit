@@ -186,6 +186,25 @@ PDF output is only produced when you pass `--pdf` or give an `--output`
 filename ending in `.pdf`. The command always reminds you to verify each
 recommendation manually.
 
+### FastAPI backend
+
+The repository also includes a small FastAPI service. Start it inside Docker:
+
+```bash
+docker compose up api
+```
+
+This runs the API on [localhost:8000](http://localhost:8000) and sets the
+`APP_ENV` variable from `docker-compose.yml` (defaults to `prod`). Launch the
+frontend dev server alongside it with:
+
+```bash
+docker compose up frontend
+```
+
+The Vite dev server will then be available on port 5173 while the API continues
+to listen on port 8000.
+
 ### Updating heuristics
 
 Regex patterns for the local classifier live in `bankcleanr/data/heuristics.yml`.
