@@ -101,6 +101,18 @@ make e2e
 The `make e2e` command automatically uses Podman when available and falls back
 to Docker otherwise.
 
+If the Cypress container cannot reach the dev server, Vite may be refusing
+connections from external hosts. Update `frontend/vite.config.ts` so the dev
+server listens on all interfaces:
+
+```ts
+export default defineConfig({
+  server: {
+    host: true,
+  },
+});
+```
+
 ## Configuration
 
 The tool loads settings from `~/.bankcleanr/config.yml`. Set your preferred LLM
