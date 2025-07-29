@@ -9,6 +9,8 @@ services:
     image: node:20
     working_dir: /app
     command: sh -c "npm ci && npm run dev -- --host"
+    environment:
+      - CI=1
     volumes:
       - ./frontend:/app
     ports:
