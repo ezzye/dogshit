@@ -23,6 +23,8 @@ services:
       context: .
       dockerfile: Dockerfile.e2e
     working_dir: /app
+    environment:
+      - CYPRESS_BASE_URL=http://frontend:5173
     entrypoint: ["npx", "cypress", "run"]
     depends_on:
       frontend:
