@@ -47,6 +47,14 @@ docker compose up frontend e2e
 The `e2e` service now runs entirely inside the container and no longer mounts the
 `frontend` directory from the host.
 
+When running the dev server inside Docker or a CI environment set the
+`CI` variable so Vite only allows requests from the `frontend` hostname:
+
+```bash
+CI=1 npm run dev
+```
+Local development does not require this variable.
+
 This starts Cypress in a virtual display so the browser can run in headless
 mode. Use `cypress run --browser chrome --headed` if you prefer a visible
 browser.
@@ -103,12 +111,15 @@ to Docker otherwise.
 
 If the Cypress container cannot reach the dev server, Vite may be refusing
 connections from external hosts. Update `frontend/vite.config.ts` so the dev
-server listens on all interfaces:
+server listens on all interfaces and set the `CI` variable when running in
+containers:
 
 ```ts
 export default defineConfig({
   server: {
     host: true,
+    // CI=1 restricts access to the "frontend" hostname
+    allowedHosts: process.env.CI ? ['frontend'] : ['localhost'],
   },
 });
 ```
