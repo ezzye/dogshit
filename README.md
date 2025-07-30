@@ -195,7 +195,10 @@ docker compose up api
 ```
 
 This runs the API on [localhost:8000](http://localhost:8000) and sets the
-`APP_ENV` variable from `docker-compose.yml` (defaults to `prod`). Launch the
+`APP_ENV` variable from `docker-compose.yml` (defaults to `prod`). The Docker
+image disables Poetry's virtual environments by setting
+`POETRY_VIRTUALENVS_CREATE=false` and exposes port 8000.
+Launch the
 frontend dev server alongside it with:
 
 ```bash
