@@ -1,4 +1,5 @@
 import os
+import urllib.request
 from bankcleanr.rules import regex
 
 ORIG_HEURISTICS = (regex.DATA_DIR / "heuristics.yml").read_text()
@@ -37,4 +38,40 @@ def after_scenario(context, scenario):
         try:
             delattr(context, "_orig_auto_confirm")
         except AttributeError:
+            pass
+    try:
+        orig = getattr(context, "_orig_backend_url")
+    except Exception:
+        orig = None
+    else:
+        if orig is None:
+            os.environ.pop("BANKCLEANR_BACKEND_URL", None)
+        else:
+            os.environ["BANKCLEANR_BACKEND_URL"] = orig
+        try:
+            delattr(context, "_orig_backend_url")
+        except Exception:
+            pass
+    try:
+        orig = getattr(context, "_orig_backend_token")
+    except Exception:
+        orig = None
+    else:
+        if orig is None:
+            os.environ.pop("BANKCLEANR_BACKEND_TOKEN", None)
+        else:
+            os.environ["BANKCLEANR_BACKEND_TOKEN"] = orig
+        try:
+            delattr(context, "_orig_backend_token")
+        except Exception:
+            pass
+    try:
+        orig = getattr(context, "_orig_urlopen")
+    except Exception:
+        pass
+    else:
+        urllib.request.urlopen = orig
+        try:
+            delattr(context, "_orig_urlopen")
+        except Exception:
             pass
