@@ -81,3 +81,35 @@ def test_parse_jsonl_option(tmp_path):
     for line in lines:
         data = json.loads(line)
         jsonschema.validate(data, schema)
+
+
+def test_analyse_uses_db(tmp_path, monkeypatch):
+    """CLI classification should read heuristics from the database."""
+    from sqlmodel import create_engine
+    import importlib
+    from bankcleanr.rules import db_store, regex, heuristics
+    from bankcleanr.transaction import Transaction
+
+    monkeypatch.setenv("APP_ENV", "test")
+    db_file = tmp_path / "rules.db"
+    importlib.reload(db_store)
+    db_store.DB_PATH = db_file
+    db_store.engine = create_engine(f"sqlite:///{db_file}", echo=False)
+    db_store.init_db()
+    db_store.add_pattern("coffee", "Coffee shop")
+    regex.reload_patterns()
+    importlib.reload(heuristics)
+
+    monkeypatch.setattr(
+        "bankcleanr.cli.load_from_path",
+        lambda path, verbose=False: [
+            Transaction(date="2024-01-01", description="Coffee shop", amount="-1")
+        ],
+    )
+
+    runner = CliRunner()
+    result = runner.invoke(app, ["analyse", "dummy.pdf", "--outdir", str(tmp_path)])
+    assert result.exit_code == 0
+    csv = tmp_path / "summary.csv"
+    assert csv.exists()
+    assert "coffee" in csv.read_text()
