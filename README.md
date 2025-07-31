@@ -215,6 +215,13 @@ After LLM classification the tool asks if newly labelled descriptions should be
 added to this file. Confirm with `y` to store the pattern so future runs
 recognise it. You can also edit the YAML manually if needed.
 
+#### Editing via the web interface
+
+The frontend loads rules from `bankcleanr/data/heuristics.yml` by default.
+Upload a JSONL transaction file, then adjust or add regex patterns in the table.
+Click **Save** to send a `POST` request to `/heuristics` which persists the rule
+in the application's SQLite database.
+
 ## Building standalone executables
 
 Run `scripts/build_exe.sh` to create single-file binaries for Linux, macOS and
