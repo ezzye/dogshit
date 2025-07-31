@@ -6,6 +6,9 @@ import os
 
 @when("I run the build script")
 def run_build_script(context):
+    if shutil.which("pyinstaller") is None:
+        context.scenario.skip("pyinstaller not installed")
+        return
     root = Path(__file__).resolve().parents[2]
     script = root / "scripts" / "build_exe.sh"
     context.build_dir = root / "dist" / "linux"

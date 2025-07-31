@@ -3,6 +3,8 @@
 from typing import Iterable, List, Callable, Optional, Tuple
 import sys
 import os
+import json
+import urllib.request
 from collections import OrderedDict
 
 from bankcleanr.transaction import Transaction, normalise
@@ -65,5 +67,20 @@ def learn_new_patterns(
         if answer and answer.lower().startswith("y"):
             regex.add_pattern(label, description)
             regex.reload_patterns()
+            backend_url = os.getenv("BANKCLEANR_BACKEND_URL")
+            token = os.getenv("BANKCLEANR_BACKEND_TOKEN")
+            if backend_url and token:
+                dest = f"{backend_url.rstrip('/')}/heuristics?token={token}"
+                payload = json.dumps({"label": label, "pattern": description}).encode()
+                try:
+                    req = urllib.request.Request(
+                        dest,
+                        data=payload,
+                        method="POST",
+                        headers={"Content-Type": "application/json"},
+                    )
+                    urllib.request.urlopen(req, timeout=5)
+                except Exception as exc:  # pragma: no cover - ignore network errors
+                    print(f"Failed to POST heuristic: {exc}", file=sys.stderr)
 
 

@@ -2,6 +2,8 @@ import importlib
 import yaml
 from io import StringIO
 import contextlib
+import json
+import urllib.request
 from bankcleanr.rules import regex
 from bankcleanr.rules import heuristics
 from bankcleanr.transaction import Transaction
@@ -90,3 +92,28 @@ def test_group_unmatched_transactions(monkeypatch):
         ("coffee", "Coffee shop", 2),
         ("books", "Book store", 1),
     ]
+
+
+def test_learn_new_patterns_posts_backend(monkeypatch):
+    monkeypatch.setattr(regex, "classify", lambda d: "unknown")
+    monkeypatch.setattr(regex, "add_pattern", lambda label, p: None)
+    monkeypatch.setattr(regex, "reload_patterns", lambda: None)
+
+    posted = {}
+
+    def fake_urlopen(req, timeout=0):
+        posted["url"] = req.full_url
+        posted["body"] = req.data.decode()
+        class R:
+            pass
+        return R()
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+    monkeypatch.setenv("BANKCLEANR_BACKEND_URL", "http://test")
+    monkeypatch.setenv("BANKCLEANR_BACKEND_TOKEN", "tok")
+
+    txs = [Transaction(date="2024-01-01", description="Coffee shop", amount="-1")]
+    heuristics.learn_new_patterns(txs, ["coffee"], confirm=lambda _: "y")
+
+    assert posted["url"] == "http://test/heuristics?token=tok"
+    assert json.loads(posted["body"]) == {"label": "coffee", "pattern": "Coffee shop"}

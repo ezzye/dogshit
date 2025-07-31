@@ -18,3 +18,10 @@ Feature: Local heuristics classification
     Then the labels are
       | label |
       | gym |
+
+  Scenario: Learned patterns persist to backend
+    Given an authenticated client
+    And an empty heuristics file
+    And backend environment variables
+    When I learn a pattern labeled "coffee" for "Coffee shop"
+    Then the backend has a heuristic labeled "coffee"
