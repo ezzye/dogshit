@@ -69,6 +69,17 @@ export default function RuleTable({ rules, onChange, onSave }: Props) {
         <input type="file" onChange={handleImport} />
         <button onClick={handleExport}>Export CSV</button>
       </div>
+      <p className="text-sm text-gray-600 mb-2">
+        Pattern expects a regular expression matched against transaction descriptions.
+        {' '}
+        <a
+          href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_expressions"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          (Regex guide)
+        </a>
+      </p>
       <table className="border-collapse w-full">
         <thead>
           <tr>
