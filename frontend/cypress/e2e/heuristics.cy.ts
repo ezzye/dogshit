@@ -6,6 +6,7 @@ describe('heuristic editor', () => {
 
     cy.visit('/');
     cy.wait('@load');
+    cy.contains('Pattern expects a regular expression');
 
     cy.fixture('tx.jsonl').then((content) => {
       const blob = new Blob([content], { type: 'application/jsonl' });
