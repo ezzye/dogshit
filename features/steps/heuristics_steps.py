@@ -1,15 +1,15 @@
 from behave import given, when, then
+
 from pathlib import Path
-import tempfile
-import yaml
 import importlib
 import os
-import urllib.request
-import urllib.parse
-from pathlib import Path
 import tempfile
+import urllib.parse
+import urllib.request
+
 import yaml
 from sqlmodel import create_engine
+
 from bankcleanr.transaction import Transaction
 from bankcleanr.rules import regex
 from bankcleanr.rules import heuristics, db_store
