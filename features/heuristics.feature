@@ -9,8 +9,8 @@ Feature: Local heuristics classification
       | dropbox |
       | unknown |
 
-  Scenario: Load patterns from YAML
-    Given a heuristics file containing
+  Scenario: Load patterns from database
+    Given a heuristics database containing
       | label | pattern |
       | gym   | gym membership |
     And a transaction "Monthly gym membership"
@@ -21,7 +21,7 @@ Feature: Local heuristics classification
 
   Scenario: Learned patterns persist to backend
     Given an authenticated client
-    And an empty heuristics file
+    And an empty heuristics database
     And backend environment variables
     When I learn a pattern labeled "coffee" for "Coffee shop"
     Then the backend has a heuristic labeled "coffee"

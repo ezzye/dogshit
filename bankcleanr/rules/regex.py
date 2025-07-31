@@ -1,37 +1,29 @@
 import re
-from pathlib import Path
-import yaml
+from typing import Dict
 
-DATA_DIR = Path(__file__).resolve().parent.parent / "data"
-HEURISTICS_PATH = DATA_DIR / "heuristics.yml"
+from . import db_store
 
 
-def _load_patterns(path: Path = HEURISTICS_PATH) -> dict[str, re.Pattern]:
-    """Load regex patterns from the heuristics YAML file."""
-    if path.exists():
-        data = yaml.safe_load(path.read_text()) or {}
-    else:
-        data = {}
+def _load_patterns() -> Dict[str, re.Pattern]:
+    """Load regex patterns from the heuristics database."""
+    data = db_store.get_patterns()
     return {label: re.compile(pattern, re.I) for label, pattern in data.items()}
 
 
 PATTERNS = _load_patterns()
 
 
-def reload_patterns(path: Path = HEURISTICS_PATH) -> None:
-    """Reload PATTERNS from the heuristics file."""
+def reload_patterns() -> None:
+    """Reload PATTERNS from the database."""
     global PATTERNS
-    PATTERNS = _load_patterns(path)
+    PATTERNS = _load_patterns()
 
 
-def add_pattern(label: str, pattern: str, path: Path = HEURISTICS_PATH) -> None:
-    """Append a new label→pattern mapping to the heuristics file."""
-    data = {}
-    if path.exists():
-        data = yaml.safe_load(path.read_text()) or {}
-    data[label] = pattern
-    path.write_text(yaml.safe_dump(data))
+def add_pattern(label: str, pattern: str) -> None:
+    """Store a new heuristic pattern in the database."""
+    db_store.add_pattern(label, pattern)
     PATTERNS[label] = re.compile(pattern, re.I)
+
 
 def classify(description: str) -> str:
     """Return label if description matches a known pattern."""

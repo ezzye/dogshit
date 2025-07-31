@@ -1,12 +1,28 @@
 import importlib
-import yaml
-from io import StringIO
 import contextlib
 import json
+from io import StringIO
 import urllib.request
-from bankcleanr.rules import regex
-from bankcleanr.rules import heuristics
+
+import pytest
+from sqlmodel import create_engine
+
+from bankcleanr.rules import regex, heuristics, db_store
 from bankcleanr.transaction import Transaction
+
+
+@pytest.fixture(autouse=True)
+def _db(tmp_path, monkeypatch):
+    monkeypatch.setenv("APP_ENV", "test")
+    db_file = tmp_path / "rules.db"
+    importlib.reload(db_store)
+    db_store.DB_PATH = db_file
+    db_store.engine = create_engine(f"sqlite:///{db_file}", echo=False)
+    db_store.init_db()
+    importlib.reload(regex)
+    regex.reload_patterns()
+    importlib.reload(heuristics)
+    yield
 
 
 def test_classify_transactions():
@@ -20,23 +36,14 @@ def test_classify_transactions():
     assert labels == ["spotify", "amazon prime", "dropbox", "unknown"]
 
 
-def test_patterns_loaded_from_yaml(tmp_path, monkeypatch):
-    data = {"coffee": "coffee shop"}
-    path = tmp_path / "heuristics.yml"
-    path.write_text(yaml.safe_dump(data))
-
-    importlib.reload(regex)
-    monkeypatch.setattr(regex, "HEURISTICS_PATH", path, raising=False)
-    regex.reload_patterns(path)
+def test_patterns_loaded_from_db():
+    db_store.add_pattern("coffee", "coffee shop")
+    regex.reload_patterns()
     importlib.reload(heuristics)
 
     txs = [Transaction(date="2024-01-01", description="Coffee shop", amount="-1")]
     labels = heuristics.classify_transactions(txs)
     assert labels == ["coffee"]
-
-    # restore default patterns
-    importlib.reload(regex)
-    importlib.reload(heuristics)
 
 
 def test_learn_new_patterns_prompts_once(monkeypatch):
