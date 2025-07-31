@@ -12,6 +12,7 @@ from langchain_core.messages import HumanMessage
 from tenacity import retry, wait_random_exponential, stop_after_attempt
 
 from .base import AbstractAdapter
+from .utils import load_heuristics_text
 from bankcleanr.transaction import normalise, Transaction
 from bankcleanr.rules.prompts import CATEGORY_PROMPT
 
@@ -29,15 +30,12 @@ class OpenAIAdapter(AbstractAdapter):
         model: str = "gpt-3.5-turbo",
         api_key: str | None = None,
         max_concurrency: int = 5,
-        heuristics_path: Path = DATA_DIR / "heuristics.yml",
         cancellation_path: Path = DATA_DIR / "cancellation.yml",
     ):
         self.llm = ChatOpenAI(model=model, api_key=api_key)
         # Limit the number of concurrent API calls
         self._sem = asyncio.Semaphore(max_concurrency)
-        self.heuristics_text = (
-            heuristics_path.read_text() if heuristics_path.exists() else ""
-        )
+        self.heuristics_text = load_heuristics_text()
         self.cancellation_text = (
             cancellation_path.read_text() if cancellation_path.exists() else ""
         )

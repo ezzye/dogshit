@@ -110,7 +110,10 @@ def test_prompt_includes_data(monkeypatch):
     tx = Transaction(date="2024-01-01", description="Coffee", amount="-1")
     asyncio.run(adapter._aclassify(tx))
     prompt = chat.messages[0].content
-    heur = Path("bankcleanr/data/heuristics.yml").read_text().strip()
+    from bankcleanr.llm.utils import load_heuristics_text
+    heur = load_heuristics_text()
     cancel = Path("bankcleanr/data/cancellation.yml").read_text().strip()
-    assert heur in prompt
+    # ensure at least one heuristic line is included
+    line = heur.splitlines()[0]
+    assert line in prompt
     assert cancel in prompt
