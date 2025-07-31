@@ -29,7 +29,7 @@ Feature: LLM classification
     Then no more than 5 concurrent requests were sent
 
   Scenario: Learned patterns are applied immediately
-    Given an empty heuristics file
+    Given an empty heuristics database
     And a transaction "Coffee shop"
     And the OpenAI adapter is mocked to return "coffee"
     When I classify transactions with the LLM accepting new patterns
@@ -38,7 +38,7 @@ Feature: LLM classification
       | coffee |
 
   Scenario: Summary of new pattern suggestions is shown once
-    Given an empty heuristics file
+    Given an empty heuristics database
     And duplicate transactions requiring LLM
     And the OpenAI adapter is mocked to return "coffee"
     When I classify transactions with the LLM summarising new patterns

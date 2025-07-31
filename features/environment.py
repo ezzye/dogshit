@@ -1,8 +1,9 @@
 import os
 import urllib.request
-from bankcleanr.rules import regex
+import importlib
+from bankcleanr.rules import regex, db_store
 
-ORIG_HEURISTICS = (regex.DATA_DIR / "heuristics.yml").read_text()
+ORIG_HEURISTICS = db_store.HEURISTICS_PATH.read_text()
 
 
 def before_scenario(context, scenario):
@@ -20,11 +21,11 @@ def after_scenario(context, scenario):
         except Exception:
             pass
     if hasattr(context, "heuristics_path"):
-        regex.HEURISTICS_PATH = getattr(
-            context, "orig_heuristics", regex.DATA_DIR / "heuristics.yml"
+        db_store.HEURISTICS_PATH = getattr(
+            context, "orig_heuristics", db_store.DATA_DIR / "heuristics.yml"
         )
-        # restore original heuristics file contents
-        regex.HEURISTICS_PATH.write_text(ORIG_HEURISTICS)
+        db_store.HEURISTICS_PATH.write_text(ORIG_HEURISTICS)
+        importlib.reload(db_store)
         regex.reload_patterns()
         delattr(context, "heuristics_path")
         if hasattr(context, "orig_heuristics"):
@@ -73,5 +74,33 @@ def after_scenario(context, scenario):
         urllib.request.urlopen = orig
         try:
             delattr(context, "_orig_urlopen")
+        except Exception:
+            pass
+    try:
+        db_file = getattr(context, "db_file")
+    except Exception:
+        db_file = None
+    if db_file is not None:
+        try:
+            os.unlink(db_file)
+        except Exception:
+            pass
+        try:
+            orig = getattr(context, "_orig_app_env")
+        except Exception:
+            orig = None
+        else:
+            if orig is None:
+                os.environ.pop("APP_ENV", None)
+            else:
+                os.environ["APP_ENV"] = orig
+            try:
+                delattr(context, "_orig_app_env")
+            except Exception:
+                pass
+        importlib.reload(db_store)
+        regex.reload_patterns()
+        try:
+            delattr(context, "db_file")
         except Exception:
             pass

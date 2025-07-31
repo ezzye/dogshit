@@ -6,9 +6,13 @@ import importlib
 import os
 import urllib.request
 import urllib.parse
+from pathlib import Path
+import tempfile
+import yaml
+from sqlmodel import create_engine
 from bankcleanr.transaction import Transaction
 from bankcleanr.rules import regex
-from bankcleanr.rules import heuristics
+from bankcleanr.rules import heuristics, db_store
 
 
 @given("sample transactions")
@@ -32,16 +36,21 @@ def check_labels(context):
     assert context.labels == expected
 
 
-@given("a heuristics file containing")
-def heuristics_file(context):
+@given("a heuristics database containing")
+def heuristics_db(context):
     data = {row["label"]: row["pattern"] for row in context.table}
     tmp = tempfile.NamedTemporaryFile(delete=False)
-    tmp.write(yaml.safe_dump(data).encode())
     tmp.close()
-    context.heuristics_path = Path(tmp.name)
-    context.orig_heuristics = regex.HEURISTICS_PATH
-    regex.HEURISTICS_PATH = Path(tmp.name)
-    regex.reload_patterns(Path(tmp.name))
+    context.db_file = Path(tmp.name)
+    context._orig_app_env = os.getenv("APP_ENV")
+    os.environ["APP_ENV"] = "test"
+    importlib.reload(db_store)
+    db_store.DB_PATH = context.db_file
+    db_store.engine = create_engine(f"sqlite:///{context.db_file}", echo=False)
+    db_store.init_db()
+    for label, pattern in data.items():
+        db_store.add_pattern(label, pattern)
+    regex.reload_patterns()
     importlib.reload(heuristics)
 
 

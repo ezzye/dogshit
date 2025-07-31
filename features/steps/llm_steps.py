@@ -3,12 +3,13 @@ import os
 from pathlib import Path
 import tempfile
 import importlib
+from sqlmodel import create_engine
 
 from bankcleanr.transaction import Transaction
 from bankcleanr.llm import classify_transactions, PROVIDERS
 from bankcleanr.llm.openai import OpenAIAdapter
 import bankcleanr.llm.openai as openai_mod
-from bankcleanr.rules import regex, heuristics
+from bankcleanr.rules import regex, heuristics, db_store
 import asyncio
 import io
 import contextlib
@@ -141,15 +142,24 @@ def check_throttling(context):
     assert context.max_running <= 5
 
 
-@given("an empty heuristics file")
-def empty_heuristics_file(context):
-    tmp = tempfile.NamedTemporaryFile(delete=False)
-    tmp.write(b"")
-    tmp.close()
-    context.heuristics_path = Path(tmp.name)
-    context.orig_heuristics = regex.HEURISTICS_PATH
-    regex.HEURISTICS_PATH = Path(tmp.name)
-    regex.reload_patterns(Path(tmp.name))
+@given("an empty heuristics database")
+def empty_heuristics_db(context):
+    tmpdb = tempfile.NamedTemporaryFile(delete=False)
+    tmpdb.close()
+    context.db_file = Path(tmpdb.name)
+    context._orig_app_env = os.getenv("APP_ENV")
+    os.environ["APP_ENV"] = "test"
+    empty = tempfile.NamedTemporaryFile(delete=False)
+    empty.write(b"")
+    empty.close()
+    context.heuristics_path = Path(empty.name)
+    context.orig_heuristics = db_store.HEURISTICS_PATH
+    importlib.reload(db_store)
+    db_store.DB_PATH = context.db_file
+    db_store.engine = create_engine(f"sqlite:///{context.db_file}", echo=False)
+    db_store.HEURISTICS_PATH = Path(empty.name)
+    db_store.init_db()
+    regex.reload_patterns()
     importlib.reload(heuristics)
 
 
