@@ -217,17 +217,15 @@ poetry run python scripts/import_heuristics.py
 
 ### Updating heuristics
 
-Regex patterns for the local classifier live in `bankcleanr/data/heuristics.yml`.
-After LLM classification the tool asks if newly labelled descriptions should be
-added to this file. Confirm with `y` to store the pattern so future runs
-recognise it. You can also edit the YAML manually if needed.
+Regex patterns are stored in the application's SQLite database. After LLM
+classification the tool asks if newly labelled descriptions should be saved as
+new heuristics. Confirm with `y` to store the pattern so future runs recognise
+it.
 
-#### Editing via the web interface
-
-The frontend loads rules from `bankcleanr/data/heuristics.yml` by default.
-Upload a JSONL transaction file, then adjust or add regex patterns in the table.
-Click **Save** to send a `POST` request to `/heuristics` which persists the rule
-in the application's SQLite database.
+Rules can also be edited through the web interface or via the API. Upload a
+JSONL transaction file in the frontend, adjust or add patterns in the table and
+click **Save**. This issues a `POST` request to `/heuristics` which writes the
+rule to the database.
 
 ## Building standalone executables
 
