@@ -208,6 +208,13 @@ docker compose up frontend
 The Vite dev server will then be available on port 5173 while the API continues
 to listen on port 8000.
 
+When starting with an empty database run the import script once to seed the
+default heuristics:
+
+```bash
+poetry run python scripts/import_heuristics.py
+```
+
 ### Updating heuristics
 
 Regex patterns for the local classifier live in `bankcleanr/data/heuristics.yml`.
