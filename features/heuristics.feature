@@ -25,3 +25,8 @@ Feature: Local heuristics classification
     And backend environment variables
     When I learn a pattern labeled "coffee" for "Coffee shop"
     Then the backend has a heuristic labeled "coffee"
+
+  Scenario: Import heuristics file
+    Given a fresh heuristics database
+    When I run the import heuristics script
+    Then the database has a heuristic labeled "spotify"

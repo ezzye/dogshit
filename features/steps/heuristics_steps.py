@@ -6,6 +6,7 @@ import os
 import tempfile
 import urllib.parse
 import urllib.request
+import runpy
 
 import yaml
 from sqlmodel import create_engine
@@ -100,5 +101,37 @@ def backend_has_rule(context, label):
         assert any(r["label"] == label for r in resp.json())
 
     context.loop.run_until_complete(check())
+
+
+@given("a fresh heuristics database")
+def fresh_db(context):
+    tmp = tempfile.NamedTemporaryFile(delete=False)
+    tmp.close()
+    context.db_file = Path(tmp.name)
+    context._orig_app_env = os.getenv("APP_ENV")
+    os.environ["APP_ENV"] = "test"
+    importlib.reload(db_store)
+    db_store.DB_PATH = context.db_file
+    db_store.engine = create_engine(f"sqlite:///{context.db_file}", echo=False)
+    db_store.init_db()
+    regex.reload_patterns()
+    importlib.reload(heuristics)
+
+
+@when("I run the import heuristics script")
+def run_import_script(context):
+    root = Path(__file__).resolve().parents[2]
+    runpy.run_path(str(root / "scripts" / "import_heuristics.py"), run_name="__main__")
+
+
+@then('the database has a heuristic labeled "{label}"')
+def db_has_rule(context, label):
+    from sqlmodel import Session, select
+    from backend.models import Heuristic
+
+    engine = create_engine(f"sqlite:///{context.db_file}", echo=False)
+    with Session(engine) as session:
+        row = session.exec(select(Heuristic).where(Heuristic.label == label)).first()
+        assert row is not None
 
 
