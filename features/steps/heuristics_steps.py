@@ -8,7 +8,6 @@ import urllib.parse
 import urllib.request
 import runpy
 
-import yaml
 from sqlmodel import create_engine
 
 from bankcleanr.transaction import Transaction
