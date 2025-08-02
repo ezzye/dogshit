@@ -11,6 +11,7 @@ import logging
 from .base import AbstractAdapter
 from .utils import load_heuristics_texts
 from .retry import retry
+from .cost_manager import cost_manager, estimate_tokens
 from bankcleanr.transaction import normalise
 from bankcleanr.rules.prompts import CATEGORY_PROMPT
 
@@ -24,6 +25,7 @@ class MistralAdapter(AbstractAdapter):
         self,
         model: str = "mistral-small",
         api_key: str | None = None,
+        price_per_token: float = 0.000002,
     ):
         try:
             from mistralai.client import MistralClient
@@ -32,6 +34,7 @@ class MistralAdapter(AbstractAdapter):
         else:
             self.client = MistralClient(api_key=api_key)
         self.model = model
+        self.price_per_token = price_per_token
         (
             self.user_heuristics_text,
             self.global_heuristics_text,
@@ -61,7 +64,11 @@ class MistralAdapter(AbstractAdapter):
                 global_heuristics=self.global_heuristics_text,
             )
             try:
+                tokens = estimate_tokens(prompt)
+                cost_manager.check_and_add(tokens * self.price_per_token)
                 resp = self._chat(prompt)
+            except RuntimeError:
+                raise
             except Exception as exc:
                 logger.debug("[MistralAdapter] error: %s", exc)
                 details.append({"category": "unknown", "new_rule": None})

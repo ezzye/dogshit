@@ -11,6 +11,7 @@ import re
 from .base import AbstractAdapter
 from .utils import load_heuristics_texts
 from .retry import retry
+from .cost_manager import cost_manager, estimate_tokens
 from bankcleanr.transaction import normalise
 from bankcleanr.rules.prompts import CATEGORY_PROMPT
 
@@ -25,6 +26,7 @@ class GeminiAdapter(AbstractAdapter):
         self,
         model: str = "gemini-2.5-flash",
         api_key: str | None = None,
+        price_per_token: float = 0.000002,
     ):
         """Initialise the Gemini adapter and underlying client."""
         try:
@@ -37,6 +39,7 @@ class GeminiAdapter(AbstractAdapter):
             self.client = genai.Client()
             logger.debug("[GeminiAdapter] initialised model=%s", model)
         self.model = model
+        self.price_per_token = price_per_token
         (
             self.user_heuristics_text,
             self.global_heuristics_text,
@@ -65,7 +68,11 @@ class GeminiAdapter(AbstractAdapter):
             )
             logger.debug("[GeminiAdapter] prompt: %s", prompt)
             try:
+                tokens = estimate_tokens(prompt)
+                cost_manager.check_and_add(tokens * self.price_per_token)
                 resp = self._generate_content(prompt)
+            except RuntimeError:
+                raise
             except Exception as exc:
                 logger.debug("[GeminiAdapter] error: %s", exc)
                 details.append({"category": "unknown", "new_rule": None})

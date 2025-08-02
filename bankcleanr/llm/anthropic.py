@@ -11,6 +11,7 @@ import logging
 from .base import AbstractAdapter
 from .utils import load_heuristics_texts
 from .retry import retry
+from .cost_manager import cost_manager, estimate_tokens
 from bankcleanr.transaction import normalise
 from bankcleanr.rules.prompts import CATEGORY_PROMPT
 
@@ -24,6 +25,7 @@ class AnthropicAdapter(AbstractAdapter):
         self,
         model: str = "claude-3-haiku-20240307",
         api_key: str | None = None,
+        price_per_token: float = 0.000002,
     ):
         try:
             import anthropic
@@ -32,6 +34,7 @@ class AnthropicAdapter(AbstractAdapter):
         else:
             self.client = anthropic.Anthropic(api_key=api_key)
         self.model = model
+        self.price_per_token = price_per_token
         (self.user_heuristics_text, self.global_heuristics_text) = load_heuristics_texts()
 
     @retry()
@@ -59,7 +62,11 @@ class AnthropicAdapter(AbstractAdapter):
                 global_heuristics=self.global_heuristics_text,
             )
             try:
+                tokens = estimate_tokens(prompt)
+                cost_manager.check_and_add(tokens * self.price_per_token)
                 resp = self._create_message(prompt)
+            except RuntimeError:
+                raise
             except Exception as exc:
                 logger.debug("[AnthropicAdapter] error: %s", exc)
                 details.append({"category": "unknown", "new_rule": None})

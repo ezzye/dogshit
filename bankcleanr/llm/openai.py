@@ -21,6 +21,7 @@ from tenacity import retry, wait_random_exponential, stop_after_attempt
 
 from .base import AbstractAdapter
 from .utils import load_heuristics_texts
+from .cost_manager import cost_manager, estimate_tokens
 from bankcleanr.transaction import normalise, Transaction
 from bankcleanr.rules.prompts import CATEGORY_PROMPT
 
@@ -38,6 +39,7 @@ class OpenAIAdapter(AbstractAdapter):
         model: str = "gpt-3.5-turbo",
         api_key: str | None = None,
         max_concurrency: int = 5,
+        price_per_token: float = 0.000002,
     ):
         if ChatOpenAI is None:
             self.llm = None
@@ -45,6 +47,7 @@ class OpenAIAdapter(AbstractAdapter):
             self.llm = ChatOpenAI(model=model, api_key=api_key)
         # Limit the number of concurrent API calls
         self._sem = asyncio.Semaphore(max_concurrency)
+        self.price_per_token = price_per_token
         (
             self.user_heuristics_text,
             self.global_heuristics_text,
@@ -60,6 +63,8 @@ class OpenAIAdapter(AbstractAdapter):
             )
             logger.debug("Rendered prompt: %s", prompt)
             message = HumanMessage(content=prompt)
+            tokens = estimate_tokens(prompt)
+            cost_manager.check_and_add(tokens * self.price_per_token)
             result = await self.llm.ainvoke([message])
         logger.debug("LLM response: %s", result.content)
         try:
@@ -88,6 +93,8 @@ class OpenAIAdapter(AbstractAdapter):
             return details
         try:
             results = asyncio.run(self._aclassify_batch(tx_objs))
+        except RuntimeError:
+            raise
         except Exception as exc:
             logger.error("Failed to classify transactions: %s", exc)
             results = [
