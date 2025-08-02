@@ -44,7 +44,7 @@ def _mock_adapter(context, provider, label):
             pass
 
         def classify_transactions(self, transactions):
-            return [label for _ in transactions]
+            return [{"category": label, "new_rule": None} for _ in transactions]
 
     context.original = PROVIDERS[provider]
     context.provider = provider
@@ -91,7 +91,7 @@ def classify_with_capture(context):
 
         def classify_transactions(self, transactions):
             context.captured_descriptions = [tx.description for tx in transactions]
-            return ["ok"]
+            return [{"category": "ok", "new_rule": None}]
 
     context.original = PROVIDERS["openai"]
     PROVIDERS["openai"] = CaptureAdapter
@@ -201,7 +201,7 @@ def classify_live(context, provider):
 
 @then('the returned category is not "unknown"')
 def check_live_category(context):
-    assert context.labels[0] != "unknown"
+    assert context.labels[0]["category"] != "unknown"
 
 
 @then('the summary output lists "{description}" {count:d} times')

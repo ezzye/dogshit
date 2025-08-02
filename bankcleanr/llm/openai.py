@@ -78,21 +78,20 @@ class OpenAIAdapter(AbstractAdapter):
         tasks = [self._aclassify(tx) for tx in txs]
         return await asyncio.gather(*tasks)
 
-    def classify_transactions(self, transactions: Iterable) -> List[str]:
+    def classify_transactions(self, transactions: Iterable) -> List[Dict[str, Any]]:
         tx_objs = [normalise(tx) for tx in transactions]
         if self.llm is None:
-            self.last_details = [
+            details = [
                 {"category": "unknown", "new_rule": None} for _ in tx_objs
             ]
-            return ["unknown" for _ in tx_objs]
+            self.last_details = details
+            return details
         try:
             results = asyncio.run(self._aclassify_batch(tx_objs))
         except Exception as exc:
             logger.error("Failed to classify transactions: %s", exc)
-            self.last_details = [
+            results = [
                 {"category": "unknown", "new_rule": None} for _ in tx_objs
             ]
-            return ["unknown" for _ in tx_objs]
-
         self.last_details = results
-        return [res.get("category", "unknown") for res in results]
+        return results

@@ -17,5 +17,5 @@ def test_returns_unknown_when_library_missing(monkeypatch):
 
     adapter = GeminiAdapter(api_key="dummy")
     tx = Transaction(date="2024-01-01", description="Coffee", amount="-1")
-    labels = adapter.classify_transactions([tx])
-    assert labels == ["unknown"]
+    details = adapter.classify_transactions([tx])
+    assert details == [{"category": "unknown", "new_rule": None}]

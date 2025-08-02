@@ -27,9 +27,9 @@ def probe_adapter(adapter: AbstractAdapter, timeout: float = 5.0) -> bool:
     with ThreadPoolExecutor(max_workers=1) as ex:
         future = ex.submit(adapter.classify_transactions, [tx])
         try:
-            labels = future.result(timeout=timeout)
+            details = future.result(timeout=timeout)
         except FutureTimeoutError as exc:  # pragma: no cover - defensive
             raise RuntimeError("timed out") from exc
-    if not labels or labels[0] == "unknown":
+    if not details or details[0].get("category") == "unknown":
         raise RuntimeError("no valid response")
     return True

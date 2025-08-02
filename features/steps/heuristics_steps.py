@@ -91,7 +91,7 @@ def backend_env(context):
 def learn_pattern(context, label, description):
     txs = [Transaction(date="2024-01-01", description=description, amount="-1.00")]
     manager = Manager()
-    manager.merge_llm_rules(txs, [label])
+    manager.merge_llm_rules(txs, [{"category": label, "new_rule": None}])
     manager.persist()
 
 

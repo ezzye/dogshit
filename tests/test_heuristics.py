@@ -8,6 +8,8 @@ from sqlmodel import create_engine
 from bankcleanr.rules import regex, db_store, heuristics
 from bankcleanr.rules.manager import Manager
 from bankcleanr.transaction import Transaction
+from bankcleanr.llm import classify_transactions as llm_classify, PROVIDERS
+from bankcleanr.llm.base import AbstractAdapter
 
 
 @pytest.fixture(autouse=True)
@@ -48,7 +50,7 @@ def test_patterns_loaded_from_db():
 def test_manager_persists_patterns():
     manager = Manager()
     txs = [Transaction(date="2024-01-01", description="Coffee shop", amount="-1")]
-    manager.merge_llm_rules(txs, ["coffee"])
+    manager.merge_llm_rules(txs, [{"category": "coffee", "new_rule": None}])
     manager.persist()
     assert db_store.get_patterns()["coffee"] == "Coffee shop"
     assert manager.classify(txs) == ["coffee"]
@@ -70,8 +72,33 @@ def test_manager_posts_backend(monkeypatch):
 
     manager = Manager()
     txs = [Transaction(date="2024-01-01", description="Coffee shop", amount="-1")]
-    manager.merge_llm_rules(txs, ["coffee"])
+    manager.merge_llm_rules(txs, [{"category": "coffee", "new_rule": None}])
     manager.persist()
 
     assert posted["url"] == "http://test/heuristics?token=tok"
     assert json.loads(posted["body"]) == {"label": "coffee", "pattern": "Coffee shop"}
+
+
+def test_adapter_rule_persisted_and_used(monkeypatch):
+    calls = {"n": 0}
+
+    class DummyAdapter(AbstractAdapter):
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def classify_transactions(self, transactions):
+            calls["n"] += 1
+            return [
+                {"category": "coffee", "new_rule": "Coffee shop"} for _ in transactions
+            ]
+
+    monkeypatch.setitem(PROVIDERS, "openai", DummyAdapter)
+
+    tx = Transaction(date="2024-01-01", description="Coffee shop", amount="-1")
+    labels = llm_classify([tx], provider="openai")
+    assert labels == ["coffee"]
+    assert db_store.get_patterns()["coffee"] == "Coffee shop"
+
+    labels = llm_classify([tx], provider="openai")
+    assert labels == ["coffee"]
+    assert calls["n"] == 1
