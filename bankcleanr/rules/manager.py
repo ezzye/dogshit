@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Iterable, List, Dict
+from typing import Iterable, List, Dict, Mapping
 import json
 import os
 import sys
@@ -26,12 +26,14 @@ class Manager:
         return labels
 
     def merge_llm_rules(
-        self, transactions: Iterable[Transaction], labels: Iterable[str]
+        self, transactions: Iterable[Transaction], details: Iterable[Mapping[str, str | None]]
     ) -> None:
         """Record LLM-suggested rules for unknown transactions."""
-        for tx, label in zip(transactions, labels):
-            if label != "unknown" and regex.classify(tx.description) == "unknown":
-                self.pending[label] = tx.description
+        for tx, detail in zip(transactions, details):
+            category = detail.get("category", "unknown")
+            if category != "unknown" and regex.classify(tx.description) == "unknown":
+                pattern = detail.get("new_rule") or tx.description
+                self.pending[category] = pattern
 
     def persist(self) -> None:
         """Persist pending rules and reload patterns."""

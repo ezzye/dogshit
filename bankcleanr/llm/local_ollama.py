@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Iterable, List
+from typing import Dict, Iterable, List
 from pathlib import Path
 import requests
 
@@ -29,9 +29,9 @@ class LocalOllamaAdapter(AbstractAdapter):
             self.global_heuristics_text,
         ) = load_heuristics_texts()
 
-    def classify_transactions(self, transactions: Iterable) -> List[str]:
+    def classify_transactions(self, transactions: Iterable) -> List[Dict[str, str | None]]:
         tx_objs = [normalise(tx) for tx in transactions]
-        labels: List[str] = []
+        details: List[Dict[str, str | None]] = []
         for tx in tx_objs:
             prompt = CATEGORY_PROMPT.render(
                 txn=tx,
@@ -46,7 +46,10 @@ class LocalOllamaAdapter(AbstractAdapter):
                 )
                 resp.raise_for_status()
                 data = resp.json()
-                labels.append(data.get("response", "").strip().lower())
+                details.append(
+                    {"category": data.get("response", "").strip().lower(), "new_rule": None}
+                )
             except Exception:
-                labels.append("unknown")
-        return labels
+                details.append({"category": "unknown", "new_rule": None})
+        self.last_details = details
+        return details

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Iterable, List
+from typing import Dict, Iterable, List
 from pathlib import Path
 import logging
 
@@ -39,13 +39,17 @@ class GeminiAdapter(AbstractAdapter):
             self.global_heuristics_text,
         ) = load_heuristics_texts()
 
-    def classify_transactions(self, transactions: Iterable) -> List[str]:
+    def classify_transactions(self, transactions: Iterable) -> List[Dict[str, str | None]]:
         tx_objs = [normalise(tx) for tx in transactions]
         if self.client is None:
             logger.debug("[GeminiAdapter] no client available")
-            return ["unknown" for _ in tx_objs]
+            details = [
+                {"category": "unknown", "new_rule": None} for _ in tx_objs
+            ]
+            self.last_details = details
+            return details
 
-        labels: List[str] = []
+        details: List[Dict[str, str | None]] = []
         for tx in tx_objs:
             prompt = CATEGORY_PROMPT.render(
                 txn=tx,
@@ -62,11 +66,12 @@ class GeminiAdapter(AbstractAdapter):
                     resp.text if hasattr(resp, "text") else resp.candidates[0].content
                 )
                 logger.debug("[GeminiAdapter] message: %s", message)
-                labels.append(message.strip().lower())
+                details.append({"category": message.strip().lower(), "new_rule": None})
             except Exception as exc:
                 logger.debug("[GeminiAdapter] error: %s", exc)
                 import traceback
 
                 traceback.print_exc()
-                labels.append("unknown")
-        return labels
+                details.append({"category": "unknown", "new_rule": None})
+        self.last_details = details
+        return details

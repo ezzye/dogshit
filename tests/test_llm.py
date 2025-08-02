@@ -32,7 +32,7 @@ class DummyAdapter(OpenAIAdapter):
         self.label = label
 
     def classify_transactions(self, transactions):
-        return [self.label for _ in transactions]
+        return [{"category": self.label, "new_rule": None} for _ in transactions]
 
 
 def test_llm_fallback(monkeypatch):
@@ -70,7 +70,7 @@ def test_llm_masks_before_sending(monkeypatch):
 
         def classify_transactions(self, transactions):
             captured["descriptions"] = [tx.description for tx in transactions]
-            return ["remote"]
+            return [{"category": "remote", "new_rule": None} for _ in transactions]
 
     monkeypatch.setitem(PROVIDERS, "openai", CaptureAdapter)
     txs = [Transaction(date="2024-01-01", description="Send 12-34-56 12345678", amount="-9.99")]
@@ -224,7 +224,7 @@ def test_llm_adds_patterns_and_reuses(monkeypatch, tmp_path):
 
         def classify_transactions(self, txs):
             calls["n"] += 1
-            return ["coffee" for _ in txs]
+            return [{"category": "coffee", "new_rule": None} for _ in txs]
 
     monkeypatch.setitem(PROVIDERS, "openai", DummyAdapter)
 
@@ -253,10 +253,10 @@ def test_reclassification_after_learning(monkeypatch):
 
     class CaptureAdapter(OpenAIAdapter):
         def __init__(self, *a, **k):
-            self.last_details = [{"category": "coffee"}]
+            self.last_details = [{"category": "coffee", "new_rule": None}]
 
         def classify_transactions(self, txs):
-            return ["coffee"]
+            return self.last_details
 
     adapter = CaptureAdapter()
     monkeypatch.setattr(llm_mod, "get_adapter", lambda *a, **k: adapter)
@@ -266,6 +266,6 @@ def test_reclassification_after_learning(monkeypatch):
 
     assert labels == ["coffee"]
     assert call_count["n"] == 2
-    assert adapter.last_details == [{"category": "coffee"}]
+    assert adapter.last_details == [{"category": "coffee", "new_rule": None}]
 
 

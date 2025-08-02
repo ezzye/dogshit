@@ -65,12 +65,13 @@ def classify_transactions(
             "[classify_transactions] masked: %s",
             [tx.description for tx in masked],
         )
-        llm_labels = adapter.classify_transactions(masked)
-        logger.debug("[classify_transactions] llm labels: %s", llm_labels)
+        details = adapter.classify_transactions(masked)
+        logger.debug("[classify_transactions] llm details: %s", details)
+        llm_labels = [d.get("category", "unknown") for d in details]
         for idx, llm_label in zip(unmatched_indexes, llm_labels):
             labels[idx] = llm_label
 
-        manager.merge_llm_rules(unmatched, llm_labels)
+        manager.merge_llm_rules(unmatched, details)
         manager.persist()
 
         refreshed = manager.classify(tx_objs)

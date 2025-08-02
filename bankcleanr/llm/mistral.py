@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Iterable, List
+from typing import Dict, Iterable, List
 from pathlib import Path
 
 from .base import AbstractAdapter
@@ -31,12 +31,16 @@ class MistralAdapter(AbstractAdapter):
             self.global_heuristics_text,
         ) = load_heuristics_texts()
 
-    def classify_transactions(self, transactions: Iterable) -> List[str]:
+    def classify_transactions(self, transactions: Iterable) -> List[Dict[str, str | None]]:
         tx_objs = [normalise(tx) for tx in transactions]
         if self.client is None:
-            return ["unknown" for _ in tx_objs]
+            details = [
+                {"category": "unknown", "new_rule": None} for _ in tx_objs
+            ]
+            self.last_details = details
+            return details
 
-        labels: List[str] = []
+        details: List[Dict[str, str | None]] = []
         for tx in tx_objs:
             prompt = CATEGORY_PROMPT.render(
                 txn=tx,
@@ -48,5 +52,6 @@ class MistralAdapter(AbstractAdapter):
                 messages=[{"role": "user", "content": prompt}],
             )
             message = resp.choices[0].message.content if resp.choices else ""
-            labels.append(message.strip().lower())
-        return labels
+            details.append({"category": message.strip().lower(), "new_rule": None})
+        self.last_details = details
+        return details

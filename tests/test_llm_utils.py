@@ -14,7 +14,7 @@ class DummyAdapter(AbstractAdapter):
         if self.raise_exc:
             raise RuntimeError("fail")
         time.sleep(self.delay)
-        return ["ok" for _ in transactions]
+        return [{"category": "ok", "new_rule": None} for _ in transactions]
 
 
 def test_probe_adapter_success():

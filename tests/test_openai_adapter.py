@@ -54,8 +54,8 @@ def test_classify_returns_unknown_on_failure(monkeypatch):
     monkeypatch.setattr("bankcleanr.llm.openai.ChatOpenAI", lambda *a, **k: FailingChat())
     adapter = OpenAIAdapter(api_key="dummy")
     tx = Transaction(date="2024-01-01", description="Coffee", amount="-1")
-    labels = adapter.classify_transactions([tx])
-    assert labels == ["unknown"]
+    details = adapter.classify_transactions([tx])
+    assert details == [{"category": "unknown", "new_rule": None}]
 
 
 def test_classify_transactions_parses_json(monkeypatch):
@@ -63,8 +63,8 @@ def test_classify_transactions_parses_json(monkeypatch):
     monkeypatch.setattr("bankcleanr.llm.openai.ChatOpenAI", lambda *a, **k: DummyChat())
     adapter = OpenAIAdapter(api_key="dummy")
     tx = Transaction(date="2024-01-01", description="Coffee", amount="-1")
-    labels = adapter.classify_transactions([tx])
-    assert labels == ["coffee"]
+    details = adapter.classify_transactions([tx])
+    assert details[0]["category"] == "coffee"
     assert adapter.last_details[0] == {
         "category": "coffee",
         "new_rule": ".*COFFEE.*",
