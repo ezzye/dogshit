@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Dict, List, Mapping, Optional, TypedDict
+from typing import List, Mapping, Optional, TypedDict
 
 
 class ClassificationDetail(TypedDict, total=False):

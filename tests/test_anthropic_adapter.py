@@ -1,4 +1,3 @@
-import pytest
 from bankcleanr.llm.anthropic import AnthropicAdapter
 from bankcleanr.transaction import Transaction
 
