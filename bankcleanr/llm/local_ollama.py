@@ -12,6 +12,7 @@ import logging
 from .base import AbstractAdapter
 from .utils import load_heuristics_texts
 from .retry import retry
+from .cost_manager import cost_manager, estimate_tokens
 from bankcleanr.transaction import normalise
 from bankcleanr.rules.prompts import CATEGORY_PROMPT
 
@@ -26,10 +27,12 @@ class LocalOllamaAdapter(AbstractAdapter):
         model: str = "llama3",
         host: str = "http://localhost:11434",
         api_key: str | None = None,
+        price_per_token: float = 0.0,
     ):
         self.model = model
         self.host = host.rstrip("/")
         self.api_key = api_key
+        self.price_per_token = price_per_token
         (
             self.user_heuristics_text,
             self.global_heuristics_text,
@@ -55,6 +58,8 @@ class LocalOllamaAdapter(AbstractAdapter):
                 global_heuristics=self.global_heuristics_text,
             )
             try:
+                tokens = estimate_tokens(prompt)
+                cost_manager.check_and_add(tokens * self.price_per_token)
                 data = self._generate(prompt)
                 message = data.get("response", "")
                 content = message.strip()
@@ -74,6 +79,8 @@ class LocalOllamaAdapter(AbstractAdapter):
                 except Exception as exc:
                     logger.debug("[LocalOllamaAdapter] parse error: %s", exc)
                     details.append({"category": content.lower(), "new_rule": None})
+            except RuntimeError:
+                raise
             except Exception as exc:
                 logger.debug("[LocalOllamaAdapter] error: %s", exc)
                 details.append({"category": "unknown", "new_rule": None})
