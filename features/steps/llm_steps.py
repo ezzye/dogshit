@@ -78,6 +78,7 @@ def check_labels(context):
 
 @given("a transaction containing account details")
 def transaction_with_account(context):
+    empty_heuristics_db(context)
     context.txs = [
         Transaction(date="2024-01-01", description="Send 12-34-56 12345678", amount="-1.00")
     ]
