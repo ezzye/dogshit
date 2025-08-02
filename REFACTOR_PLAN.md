@@ -14,13 +14,13 @@ Keep each numbered section self-contained so the agent can work through it in or
 ---
 
 ## 1  |  Foundation – Clean Up & Safety Net
-1. **Boot the test harness**  
-   * Ensure `pytest`, `behave`, `coverage` already run via `make test`.  
+1. **Boot the test harness**
+   * Ensure `pytest`, `behave`, `coverage` already run via `make test`.
    * **TASK**: Fix any red/red-X tests; stub failing externals so the suite goes green again.
-2. **Add continuous integration** (if missing)  
+2. **Add continuous integration** (if missing)
    * GitHub Actions workflow: `make lint`, `make test`, artefact upload.
-3. **Snapshot current behaviour**  
-   * Freeze a minimal “golden path” BDD feature (CLI → parse sample PDF → CSV summary).  
+3. **Snapshot current behaviour**
+   * Freeze a minimal “golden path” BDD feature (CLI → parse sample PDF → CSV summary).
    * This guards against regressions during refactor.
 
 ---
@@ -42,73 +42,75 @@ Goal | *Parse, mask & export a lightweight file for upload.*
 ## 3  |  Backend Skeleton (Stage 2 & 3)
 Goal | *Receive upload, store per-user heuristics, enrich unlabeled rows via LLM.*
 
-1. **Spin up FastAPI** (`backend/`) with `/upload`, `/heuristics`, `/classify`, `/summary` routes.  
-2. **Persistence layer** – start with SQLite + SQLModel; one DB per env.  
-3. **Auth** – email + magic-link (Passkey ready).  
-4. **Containerise** (`Dockerfile`, `docker-compose.yml`).  
+1. **Spin up FastAPI** (`backend/`) with `/upload`, `/heuristics`, `/classify`, `/summary` routes.
+2. **Persistence layer** – start with SQLite + SQLModel; one DB per env.
+3. **Auth** – email + magic-link (Passkey ready).
+4. **Containerise** (`Dockerfile`, `docker-compose.yml`).
 5. **Tests** – component tests hit the real HTTP API with `httpx.AsyncClient`.
 
 ---
 
 ## 4  |  Heuristic Editor UI (Stage 2)
 Goal | *Let users review & tweak the rule table in-browser.*
+Note that LLM needs to make rules not user.
 
-1. **React + TypeScript SPA** inside `/frontend`.  
-2. Table grid (shadcn/ui DataTable) with CRUD ops, CSV import/export.  
-3. Auto-save to `/heuristics` API; optimistic updates.  
-4. Cypress E2E: “User uploads JSONL → edits a rule → saves → sees confirmation”.
+1. **React + TypeScript SPA** inside `/frontend`.
+2. Table grid (shadcn/ui DataTable) with CRUD ops, CSV import/export.  Note that LLM needs to make rules not user.
+3. Auto-save to `/heuristics` API; optimistic updates.  Note that LLM needs to make rules not user.
+4. Cypress E2E: “User uploads JSONL → edits a rule → saves → sees confirmation”. Note that LLM needs to make rules not user.
 
 ---
 
 ## 5  |  LLM Classification Service (Stage 3)
 Goal | *Merge user rules, global rules & LLM suggestions.*
 
-| Task | Detail |
-|------|--------|
-| 5-A | **Prompt template** – lives in `rules/prompts.py`; parameterise `{{txn.description}}`, `{{user_heuristics}}`, `{{global_heuristics}}`. |
-| 5-B | **Adapter refactor** – unify `llm/*` classes under `AbstractAdapter.classify_transactions(batch)`. |
-| 5-C | **Retry & cost guardrails** – exponential back-off, max £/day env var. |
-| 5-D | **Auto-learning** – when LLM returns a *new* rule, enqueue it for human review in the UI. |
-| 5-E | **Unit tests** – mock LLM, assert JSON schema of response. |
+| Task | Detail                                                                                                                                                                                                                                                                                                                                                             |
+|------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 5-0  | **Tidy up/ refactor the heuristics module/functions.  The goal is for the LLM to update heuristic rules which are then used to analyse bank statements. While there should be a method for users to be able to update/correct rules.  The goal is that this is never necessary as LLM uses web search etc to correctly classify and describe bank statement items. |
+| 5-A  | **Prompt template** – lives in `rules/prompts.py`; parameterise `{{txn.description}}`, `{{user_heuristics}}`, `{{global_heuristics}}`. Note that LLM needs to make rules not user.                                                                                                                                                                                 |
+| 5-B  | **Adapter refactor** – unify `llm/*` classes under `AbstractAdapter.classify_transactions(batch)`. Note that LLM needs to make rules not user.                                                                                                                                                                                                                     |
+| 5-C  | **Retry & cost guardrails** – exponential back-off, max £/day env var.  Note that cost may start high but as LLM updates heuristics and persists rules it needs to do less and less work to classify transaction, until all transactions can be classified and described by the persisted heuristic rules.                                                         |
+| 5-D  | **Auto-learning** – when LLM returns a *new* rule, no need for human to review rule. Store persisted database between runs, so that each time bank statements analysed rules are improved, and same transcations are not requested again and again.                                                                                                                |
+| 5-E  | **As well as BDD tests some e2e tests are need that use real LLM endpoint.                                                                                                                                                                                                                                                                                         |
 
 ---
 
 ## 6  |  Analytics & Summarisation (Stage 4)
-1. **`analytics.py` enhancements** – new functions: `monthly_totals`, `recurring_flags`.  
-2. **Summary builder** – produce a `Summary` object (transactions + charts meta).  
+1. **`analytics.py` enhancements** – new functions: `monthly_totals`, `recurring_flags`.
+2. **Summary builder** – produce a `Summary` object (transactions + charts meta).
 3. **Tests** – snapshot comparison of a synthetic dataset.
 
 ---
 
 ## 7  |  Savings Report Generator (Stage 5)
-1. **Prompt** – feed the summary + cancellation map into LLM (small context-optimised call).  
-2. **Post-processing** – ensure bullets: *who to contact*, *saving/month*, *cancellation channel*.  
-3. **PDF export** – `reports/writer.py` gains `write_full_report(summary, pdf_path)`.  
+1. **Prompt** – feed the summary + cancellation map into LLM (small context-optimised call).
+2. **Post-processing** – ensure bullets: *who to contact*, *saving/month*, *cancellation channel*.
+3. **PDF export** – `reports/writer.py` gains `write_full_report(summary, pdf_path)`.
 4. **BDD feature** – “Given mocked LLM returns X, PDF contains ‘Total annual saving £###’”.
 
 ---
 
 ## 8  |  Frontend Download Flow (Stage 6)
-1. **Progress indicator** while backend crunches.  
-2. **Download button** with signed URL (10 min expiry).  
-3. **Accessibility pass** – keyboard nav + aria-labels.  
+1. **Progress indicator** while backend crunches.
+2. **Download button** with signed URL (10 min expiry).
+3. **Accessibility pass** – keyboard nav + aria-labels.
 4. Playwright E2E to assert file download & checksum.
 
 ---
 
 ## 9  |  Production Hardening
-*   **Observability** – OpenTelemetry traces; console exporter in dev, OTLP in prod.  
-*   **Rate-limit & quota** – per-user daily token cap.  
-*   **Data retention** – auto-purge PII after N days (env configurable).  
+*   **Observability** – OpenTelemetry traces; console exporter in dev, OTLP in prod.
+*   **Rate-limit & quota** – per-user daily token cap.
+*   **Data retention** – auto-purge PII after N days (env configurable).
 *   **Signed builds** – follow `component_overview.md` for macOS notarisation & Windows EV cert.
 
 ---
 
 ## 10  |  Documentation & Hand-off
-1. **Update `README.md`** with new CLI & web usage examples.  
-2. **Architecture diagram** – regenerate Mermaid in `MODULES.md`.  
-3. **Changelog** – keep `CHANGELOG.md` per Semantic Versioning.  
-4. **Success checklist** (include in PR template):  
+1. **Update `README.md`** with new CLI & web usage examples.
+2. **Architecture diagram** – regenerate Mermaid in `MODULES.md`.
+3. **Changelog** – keep `CHANGELOG.md` per Semantic Versioning.
+4. **Success checklist** (include in PR template):
 ```
 
 ✅ builds & runs
@@ -145,9 +147,9 @@ REFACTOR\_PLAN.md   ← this file
 ---
 
 ## Appendix B | “Definition of Done” per Stage
-1. **Green pipeline** – CI on main.  
-2. **Binary release** – GitHub Release with artefact + SHA-256.  
-3. **E2E demo** – screencast link in PR description.  
+1. **Green pipeline** – CI on main.
+2. **Binary release** – GitHub Release with artefact + SHA-256.
+3. **E2E demo** – screencast link in PR description.
 4. **Security scan** – `pip-audit` passes, no critical CVEs.
 
 ---
