@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, List, Dict, Callable
+from typing import Iterable, List, Dict
 
 import yaml
 
@@ -34,11 +34,10 @@ def recommend_transactions(
     transactions: Iterable,
     provider: str | None = None,
     kb_path: Path = KB_PATH,
-    confirm: Callable[[str], str] | None = None,
 ) -> List[Recommendation]:
     """Return recommendations for each transaction."""
     txs = [normalise(tx) for tx in transactions]
-    labels = classify_transactions(txs, provider=provider, confirm=confirm)
+    labels = classify_transactions(txs, provider=provider)
     kb = load_knowledge_base(kb_path)
     results: List[Recommendation] = []
     for tx, label in zip(txs, labels):

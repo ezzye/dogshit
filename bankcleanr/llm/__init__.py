@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from typing import Iterable, List, Dict, Type, Callable
+from typing import Iterable, List, Dict, Type
 import logging
 
 from bankcleanr.settings import get_settings
 from bankcleanr.transaction import normalise, Transaction, mask_sensitive_fields
-from bankcleanr.rules import heuristics
+from bankcleanr.rules.manager import Manager
 
 from .base import AbstractAdapter
 from .openai import OpenAIAdapter
@@ -39,11 +39,11 @@ def get_adapter(provider: str | None = None) -> AbstractAdapter:
 def classify_transactions(
     transactions: Iterable,
     provider: str | None = None,
-    confirm: Callable[[str], str] | None = None,
 ) -> List[str]:
     """Classify transactions using heuristics and an optional LLM provider."""
     tx_objs = [normalise(tx) for tx in transactions]
-    labels = heuristics.classify_transactions(tx_objs)
+    manager = Manager()
+    labels = manager.classify(tx_objs)
     logger.debug("[classify_transactions] heuristic labels: %s", labels)
 
     unmatched: List[Transaction] = []
@@ -70,11 +70,11 @@ def classify_transactions(
         for idx, llm_label in zip(unmatched_indexes, llm_labels):
             labels[idx] = llm_label
 
-    heuristics.learn_new_patterns(tx_objs, labels, confirm=confirm)
+        manager.merge_llm_rules(unmatched, llm_labels)
+        manager.persist()
 
-    refreshed = heuristics.classify_transactions(tx_objs)
-    for idx in unmatched_indexes:
-        if refreshed[idx] != "unknown":
+        refreshed = manager.classify(tx_objs)
+        for idx in unmatched_indexes:
             labels[idx] = refreshed[idx]
 
     return labels

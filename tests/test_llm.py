@@ -1,6 +1,5 @@
 from bankcleanr.llm import classify_transactions, PROVIDERS
 import bankcleanr.llm as llm_mod
-from bankcleanr.rules import heuristics
 from bankcleanr.transaction import Transaction
 from bankcleanr.llm.openai import OpenAIAdapter
 from bankcleanr.llm.mistral import MistralAdapter
@@ -23,7 +22,7 @@ def test_llm_fallback(monkeypatch):
         Transaction(date="2024-01-01", description="Spotify premium", amount="-9.99"),
         Transaction(date="2024-01-02", description="Coffee shop", amount="-2.00"),
     ]
-    labels = classify_transactions(txs, provider="openai", confirm=lambda _: "n")
+    labels = classify_transactions(txs, provider="openai")
     assert labels == ["spotify", "remote"]
 
 
@@ -56,7 +55,7 @@ def test_llm_masks_before_sending(monkeypatch):
 
     monkeypatch.setitem(PROVIDERS, "openai", CaptureAdapter)
     txs = [Transaction(date="2024-01-01", description="Send 12-34-56 12345678", amount="-9.99")]
-    classify_transactions(txs, provider="openai", confirm=lambda _: "n")
+    classify_transactions(txs, provider="openai")
     assert captured["descriptions"][0] == "Send ****3456 ****5678"
 
 
@@ -66,7 +65,7 @@ def test_mistral_fallback(monkeypatch):
         Transaction(date="2024-01-01", description="Spotify premium", amount="-9.99"),
         Transaction(date="2024-01-02", description="Coffee shop", amount="-2.00"),
     ]
-    labels = classify_transactions(txs, provider="mistral", confirm=lambda _: "n")
+    labels = classify_transactions(txs, provider="mistral")
     assert labels == ["spotify", "remote"]
 
 
@@ -76,7 +75,7 @@ def test_gemini_fallback(monkeypatch):
         Transaction(date="2024-01-01", description="Spotify premium", amount="-9.99"),
         Transaction(date="2024-01-02", description="Coffee shop", amount="-2.00"),
     ]
-    labels = classify_transactions(txs, provider="gemini", confirm=lambda _: "n")
+    labels = classify_transactions(txs, provider="gemini")
     assert labels == ["spotify", "remote"]
 
 
@@ -86,7 +85,7 @@ def test_bfl_fallback(monkeypatch):
         Transaction(date="2024-01-01", description="Spotify premium", amount="-9.99"),
         Transaction(date="2024-01-02", description="Coffee shop", amount="-2.00"),
     ]
-    labels = classify_transactions(txs, provider="bfl", confirm=lambda _: "n")
+    labels = classify_transactions(txs, provider="bfl")
     assert labels == ["spotify", "remote"]
 
 
@@ -184,15 +183,54 @@ def test_get_bfl_adapter_falls_back_to_openai(monkeypatch, tmp_path):
     assert captured["api_key"] == "openai-env"
 
 
+def test_llm_adds_patterns_and_reuses(monkeypatch, tmp_path):
+    monkeypatch.setenv("APP_ENV", "test")
+    db_file = tmp_path / "rules.db"
+    import importlib
+    from sqlmodel import create_engine
+    from bankcleanr.rules import db_store, regex
+
+    importlib.reload(db_store)
+    db_store.DB_PATH = db_file
+    db_store.engine = create_engine(f"sqlite:///{db_file}", echo=False)
+    db_store.init_db()
+    importlib.reload(regex)
+    regex.reload_patterns()
+
+    calls = {"n": 0}
+
+    class DummyAdapter(OpenAIAdapter):
+        def __init__(self, *a, **k):
+            pass
+
+        def classify_transactions(self, txs):
+            calls["n"] += 1
+            return ["coffee" for _ in txs]
+
+    monkeypatch.setitem(PROVIDERS, "openai", DummyAdapter)
+
+    txs = [Transaction(date="2024-01-01", description="Coffee shop", amount="-1")]
+    labels = classify_transactions(txs, provider="openai")
+    assert labels == ["coffee"]
+    assert db_store.get_patterns()["coffee"] == "Coffee shop"
+
+    labels = classify_transactions(txs, provider="openai")
+    assert labels == ["coffee"]
+    assert calls["n"] == 1
+
+
 def test_reclassification_after_learning(monkeypatch):
+    from bankcleanr.rules import manager as manager_mod
+
     call_count = {"n": 0}
 
-    def classify_stub(txs):
-        call_count["n"] += 1
-        return ["unknown"] if call_count["n"] == 1 else ["coffee"]
+    original = manager_mod.Manager.classify
 
-    monkeypatch.setattr(heuristics, "classify_transactions", classify_stub)
-    monkeypatch.setattr(heuristics, "learn_new_patterns", lambda *a, **k: None)
+    def spy(self, txs):
+        call_count["n"] += 1
+        return original(self, txs)
+
+    monkeypatch.setattr(manager_mod.Manager, "classify", spy)
 
     class CaptureAdapter(OpenAIAdapter):
         def __init__(self, *a, **k):

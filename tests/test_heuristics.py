@@ -1,13 +1,16 @@
 import importlib
-import contextlib
 import json
-from io import StringIO
+import urllib.request
+
+import importlib
+import json
 import urllib.request
 
 import pytest
 from sqlmodel import create_engine
 
-from bankcleanr.rules import regex, heuristics, db_store
+from bankcleanr.rules import regex, db_store, heuristics
+from bankcleanr.rules.manager import Manager
 from bankcleanr.transaction import Transaction
 
 
@@ -46,66 +49,16 @@ def test_patterns_loaded_from_db():
     assert labels == ["coffee"]
 
 
-def test_learn_new_patterns_prompts_once(monkeypatch):
-    prompts: list[str] = []
-
-    monkeypatch.setattr(regex, "classify", lambda d: "unknown")
-
-    added: list[tuple[str, str]] = []
-    monkeypatch.setattr(regex, "add_pattern", lambda label, p: added.append((label, p)))
-    monkeypatch.setattr(regex, "reload_patterns", lambda: None)
-
-    txs = [
-        Transaction(date="2024-01-01", description="Coffee shop", amount="-1"),
-        Transaction(date="2024-01-02", description="Coffee shop", amount="-1"),
-    ]
-    labels = ["coffee", "coffee"]
-
-    out = StringIO()
-    with contextlib.redirect_stdout(out):
-        heuristics.learn_new_patterns(
-            txs, labels, confirm=lambda prompt: prompts.append(prompt) or "y"
-        )
-
-    assert "Coffee shop (2)" in out.getvalue()
-    assert prompts == ["Add pattern for 'coffee' matching 'Coffee shop'? [y/N] "]
-    assert added == [("coffee", "Coffee shop")]
-
-
-def test_learn_new_patterns_env(monkeypatch):
-    monkeypatch.setattr(regex, "classify", lambda d: "unknown")
-    monkeypatch.setattr(regex, "add_pattern", lambda label, p: (_ for _ in ()).throw(RuntimeError("should not add")))
-    monkeypatch.setattr(regex, "reload_patterns", lambda: None)
-    monkeypatch.setenv("BANKCLEANR_AUTO_CONFIRM", "")
-
+def test_manager_persists_patterns():
+    manager = Manager()
     txs = [Transaction(date="2024-01-01", description="Coffee shop", amount="-1")]
-    labels = ["coffee"]
-
-    heuristics.learn_new_patterns(txs, labels)
-
-
-def test_group_unmatched_transactions(monkeypatch):
-    monkeypatch.setattr(regex, "classify", lambda d: "unknown")
-
-    txs = [
-        Transaction(date="2024-01-01", description="Coffee shop", amount="-1"),
-        Transaction(date="2024-01-02", description="Coffee shop", amount="-1"),
-        Transaction(date="2024-01-03", description="Book store", amount="-1"),
-    ]
-    labels = ["coffee", "coffee", "books"]
-
-    groups = heuristics.group_unmatched_transactions(txs, labels)
-    assert groups == [
-        ("coffee", "Coffee shop", 2),
-        ("books", "Book store", 1),
-    ]
+    manager.merge_llm_rules(txs, ["coffee"])
+    manager.persist()
+    assert db_store.get_patterns()["coffee"] == "Coffee shop"
+    assert manager.classify(txs) == ["coffee"]
 
 
-def test_learn_new_patterns_posts_backend(monkeypatch):
-    monkeypatch.setattr(regex, "classify", lambda d: "unknown")
-    monkeypatch.setattr(regex, "add_pattern", lambda label, p: None)
-    monkeypatch.setattr(regex, "reload_patterns", lambda: None)
-
+def test_manager_posts_backend(monkeypatch):
     posted = {}
 
     def fake_urlopen(req, timeout=0):
@@ -119,8 +72,10 @@ def test_learn_new_patterns_posts_backend(monkeypatch):
     monkeypatch.setenv("BANKCLEANR_BACKEND_URL", "http://test")
     monkeypatch.setenv("BANKCLEANR_BACKEND_TOKEN", "tok")
 
+    manager = Manager()
     txs = [Transaction(date="2024-01-01", description="Coffee shop", amount="-1")]
-    heuristics.learn_new_patterns(txs, ["coffee"], confirm=lambda _: "y")
+    manager.merge_llm_rules(txs, ["coffee"])
+    manager.persist()
 
     assert posted["url"] == "http://test/heuristics?token=tok"
     assert json.loads(posted["body"]) == {"label": "coffee", "pattern": "Coffee shop"}

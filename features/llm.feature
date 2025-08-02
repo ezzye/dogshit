@@ -32,19 +32,7 @@ Feature: LLM classification
     Given an empty heuristics database
     And a transaction "Coffee shop"
     And the OpenAI adapter is mocked to return "coffee"
-    When I classify transactions with the LLM accepting new patterns
+    When I classify transactions with the LLM
     Then the LLM labels are
       | label |
       | coffee |
-
-  Scenario: Summary of new pattern suggestions is shown once
-    Given an empty heuristics database
-    And duplicate transactions requiring LLM
-    And the OpenAI adapter is mocked to return "coffee"
-    When I classify transactions with the LLM summarising new patterns
-    Then the LLM labels are
-      | label |
-      | coffee |
-      | coffee |
-    And the summary output lists "Coffee shop" 2 times
-    And the user is prompted once for "Coffee shop"
