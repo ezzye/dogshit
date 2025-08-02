@@ -6,7 +6,7 @@ from typing import Iterable, List
 from pathlib import Path
 
 from .base import AbstractAdapter
-from .utils import load_heuristics_text
+from .utils import load_heuristics_texts
 from bankcleanr.transaction import normalise
 from bankcleanr.rules.prompts import CATEGORY_PROMPT
 
@@ -18,7 +18,6 @@ class MistralAdapter(AbstractAdapter):
         self,
         model: str = "mistral-small",
         api_key: str | None = None,
-        cancellation_path: Path = DATA_DIR / "cancellation.yml",
     ):
         try:
             from mistralai.client import MistralClient
@@ -27,10 +26,10 @@ class MistralAdapter(AbstractAdapter):
         else:
             self.client = MistralClient(api_key=api_key)
         self.model = model
-        self.heuristics_text = load_heuristics_text()
-        self.cancellation_text = (
-            cancellation_path.read_text() if cancellation_path.exists() else ""
-        )
+        (
+            self.user_heuristics_text,
+            self.global_heuristics_text,
+        ) = load_heuristics_texts()
 
     def classify_transactions(self, transactions: Iterable) -> List[str]:
         tx_objs = [normalise(tx) for tx in transactions]
@@ -40,9 +39,9 @@ class MistralAdapter(AbstractAdapter):
         labels: List[str] = []
         for tx in tx_objs:
             prompt = CATEGORY_PROMPT.render(
-                description=tx.description,
-                heuristics=self.heuristics_text,
-                cancellation=self.cancellation_text,
+                txn=tx,
+                user_heuristics=self.user_heuristics_text,
+                global_heuristics=self.global_heuristics_text,
             )
             resp = self.client.chat(
                 model=self.model,

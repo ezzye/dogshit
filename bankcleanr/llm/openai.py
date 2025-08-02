@@ -7,12 +7,20 @@ import logging
 from typing import Iterable, List, Dict, Any
 from pathlib import Path
 
-from langchain_openai import ChatOpenAI
-from langchain_core.messages import HumanMessage
+try:
+    from langchain_openai import ChatOpenAI
+except Exception:  # pragma: no cover - library may not be installed
+    ChatOpenAI = None
+try:  # pragma: no cover - library may not be installed
+    from langchain_core.messages import HumanMessage
+except Exception:  # pragma: no cover - simple fallback
+    class HumanMessage:  # type: ignore
+        def __init__(self, content: str):
+            self.content = content
 from tenacity import retry, wait_random_exponential, stop_after_attempt
 
 from .base import AbstractAdapter
-from .utils import load_heuristics_text
+from .utils import load_heuristics_texts
 from bankcleanr.transaction import normalise, Transaction
 from bankcleanr.rules.prompts import CATEGORY_PROMPT
 
@@ -30,23 +38,25 @@ class OpenAIAdapter(AbstractAdapter):
         model: str = "gpt-3.5-turbo",
         api_key: str | None = None,
         max_concurrency: int = 5,
-        cancellation_path: Path = DATA_DIR / "cancellation.yml",
     ):
-        self.llm = ChatOpenAI(model=model, api_key=api_key)
+        if ChatOpenAI is None:
+            self.llm = None
+        else:
+            self.llm = ChatOpenAI(model=model, api_key=api_key)
         # Limit the number of concurrent API calls
         self._sem = asyncio.Semaphore(max_concurrency)
-        self.heuristics_text = load_heuristics_text()
-        self.cancellation_text = (
-            cancellation_path.read_text() if cancellation_path.exists() else ""
-        )
+        (
+            self.user_heuristics_text,
+            self.global_heuristics_text,
+        ) = load_heuristics_texts()
 
     @retry(wait=wait_random_exponential(min=1, max=2), stop=stop_after_attempt(3))
     async def _aclassify(self, tx: Transaction) -> Dict[str, Any]:
         async with self._sem:
             prompt = CATEGORY_PROMPT.render(
-                description=tx.description,
-                heuristics=self.heuristics_text,
-                cancellation=self.cancellation_text,
+                txn=tx,
+                user_heuristics=self.user_heuristics_text,
+                global_heuristics=self.global_heuristics_text,
             )
             logger.debug("Rendered prompt: %s", prompt)
             message = HumanMessage(content=prompt)
@@ -61,11 +71,7 @@ class OpenAIAdapter(AbstractAdapter):
             if not isinstance(data, dict):
                 raise ValueError
         except Exception:
-            data = {
-                "category": result.content.strip().lower(),
-                "reasons_to_cancel": [],
-                "checklist": [],
-            }
+            data = {"category": result.content.strip().lower(), "new_rule": None}
         return data
 
     async def _aclassify_batch(self, txs: Iterable[Transaction]) -> List[Dict[str, Any]]:
@@ -74,13 +80,17 @@ class OpenAIAdapter(AbstractAdapter):
 
     def classify_transactions(self, transactions: Iterable) -> List[str]:
         tx_objs = [normalise(tx) for tx in transactions]
+        if self.llm is None:
+            self.last_details = [
+                {"category": "unknown", "new_rule": None} for _ in tx_objs
+            ]
+            return ["unknown" for _ in tx_objs]
         try:
             results = asyncio.run(self._aclassify_batch(tx_objs))
         except Exception as exc:
             logger.error("Failed to classify transactions: %s", exc)
             self.last_details = [
-                {"category": "unknown", "reasons_to_cancel": [], "checklist": []}
-                for _ in tx_objs
+                {"category": "unknown", "new_rule": None} for _ in tx_objs
             ]
             return ["unknown" for _ in tx_objs]
 

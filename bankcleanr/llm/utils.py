@@ -7,6 +7,14 @@ from .base import AbstractAdapter
 from bankcleanr.rules import db_store
 
 
+def load_heuristics_texts() -> tuple[str, str]:
+    """Return user and global heuristics as newline separated lines."""
+    user, global_ = db_store.get_user_and_global_patterns()
+    user_text = "\n".join(f"{label}: {pattern}" for label, pattern in user.items())
+    global_text = "\n".join(f"{label}: {pattern}" for label, pattern in global_.items())
+    return user_text, global_text
+
+
 def load_heuristics_text() -> str:
     """Return heuristics as newline separated "label: pattern" lines."""
     patterns = db_store.get_patterns()
