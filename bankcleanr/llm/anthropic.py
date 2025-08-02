@@ -10,6 +10,7 @@ import logging
 
 from .base import AbstractAdapter
 from .utils import load_heuristics_texts
+from .retry import retry
 from bankcleanr.transaction import normalise
 from bankcleanr.rules.prompts import CATEGORY_PROMPT
 
@@ -33,6 +34,14 @@ class AnthropicAdapter(AbstractAdapter):
         self.model = model
         (self.user_heuristics_text, self.global_heuristics_text) = load_heuristics_texts()
 
+    @retry()
+    def _create_message(self, prompt: str):
+        return self.client.messages.create(
+            model=self.model,
+            max_tokens=5,
+            messages=[{"role": "user", "content": prompt}],
+        )
+
     def classify_transactions(self, transactions: Iterable) -> List[Dict[str, str | None]]:
         tx_objs = [normalise(tx) for tx in transactions]
         if self.client is None:
@@ -49,11 +58,12 @@ class AnthropicAdapter(AbstractAdapter):
                 user_heuristics=self.user_heuristics_text,
                 global_heuristics=self.global_heuristics_text,
             )
-            resp = self.client.messages.create(
-                model=self.model,
-                max_tokens=5,
-                messages=[{"role": "user", "content": prompt}],
-            )
+            try:
+                resp = self._create_message(prompt)
+            except Exception as exc:
+                logger.debug("[AnthropicAdapter] error: %s", exc)
+                details.append({"category": "unknown", "new_rule": None})
+                continue
             content = resp.content[0].text if hasattr(resp.content[0], "text") else resp.content
             content = content.strip()
             try:
