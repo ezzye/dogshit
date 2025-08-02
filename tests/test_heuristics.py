@@ -2,10 +2,6 @@ import importlib
 import json
 import urllib.request
 
-import importlib
-import json
-import urllib.request
-
 import pytest
 from sqlmodel import create_engine
 
