@@ -8,6 +8,24 @@ from bankcleanr.llm.gemini import GeminiAdapter
 from bankcleanr.llm.bfl import BFLAdapter
 from bankcleanr.settings import Settings
 from pathlib import Path
+import importlib
+import pytest
+from sqlmodel import create_engine
+
+
+@pytest.fixture(autouse=True)
+def _db(tmp_path, monkeypatch):
+    monkeypatch.setenv("APP_ENV", "test")
+    db_file = tmp_path / "rules.db"
+    from bankcleanr.rules import db_store, regex
+
+    importlib.reload(db_store)
+    db_store.DB_PATH = db_file
+    db_store.engine = create_engine(f"sqlite:///{db_file}", echo=False)
+    db_store.init_db()
+    importlib.reload(regex)
+    regex.reload_patterns()
+    yield
 
 class DummyAdapter(OpenAIAdapter):
     def __init__(self, label="remote", **kwargs):
