@@ -5,6 +5,9 @@ from __future__ import annotations
 from typing import Dict, Iterable, List
 from pathlib import Path
 import requests
+import json
+import re
+import logging
 
 from .base import AbstractAdapter
 from .utils import load_heuristics_texts
@@ -12,6 +15,8 @@ from bankcleanr.transaction import normalise
 from bankcleanr.rules.prompts import CATEGORY_PROMPT
 
 DATA_DIR = Path(__file__).resolve().parents[1] / "data"
+
+logger = logging.getLogger(__name__)
 
 
 class LocalOllamaAdapter(AbstractAdapter):
@@ -46,9 +51,26 @@ class LocalOllamaAdapter(AbstractAdapter):
                 )
                 resp.raise_for_status()
                 data = resp.json()
-                details.append(
-                    {"category": data.get("response", "").strip().lower(), "new_rule": None}
-                )
+                message = data.get("response", "")
+                content = message.strip()
+                try:
+                    if content.startswith("```") and content.endswith("```"):
+                        content = content[3:-3].strip()
+                        content = re.sub(
+                            r"^json\s*", "", content, flags=re.IGNORECASE
+                        )
+                    parsed = json.loads(content)
+                    if not isinstance(parsed, dict):
+                        raise ValueError
+                    details.append(
+                        {
+                            "category": str(parsed.get("category", "unknown")),
+                            "new_rule": parsed.get("new_rule"),
+                        }
+                    )
+                except Exception as exc:
+                    logger.debug("[LocalOllamaAdapter] parse error: %s", exc)
+                    details.append({"category": content.lower(), "new_rule": None})
             except Exception:
                 details.append({"category": "unknown", "new_rule": None})
         self.last_details = details

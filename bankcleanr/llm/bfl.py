@@ -15,5 +15,8 @@ class BFLAdapter(AbstractAdapter):
         self.delegate = OpenAIAdapter(*args, **kwargs)
 
     def classify_transactions(self, transactions: Iterable) -> List[Dict[str, str | None]]:
-        self.last_details = self.delegate.classify_transactions(transactions)
-        return self.last_details
+        details = self.delegate.classify_transactions(transactions)
+        for d in details:
+            d.setdefault("new_rule", None)
+        self.last_details = details
+        return details
