@@ -18,7 +18,8 @@ Feature: LLM classification
       | coffee  |
 
   Scenario: Account details are masked before sending to the LLM
-    Given a transaction containing account details
+    Given an empty heuristics database
+    And a transaction containing account details
     When I classify the transaction with a capture adapter
     Then the adapter received the masked transaction
 
