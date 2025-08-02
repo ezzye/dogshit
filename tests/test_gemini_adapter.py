@@ -40,3 +40,22 @@ def test_classify_parses_json(monkeypatch):
     details = adapter.classify_transactions([tx])
     assert details[0]["category"] == "coffee"
     assert details[0]["new_rule"] == ".*COFFEE.*"
+
+
+def test_retries_then_unknown():
+    calls = {"n": 0}
+
+    class FailingModels:
+        def generate_content(self, *args, **kwargs):
+            calls["n"] += 1
+            raise RuntimeError("boom")
+
+    class FailingClient:
+        models = FailingModels()
+
+    adapter = GeminiAdapter(api_key="dummy")
+    adapter.client = FailingClient()
+    tx = Transaction(date="2024-01-01", description="Coffee", amount="-1")
+    details = adapter.classify_transactions([tx])
+    assert details == [{"category": "unknown", "new_rule": None}]
+    assert calls["n"] == 3

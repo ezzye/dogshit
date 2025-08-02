@@ -10,6 +10,7 @@ import re
 
 from .base import AbstractAdapter
 from .utils import load_heuristics_texts
+from .retry import retry
 from bankcleanr.transaction import normalise
 from bankcleanr.rules.prompts import CATEGORY_PROMPT
 
@@ -41,6 +42,10 @@ class GeminiAdapter(AbstractAdapter):
             self.global_heuristics_text,
         ) = load_heuristics_texts()
 
+    @retry()
+    def _generate_content(self, prompt: str):
+        return self.client.models.generate_content(model=self.model, contents=prompt)
+
     def classify_transactions(self, transactions: Iterable) -> List[Dict[str, str | None]]:
         tx_objs = [normalise(tx) for tx in transactions]
         if self.client is None:
@@ -60,38 +65,30 @@ class GeminiAdapter(AbstractAdapter):
             )
             logger.debug("[GeminiAdapter] prompt: %s", prompt)
             try:
-                resp = self.client.models.generate_content(
-                    model=self.model, contents=prompt
-                )
-                logger.debug("[GeminiAdapter] raw response: %s", resp)
-                message = (
-                    resp.text if hasattr(resp, "text") else resp.candidates[0].content
-                )
-                logger.debug("[GeminiAdapter] message: %s", message)
-                content = message.strip()
-                try:
-                    if content.startswith("```") and content.endswith("```"):
-                        content = content[3:-3].strip()
-                        content = re.sub(
-                            r"^json\s*", "", content, flags=re.IGNORECASE
-                        )
-                    data = json.loads(content)
-                    if not isinstance(data, dict):
-                        raise ValueError
-                    details.append(
-                        {
-                            "category": str(data.get("category", "unknown")),
-                            "new_rule": data.get("new_rule"),
-                        }
-                    )
-                except Exception as exc:
-                    logger.debug("[GeminiAdapter] parse error: %s", exc)
-                    details.append({"category": content.lower(), "new_rule": None})
+                resp = self._generate_content(prompt)
             except Exception as exc:
                 logger.debug("[GeminiAdapter] error: %s", exc)
-                import traceback
-
-                traceback.print_exc()
                 details.append({"category": "unknown", "new_rule": None})
+                continue
+            logger.debug("[GeminiAdapter] raw response: %s", resp)
+            message = resp.text if hasattr(resp, "text") else resp.candidates[0].content
+            logger.debug("[GeminiAdapter] message: %s", message)
+            content = message.strip()
+            try:
+                if content.startswith("```") and content.endswith("```"):
+                    content = content[3:-3].strip()
+                    content = re.sub(r"^json\s*", "", content, flags=re.IGNORECASE)
+                data = json.loads(content)
+                if not isinstance(data, dict):
+                    raise ValueError
+                details.append(
+                    {
+                        "category": str(data.get("category", "unknown")),
+                        "new_rule": data.get("new_rule"),
+                    }
+                )
+            except Exception as exc:
+                logger.debug("[GeminiAdapter] parse error: %s", exc)
+                details.append({"category": content.lower(), "new_rule": None})
         self.last_details = details
         return details
