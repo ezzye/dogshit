@@ -11,8 +11,6 @@ from bankcleanr.llm.openai import OpenAIAdapter
 import bankcleanr.llm.openai as openai_mod
 from bankcleanr.rules import regex, heuristics, db_store
 import asyncio
-import io
-import contextlib
 
 
 @given("transactions requiring LLM")
@@ -66,9 +64,7 @@ def mock_named_adapter(context, provider, label):
 @when("I classify transactions with the LLM")
 def classify_with_llm(context):
     provider = getattr(context, "provider", "openai")
-    context.labels = classify_transactions(
-        context.txs, provider=provider, confirm=lambda _: "n"
-    )
+    context.labels = classify_transactions(context.txs, provider=provider)
 
 
 @then("the LLM labels are")
@@ -99,7 +95,7 @@ def classify_with_capture(context):
 
     context.original = PROVIDERS["openai"]
     PROVIDERS["openai"] = CaptureAdapter
-    classify_transactions(context.txs, provider="openai", confirm=lambda _: "n")
+    classify_transactions(context.txs, provider="openai")
     PROVIDERS["openai"] = context.original
 
 
@@ -161,29 +157,6 @@ def empty_heuristics_db(context):
     db_store.init_db()
     regex.reload_patterns()
     importlib.reload(heuristics)
-
-
-@when("I classify transactions with the LLM accepting new patterns")
-def classify_with_llm_accept(context):
-    provider = getattr(context, "provider", "openai")
-    context.labels = classify_transactions(
-        context.txs, provider=provider, confirm=lambda _: "y"
-    )
-
-
-@when("I classify transactions with the LLM summarising new patterns")
-def classify_with_llm_summary(context):
-    provider = getattr(context, "provider", "openai")
-    context.prompts = []
-    buf = io.StringIO()
-    def _confirm(prompt: str) -> str:
-        context.prompts.append(prompt)
-        return "n"
-    with contextlib.redirect_stdout(buf):
-        context.labels = classify_transactions(
-            context.txs, provider=provider, confirm=_confirm
-        )
-    context.output = buf.getvalue()
 
 
 @given('a sample transaction "{description}"')

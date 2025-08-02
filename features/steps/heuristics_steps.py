@@ -13,6 +13,7 @@ from sqlmodel import create_engine
 from bankcleanr.transaction import Transaction
 from bankcleanr.rules import regex
 from bankcleanr.rules import heuristics, db_store
+from bankcleanr.rules.manager import Manager
 
 
 @given("sample transactions")
@@ -89,7 +90,9 @@ def backend_env(context):
 @when('I learn a pattern labeled "{label}" for "{description}"')
 def learn_pattern(context, label, description):
     txs = [Transaction(date="2024-01-01", description=description, amount="-1.00")]
-    heuristics.learn_new_patterns(txs, [label], confirm=lambda _: "y")
+    manager = Manager()
+    manager.merge_llm_rules(txs, [label])
+    manager.persist()
 
 
 @then('the backend has a heuristic labeled "{label}"')
