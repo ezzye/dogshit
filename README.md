@@ -24,6 +24,8 @@ You can run the tests directly or via the `Makefile`:
 
 ```bash
 make test
+# run Cypress end-to-end tests (requires Docker Desktop or Podman)
+make e2e
 # or run them manually
 poetry run pytest
 poetry run behave
@@ -144,9 +146,13 @@ provider:
 - `MISTRAL_API_KEY`
 - `ANTHROPIC_API_KEY`
 - `BFL_API_KEY` (falls back to `OPENAI_API_KEY` if unset)
+- `MAX_LLM_COST_PER_DAY` (optional, limit spend in GBP)
+- `LLM_COST_PATH` (optional, where to track daily spend)
 
 Export the appropriate variable before running the CLI so the adapter can talk
 to the LLM service.
+The behaviour and end-to-end suites will skip scenarios that require a live
+LLM if the corresponding key is missing.
 
 When running the behaviour tests, the live classification steps verify that the
 API key isn't a placeholder and perform a short connectivity check. If this

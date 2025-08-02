@@ -18,7 +18,9 @@ lint:
 
 e2e:
 	@if command -v podman >/dev/null 2>&1; then \
-	podman compose up --build frontend e2e; \
+	    podman compose up --build frontend e2e; \
+	elif docker compose version >/dev/null 2>&1; then \
+	    docker compose up --build frontend e2e; \
 	else \
-	docker compose up --build frontend e2e; \
+	    docker-compose up --build frontend e2e; \
 	fi
