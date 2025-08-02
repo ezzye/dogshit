@@ -1,20 +1,20 @@
 from jinja2 import Template
 
+
 CATEGORY_PROMPT = Template(
     """
-    Classify the following transaction description and respond with JSON.
+    Classify the transaction below and respond with JSON.
 
-    Required keys:
-      "category"            - short label for the merchant
-      "reasons_to_cancel"   - list explaining why a user might cancel
-      "checklist"           - step-by-step cancellation checklist
+    Keys:
+      "category" - short label for the merchant
+      "new_rule" - optional regex pattern to recognise similar transactions
 
-    Known heuristics (label: pattern):
-    {{ heuristics }}
+    User heuristics (label: pattern):
+    {{ user_heuristics }}
 
-    Known cancellation paths:
-    {{ cancellation }}
+    Global heuristics (label: pattern):
+    {{ global_heuristics }}
 
-    Transaction: {{ description }}
+    Transaction: {{ txn.description }}
     """
 )

@@ -1,12 +1,11 @@
 import asyncio
-from pathlib import Path
 from bankcleanr.llm.openai import OpenAIAdapter
 from bankcleanr.transaction import Transaction
 
 class DummyChat:
     async def ainvoke(self, messages):
         class R:
-            content = '{"category": "coffee", "reasons_to_cancel": ["expensive"], "checklist": ["call bank"]}'
+            content = '{"category": "coffee", "new_rule": ".*COFFEE.*"}'
         return R()
 
 
@@ -16,8 +15,7 @@ def test_aclassify_parses_json(monkeypatch):
     tx = Transaction(date="2024-01-01", description="Coffee", amount="-1")
     result = asyncio.run(adapter._aclassify(tx))
     assert result["category"] == "coffee"
-    assert result["reasons_to_cancel"] == ["expensive"]
-    assert result["checklist"] == ["call bank"]
+    assert result["new_rule"] == ".*COFFEE.*"
 
 
 class SlowChat:
@@ -69,8 +67,7 @@ def test_classify_transactions_parses_json(monkeypatch):
     assert labels == ["coffee"]
     assert adapter.last_details[0] == {
         "category": "coffee",
-        "reasons_to_cancel": ["expensive"],
-        "checklist": ["call bank"],
+        "new_rule": ".*COFFEE.*",
     }
 
 
@@ -110,10 +107,8 @@ def test_prompt_includes_data(monkeypatch):
     tx = Transaction(date="2024-01-01", description="Coffee", amount="-1")
     asyncio.run(adapter._aclassify(tx))
     prompt = chat.messages[0].content
-    from bankcleanr.llm.utils import load_heuristics_text
-    heur = load_heuristics_text()
-    cancel = Path("bankcleanr/data/cancellation.yml").read_text().strip()
-    # ensure at least one heuristic line is included
-    line = heur.splitlines()[0]
+    from bankcleanr.llm.utils import load_heuristics_texts
+    user, global_ = load_heuristics_texts()
+    heur_text = global_ or user
+    line = heur_text.splitlines()[0]
     assert line in prompt
-    assert cancel in prompt

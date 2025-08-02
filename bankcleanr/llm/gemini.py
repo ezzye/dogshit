@@ -7,7 +7,7 @@ from pathlib import Path
 import logging
 
 from .base import AbstractAdapter
-from .utils import load_heuristics_text
+from .utils import load_heuristics_texts
 from bankcleanr.transaction import normalise
 from bankcleanr.rules.prompts import CATEGORY_PROMPT
 
@@ -22,7 +22,6 @@ class GeminiAdapter(AbstractAdapter):
         self,
         model: str = "gemini-2.5-flash",
         api_key: str | None = None,
-        cancellation_path: Path = DATA_DIR / "cancellation.yml",
     ):
         """Initialise the Gemini adapter and underlying client."""
         try:
@@ -35,10 +34,10 @@ class GeminiAdapter(AbstractAdapter):
             self.client = genai.Client()
             logger.debug("[GeminiAdapter] initialised model=%s", model)
         self.model = model
-        self.heuristics_text = load_heuristics_text()
-        self.cancellation_text = (
-            cancellation_path.read_text() if cancellation_path.exists() else ""
-        )
+        (
+            self.user_heuristics_text,
+            self.global_heuristics_text,
+        ) = load_heuristics_texts()
 
     def classify_transactions(self, transactions: Iterable) -> List[str]:
         tx_objs = [normalise(tx) for tx in transactions]
@@ -49,9 +48,9 @@ class GeminiAdapter(AbstractAdapter):
         labels: List[str] = []
         for tx in tx_objs:
             prompt = CATEGORY_PROMPT.render(
-                description=tx.description,
-                heuristics=self.heuristics_text,
-                cancellation=self.cancellation_text,
+                txn=tx,
+                user_heuristics=self.user_heuristics_text,
+                global_heuristics=self.global_heuristics_text,
             )
             logger.debug("[GeminiAdapter] prompt: %s", prompt)
             try:

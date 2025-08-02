@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Dict
+from typing import Dict, Tuple
 
 from sqlmodel import SQLModel, create_engine, Session, select
 
@@ -51,3 +51,19 @@ def add_pattern(label: str, pattern: str) -> None:
         row = Heuristic(user_id=0, label=label, pattern=pattern)
         session.add(row)
         session.commit()
+
+
+def get_user_and_global_patterns() -> Tuple[Dict[str, str], Dict[str, str]]:
+    """Return separate mappings for user and global heuristics."""
+    init_db()
+    with get_session() as session:
+        _seed_from_yaml(session)
+        rows = session.exec(select(Heuristic)).all()
+        user_patterns: Dict[str, str] = {}
+        global_patterns: Dict[str, str] = {}
+        for r in rows:
+            if r.user_id == 0:
+                global_patterns[r.label] = r.pattern
+            else:
+                user_patterns[r.label] = r.pattern
+        return user_patterns, global_patterns
