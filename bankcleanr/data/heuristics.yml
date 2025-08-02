@@ -2,25 +2,24 @@ Bank: THE CO-OP BANK
 Banking: CCC GBP
 Cafe: CAFE KAM 46 LTD
 Cafe: COSTA COFFEE
-Convenience Store: RAMA MINI MARKET
+Grocery: RAMA MINI MARKET
 Digital Music: PAYPAL *7DIGITAL
-Food & Beverage: Crussh Retail
+Cafe: Crussh Retail
 Grocery: SAINSBURYS S/MKTS
 Internet Service Provider: COMMUNITYFIBRE LTD
 Movie Theater: Vue Entertainment
 Music Streaming: SoundCloud
 Online Education: COURSERA.ORG
-Online Music Store: PAYPAL *7DIGITAL
-Online Services: CURSOR, AI POWERED
+AI Services: CURSOR, AI POWERED
 Online retail: amazon.co.uk
 Peer-to-peer lending platform: RATESETTER
-Refund: Refund CCC
+Cash Refund: Refund CCC
 Restaurant: Chiya Restaurant
-Subscription: CLAUDE.AI SUBSCRIP
+AI Services: CLAUDE.AI SUBSCRIP
 Transportation: TFL TRAVEL CH
-unknown: MR E ELLIOTT
-amazon prime: amazon\s+prime
-dropbox: dropbox
-icloud: icloud
-netflix: netflix
-spotify: spotify
+Cash Transfer: MR E ELLIOTT
+TV Subscription: amazon\s+prime
+Internet Storage and Service: dropbox
+Internet Storage and Service: icloud
+TV Subscription: netflix
+Music Streaming: spotify

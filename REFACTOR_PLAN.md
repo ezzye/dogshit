@@ -1,158 +1,281 @@
-# file: REFACTOR_PLAN.md
-# Bankcleanr — Guided Refactor & Feature-Growth Plan
-*A step-by-step playbook for an AI coding agent (e.g. Codex) to transform the current “bankcleanr” prototype into a polished two-part product for everyday consumers.*
+file: REFACTOR\_PLAN.md
 
----
+title: Bankcleanr — Refactor & MVP Delivery Plan
 
-## 0  |  Purpose of this Document
-*   **Audience** – an automated coding agent following the conventions in `AGENTS.md` (write tests first, incremental uploads).
-*   **Scope** – covers **both** the desktop **Extractor** (offline, redacts statements) **and** the hosted **Web App** (heuristic editor ➜ LLM labelling ➜ analytics ➜ report download).
-*   **Outcome** – the only planning file needed alongside `README.md` and `AGENTS.md`.
+subtitle: A step-by-step plan to deliver the user journey end-to-end with clean code, containers, and full tests.
 
-Keep each numbered section self-contained so the agent can work through it in order, committing after every green test run.
 
----
+0 | Purpose and ground rules
+Audience – an automated coding agent and maintainers.
+Scope – the desktop Extractor (offline PDF→JSONL) and the hosted Web App (upload → rules/LLM labelling → analytics → savings report).
+Outcome – a single planning file the team can follow in order. Each numbered step is self-contained, ends in a green pipeline, and can be manually verified.
 
-## 1  |  Foundation – Clean Up & Safety Net
-1. **Boot the test harness**
-   * Ensure `pytest`, `behave`, `coverage` already run via `make test`.
-   * **TASK**: Fix any red/red-X tests; stub failing externals so the suite goes green again.
-2. **Add continuous integration** (if missing)
-   * GitHub Actions workflow: `make lint`, `make test`, artefact upload.
-3. **Snapshot current behaviour**
-   * Freeze a minimal “golden path” BDD feature (CLI → parse sample PDF → CSV summary).
-   * This guards against regressions during refactor.
+Ground rules
+• Keep or create only code used by the user journey; delete dead or confusing modules and tests.
+• Tests first for new work; incremental commits after green runs.
+• Each stage is runnable locally via docker-compose with documented commands.
+• Coverage target ≥ 90% for unit tests; BDD covers the happy path and key failures.
 
----
+1 | User journey (MVP, happy path)
 
-## 2  |  Desktop Extractor (Stage 1 of the Consumer Flow)
-Goal | *Parse, mask & export a lightweight file for upload.*
+1. The user visits the website (the App).
+2. They want to stop wasting money by understanding historic spend and future commitments.
+3. The site explains it will analyse any time period, show overspending, list cancellable commitments, and provide clear cancellation instructions and links.
+4. The site asks them to download the Bankcleanr desktop tool to convert a folder of bank statement PDFs into a JSON-type file.
+5. The user downloads their bank statements for a year into a folder.
+6. They run the tool; one consolidated JSONL file is produced.
+7. They return to the website and upload the file.
+8. The site already has a database of patterns for common statement items.
+9. The site prompts an LLM to classify unknown transactions and, from the AI output, updates the rules database for future reuse.
+10. The site also prompts the LLM to validate known classifications and improves rules where needed.
+11. Every transaction is labelled.
+12. Transactions are grouped and totalled by type, while retaining full per-transaction detail.
+13. The site generates an initial spend and income analysis.
+14. That analysis and context are sent to the LLM to produce a detailed savings report, including “how to cancel” instructions and links.
+15. The detailed report and the initial analysis are linked for download.
+16. The user downloads the report and can act to save money.
 
-| Sub-step | Increment | Key Acceptance Tests |
-|---|---|---|
-| 2-A | **Robust PDF parsing**<br>Finish `io/pdf/generic.py`; add bank-specific overrides. | *Given* a sample Barclays PDF,<br>*When* I run `bankcleanr parse file.pdf`,<br>*Then* 20 ± 2 transactions are returned. |
-| 2-B | **Redaction**<br>Implement `transaction.mask_sensitive_fields()`. | Account numbers replaced with `****1234`. |
-| 2-C | **Portable export**<br>Write masked data to **JSONL** (one txn / line). | File validates against `schemas/transaction_v1.json`. |
-| 2-D | **Packaging for non-tech users**<br>PyInstaller “one-file” builds for Win/macOS (see `component_overview.md`). | Running the `.exe` shows a GUI/CMD prompt and produces the JSONL. |
+2 | System overview (MVP)
+Components
+• Desktop Extractor: Python CLI that parses PDFs, redacts sensitive fields, and writes JSONL.
+• Backend API: FastAPI service with endpoints for uploads, rules, classification, analytics, and report generation. SQLite (via SQLModel) for persistence in dev/local; one DB per environment.
+• LLM Classification Service: adapter layer with batching, retries, cost guardrails, caching, and auto-learning that writes new/updated rules.
+• Frontend Web App: React + TypeScript SPA for upload, progress, review, and downloads. A simple rules view exists but the LLM is the primary author/editor of rules; users can correct if needed.
+• Workers: background tasks queue for classification and report generation (e.g. using Dramatiq or Celery backed by Redis).
+• Storage: local filesystem in dev (Docker volume) for artefacts; signed URLs generated by the API.
 
-*Commit after each cell in the table passes.*
+Data contracts (MVP)
+• transaction\_v1.json schema (JSONL, one transaction per line).
+• heuristic\_rule\_v1.json for rules persisted by the LLM and used by the rules engine.
+• summary\_v1.json for analytics outputs.
+• report\_v1.pdf as final user-facing document.
 
----
-
-## 3  |  Backend Skeleton (Stage 2 & 3)
-Goal | *Receive upload, store per-user heuristics, enrich unlabeled rows via LLM.*
-
-1. **Spin up FastAPI** (`backend/`) with `/upload`, `/heuristics`, `/classify`, `/summary` routes.
-2. **Persistence layer** – start with SQLite + SQLModel; one DB per env.
-3. **Auth** – email + magic-link (Passkey ready).
-4. **Containerise** (`Dockerfile`, `docker-compose.yml`).
-5. **Tests** – component tests hit the real HTTP API with `httpx.AsyncClient`.
-
----
-
-## 4  |  Heuristic Editor UI (Stage 2)
-Goal | *Let users review & tweak the rule table in-browser.*
-Note that LLM needs to make rules not user.
-
-1. **React + TypeScript SPA** inside `/frontend`.
-2. Table grid (shadcn/ui DataTable) with CRUD ops, CSV import/export.  Note that LLM needs to make rules not user.
-3. Auto-save to `/heuristics` API; optimistic updates.  Note that LLM needs to make rules not user.
-4. Cypress E2E: “User uploads JSONL → edits a rule → saves → sees confirmation”. Note that LLM needs to make rules not user.
-
----
-
-## 5  |  LLM Classification Service (Stage 3)
-Goal | *Merge user rules, global rules & LLM suggestions.*
-
-| Task | Detail                                                                                                                                                                                                                                                                                                                                                             |
-|------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| 5-0  | **Tidy up/ refactor the heuristics module/functions.  The goal is for the LLM to update heuristic rules which are then used to analyse bank statements. While there should be a method for users to be able to update/correct rules.  The goal is that this is never necessary as LLM uses web search etc to correctly classify and describe bank statement items. |
-| 5-A  | **Prompt template** – lives in `rules/prompts.py`; parameterise `{{txn.description}}`, `{{user_heuristics}}`, `{{global_heuristics}}`. Note that LLM needs to make rules not user.                                                                                                                                                                                 |
-| 5-B  | **Adapter refactor** – unify `llm/*` classes under `AbstractAdapter.classify_transactions(batch)`. Note that LLM needs to make rules not user.                                                                                                                                                                                                                     |
-| 5-C  | **Retry & cost guardrails** – exponential back-off, max £/day env var.  Note that cost may start high but as LLM updates heuristics and persists rules it needs to do less and less work to classify transaction, until all transactions can be classified and described by the persisted heuristic rules.                                                         |
-| 5-D  | **Auto-learning** – when LLM returns a *new* rule, no need for human to review rule. Store persisted database between runs, so that each time bank statements analysed rules are improved, and same transcations are not requested again and again.                                                                                                                |
-| 5-E  | **As well as BDD tests some e2e tests are need that use real LLM endpoint.                                                                                                                                                                                                                                                                                         |
-
----
-
-## 6  |  Analytics & Summarisation (Stage 4)
-1. **`analytics.py` enhancements** – new functions: `monthly_totals`, `recurring_flags`.
-2. **Summary builder** – produce a `Summary` object (transactions + charts meta).
-3. **Tests** – snapshot comparison of a synthetic dataset.
-
----
-
-## 7  |  Savings Report Generator (Stage 5)
-1. **Prompt** – feed the summary + cancellation map into LLM (small context-optimised call).
-2. **Post-processing** – ensure bullets: *who to contact*, *saving/month*, *cancellation channel*.
-3. **PDF export** – `reports/writer.py` gains `write_full_report(summary, pdf_path)`.
-4. **BDD feature** – “Given mocked LLM returns X, PDF contains ‘Total annual saving £###’”.
-
----
-
-## 8  |  Frontend Download Flow (Stage 6)
-1. **Progress indicator** while backend crunches.
-2. **Download button** with signed URL (10 min expiry).
-3. **Accessibility pass** – keyboard nav + aria-labels.
-4. Playwright E2E to assert file download & checksum.
-
----
-
-## 9  |  Production Hardening
-*   **Observability** – OpenTelemetry traces; console exporter in dev, OTLP in prod.
-*   **Rate-limit & quota** – per-user daily token cap.
-*   **Data retention** – auto-purge PII after N days (env configurable).
-*   **Signed builds** – follow `component_overview.md` for macOS notarisation & Windows EV cert.
-
----
-
-## 10  |  Documentation & Hand-off
-1. **Update `README.md`** with new CLI & web usage examples.
-2. **Architecture diagram** – regenerate Mermaid in `MODULES.md`.
-3. **Changelog** – keep `CHANGELOG.md` per Semantic Versioning.
-4. **Success checklist** (include in PR template):
-```
-
-✅ builds & runs
-✅ all tests pass
-✅ docs / comments present
-
-```
-
----
-
-## Appendix A | Folder Layout After Refactor
-```
-
+3 | Repository layout after refactor
 bankcleanr/
 cli.py
-gui/                     ← optional local GUI
-extractor/               ← redaction logic
+extractor/                 # PDF parsing, masking, JSONL export
 backend/
-app.py                   ← FastAPI
+app.py                   # FastAPI
+rules/                   # engine, prompts, adapters
+analytics/
+reports/
+workers/
+tests/ (unit + component)
 frontend/
 src/
+e2e/
 tests/
+features/                # BDD
 unit/
 component/
-features/
 docker-compose.yml
+Dockerfile.backend
+Dockerfile.extractor
+Dockerfile.frontend
 pyproject.toml
 README.md
+REFACTOR\_PLAN.md
 AGENTS.md
-REFACTOR\_PLAN.md   ← this file
 
-```
+4 | Environments, containers, and running locally
+• Docker images: backend, frontend, extractor (optional for CI build validation).
+• docker-compose services: api, worker, redis, frontend, db (SQLite file volume), storage volume.
+• One-command boot: make up (or docker compose up -d).
+• Seed script loads sample rules and a tiny demo dataset for local manual testing.
 
----
+5 | Step-by-step plan (each step is self-contained and ends with green tests and a tagged commit)
 
-## Appendix B | “Definition of Done” per Stage
-1. **Green pipeline** – CI on main.
-2. **Binary release** – GitHub Release with artefact + SHA-256.
-3. **E2E demo** – screencast link in PR description.
-4. **Security scan** – `pip-audit` passes, no critical CVEs.
+Step 0 – Foundation and safety net
+Objectives
+• Make the test harness reliable and fast. Pytest, Behave (BDD), coverage, and httpx component tests.
+• Continuous Integration: GitHub Actions with lint (ruff, mypy), unit tests, BDD, build containers, and artefact upload.
+• Remove dead code and obsolete tests.
 
----
+Acceptance
+• make test runs unit + BDD + component and passes with ≥ 90% coverage.
+• CI is green on main; containers build successfully.
+• “Golden path” BDD: CLI parses a known sample PDF and emits valid JSONL; API accepts an upload and stores it.
 
-*Work through each numbered stage, committing only when all tests (unit + BDD + E2E) pass and coverage ≥ 90 %.*
+Manual check
+• docker compose up; run make test inside backend and extractor containers; confirm green pipeline.
 
+Step 1 – Desktop Extractor (PDF → JSONL)
+Objectives
+• Robust PDF parsing with bank-specific overrides (pluggable parser registry).
+• Redaction: mask account numbers and other PII.
+• Output JSONL conforming to transaction\_v1.json.
+• Single-file builds with PyInstaller for Win/macOS (dev notarisation skipped in MVP).
+
+Acceptance
+• Given a sample Barclays PDF, when running bankcleanr parse file.pdf, then 20 ± 2 transactions are returned and the output validates against the schema.
+• Redaction masks sensitive fields as \*\*\*\*1234.
+• PyInstaller artefacts execute and produce JSONL.
+
+Manual check
+• Download sample PDFs to a folder; run CLI; open the output and spot-check.
+
+Step 2 – Backend skeleton and storage
+Objectives
+• FastAPI endpoints: POST /upload, GET /status/{job\_id}, GET /download/{summary\_id}, GET /download/{report\_id}.
+• Rules endpoints: GET/POST /rules (primarily system-authored), GET /rules/global.
+• Classification endpoints: POST /classify/start (internal), GET /classify/{job\_id}.
+• Persistence: SQLModel with SQLite (file volume per env).
+• Auth: email + magic link (stubbed in dev with single-user bypass).
+
+Acceptance
+• Component tests hit real HTTP via httpx.AsyncClient and assert 200/202/404 flows.
+• Uploaded JSONL is validated, stored, and a background job is queued.
+• Download endpoints return a signed one-time URL (MVP can return a direct file path token in dev).
+
+Manual check
+• docker compose up; curl or frontend upload; observe job status and stored artefacts.
+
+Step 3 – Rules engine (heuristics first)
+Objectives
+• Define heuristic\_rule\_v1.json and implement a deterministic rules engine that merges:
+
+1. global rules (maintained by the system),
+2. per-user rules (auto-learned),
+   with a clear precedence and explainability field on the classification result.
+   • Idempotent application: same inputs → same outputs.
+   • Rule storage and versioning with created\_by (llm|user|system) and audit fields.
+
+Acceptance
+• Unit tests for rule evaluation across precedence and conflict cases.
+• Component test: known merchant strings are labelled without LLM calls.
+• BDD: “Given rules X and transactions Y, when classify runs, then labels match snapshot and include explanations.”
+
+Manual check
+• Load seed rules; run a classification dry-run; inspect outputs and rule traces.
+
+Step 4 – LLM classification service (auto-learning)
+Objectives
+• Prompt templates in backend/rules/prompts.py parameterising:
+{{txn.description}}, {{txn.amount}}, {{txn.counterparty}}, {{user\_rules}}, {{global\_rules}}, {{recent\_confusions}}.
+• Unify adapters under AbstractAdapter with classify\_transactions(batch) and optional web-search hinting. Support at least one provider in dev.
+• Retry and cost guardrails: exponential back-off; MAX\_DAILY\_COST\_GBP env var; token/cost logging; circuit breaker when limit hit.
+• Caching and deduplication: do not re-query strings already decided with high confidence; keyed by normalised merchant signature.
+• Auto-learning: when the LLM proposes a new or improved rule with confidence ≥ threshold, persist it immediately (no human review required in MVP). Store provenance and examples for future audit.
+• Validation pass: also allow the LLM to confirm or refine existing classifications; update rules when it finds a better generalisation.
+• E2E tests: a small suite that can hit a real LLM endpoint when RUN\_REAL\_LLM=true, otherwise uses a deterministic stub.
+
+Acceptance
+• Unit tests for adapter behaviour, batching, retries, and cost limiter.
+• Component test proves: unknown transactions trigger LLM once, rule is persisted, subsequent runs skip LLM and classify via rules.
+• BDD: “Given an upload with unknown merchant Z, when the job completes, then Z is labelled and rules contain a new entry with provenance=llm.”
+
+Manual check
+• Set API key, run a job with a tiny dataset; observe rules table grow, costs logged, and no repeat queries.
+
+Step 5 – Frontend MVP (upload → progress → downloads)
+Objectives
+• React + TypeScript SPA with three primary views:
+
+1. Upload: drop JSONL; choose date range; start analysis.
+2. Progress: job status with simple steps (Uploaded → Classifying → Analysing → Report ready).
+3. Results: download links for initial analysis (JSON/CSV and a basic HTML view) and the PDF savings report.
+   • Optional rules view (read-only by default). A “Suggest a correction” action posts a feedback event the system may use to generate a per-user override rule.
+
+Acceptance
+• E2E (Playwright/Cypress): “User uploads JSONL → sees progress → downloads files → checks checksums.”
+• Accessibility smoke checks (tab order and aria-labels on primary controls).
+
+Manual check
+• Start frontend and backend; run through the happy path using the seeded sample.
+
+Step 6 – Analytics and summarisation
+Objectives
+• analytics.py provides monthly\_totals, recurring\_flags (subscription detection), category roll-ups, and overspending highlights.
+• summary\_v1.json produced for each job and stored; also a compact CSV export.
+
+Acceptance
+• Unit tests on synthetic datasets with snapshot comparisons.
+• Component test: uploaded dataset produces expected summary totals.
+
+Manual check
+• Inspect generated summary and CSV in storage; verify recurring detection looks sensible.
+
+Step 7 – Savings report generation
+Objectives
+• Assemble prompt context from summary + identified commitments.
+• LLM generates the savings guidance including: who to contact, monthly saving, cancellation channel, links, and step-by-step instructions.
+• PDF writer outputs report\_v1.pdf; include clear sections and a total annual saving figure.
+
+Acceptance
+• Unit tests for PDF writer (text presence and checksum against a relaxed snapshot).
+• BDD: “Given mocked LLM returns X, PDF contains ‘Total annual saving £###’ and lists cancellation links.”
+
+Manual check
+• Run a full job; open PDF; spot-check guidance and links.
+
+Step 8 – Packaging and local orchestration
+Objectives
+• docker-compose.yml orchestrates api, worker, redis, frontend; volumes for db and artefacts.
+• Make targets: make up, make down, make logs, make seed, make test, make e2e.
+• PyInstaller artefacts for extractor built in CI and attached to release.
+
+Acceptance
+• Fresh checkout → make up → visit [http://localhost:3000](http://localhost:3000) → complete happy path with sample data.
+• CI attaches extractor binaries and publishes container images to registry (GHCR).
+
+6 | Quality, safety, and operations (MVP level)
+Observability
+• Structured JSON logs; request IDs; job IDs; token and cost metrics for LLM calls.
+• Simple /health and /ready endpoints.
+
+Rate limiting and quotas
+• Per-user daily token cap enforced by the adapter layer; friendly error when reached.
+
+Data protection
+• PII masked at source; statements processed locally by the extractor before upload.
+• Configurable retention window (ENV: RETENTION\_DAYS) for uploaded files and derived artefacts; daily purge job in dev/prod.
+
+Security (dev focus)
+• Dependency scanning (pip-audit); no critical CVEs.
+• Signed URLs for downloads with short expiry (10 minutes) in the API even in dev.
+
+7 | Documentation and hand-off
+• README.md: quick-start (docker compose), sample dataset, happy-path walkthrough, environment variables.
+• MODULES.md: architecture diagram and component responsibilities.
+• CHANGELOG.md maintained per Semantic Versioning.
+• PR checklist:
+– builds & runs locally
+– all tests pass
+– coverage ≥ 90%
+– docs updated
+– no dead code left behind
+
+8 | Testing matrix (summary)
+• Unit: rules engine, analytics, adapters, PDF writer, schema validators.
+• Component: HTTP endpoints with httpx.AsyncClient; upload/classify/summary/report flows.
+• BDD: end-to-end behaviour in plain English aligned to the user journey.
+• E2E UI: upload → progress → downloads. Headless and headed runs.
+• Real-LLM E2E: opt-in via env flag; tiny dataset; asserts learning and caching.
+
+9 | Milestone cuts (you can stop after any green milestone)
+M1 – Foundation + Extractor basic parse/export.
+M2 – Backend upload/storage + job orchestration + seed rules.
+M3 – Rules engine deterministic classification without LLM.
+M4 – LLM classification with auto-learning and cost guardrails.
+M5 – Analytics + initial summary downloads.
+M6 – Savings report PDF and full happy path via the frontend.
+
+10 | Commands and environment (reference)
+• make test – runs unit + component + BDD in CI mode.
+• make up / make down – starts/stops local stack.
+• make seed – loads sample rules and a tiny dataset.
+• ENV (backend): DB\_URL, STORAGE\_PATH, SECRET\_KEY, MAGIC\_LINK\_ISSUER, LLM\_PROVIDER, LLM\_API\_KEY, MAX\_DAILY\_COST\_GBP, RETENTION\_DAYS, DOWNLOAD\_URL\_TTL\_MINUTES.
+
+11 | Definition of Done for each step
+• Green pipeline on main (CI).
+• Runnable locally via docker-compose with documented commands.
+• BDD and unit tests added/updated for new behaviour; coverage ≥ 90%.
+• No unused code or tests remain; docs reflect current behaviour.
+• A short screencast or notes showing the manual check scenario passed.
+
+Notes on scope for this MVP
+• The LLM is the primary author/editor of rules; users may submit corrections which can later seed supervised improvements. For MVP, corrections are stored as suggestions or auto-converted to per-user rules with provenance=user.
+• Web search by the LLM can be enabled to improve merchant identification and cancellation guidance; ensure prompts and adapters allow this option while keeping costs bounded.
+• Server deployment and serverless are out of scope until the MVP is proven locally; design choices (stateless API, queue workers, SQLite→Postgres migration path) keep those options open.
+
+End of plan.
