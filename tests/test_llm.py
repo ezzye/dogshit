@@ -17,7 +17,7 @@ from sqlmodel import create_engine
 def _db(tmp_path, monkeypatch):
     monkeypatch.setenv("APP_ENV", "test")
     db_file = tmp_path / "rules.db"
-    from bankcleanr.rules import db_store, regex
+    from bankcleanr.rules import db_store, regex, heuristics as heuristics_mod
 
     importlib.reload(db_store)
     db_store.DB_PATH = db_file
@@ -25,6 +25,7 @@ def _db(tmp_path, monkeypatch):
     db_store.init_db()
     importlib.reload(regex)
     regex.reload_patterns()
+    importlib.reload(heuristics_mod)
     yield
 
 class DummyAdapter(OpenAIAdapter):
