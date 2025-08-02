@@ -17,7 +17,7 @@ class DummyClient:
         self.messages = Messages()
 
 
-def test_classify_parses_json(monkeypatch):
+def test_classify_parses_json():
     adapter = AnthropicAdapter(api_key="dummy")
     adapter.client = DummyClient()
     tx = Transaction(date="2024-01-01", description="Coffee", amount="-1")
