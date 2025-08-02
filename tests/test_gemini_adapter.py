@@ -19,3 +19,24 @@ def test_returns_unknown_when_library_missing(monkeypatch):
     tx = Transaction(date="2024-01-01", description="Coffee", amount="-1")
     details = adapter.classify_transactions([tx])
     assert details == [{"category": "unknown", "new_rule": None}]
+
+
+class DummyModels:
+    def generate_content(self, *args, **kwargs):
+        class Resp:
+            text = '{"category": "coffee", "new_rule": ".*COFFEE.*"}'
+
+        return Resp()
+
+
+class DummyClient:
+    models = DummyModels()
+
+
+def test_classify_parses_json(monkeypatch):
+    adapter = GeminiAdapter(api_key="dummy")
+    adapter.client = DummyClient()
+    tx = Transaction(date="2024-01-01", description="Coffee", amount="-1")
+    details = adapter.classify_transactions([tx])
+    assert details[0]["category"] == "coffee"
+    assert details[0]["new_rule"] == ".*COFFEE.*"

@@ -5,6 +5,8 @@ from __future__ import annotations
 from typing import Dict, Iterable, List
 from pathlib import Path
 import logging
+import json
+import re
 
 from .base import AbstractAdapter
 from .utils import load_heuristics_texts
@@ -66,7 +68,25 @@ class GeminiAdapter(AbstractAdapter):
                     resp.text if hasattr(resp, "text") else resp.candidates[0].content
                 )
                 logger.debug("[GeminiAdapter] message: %s", message)
-                details.append({"category": message.strip().lower(), "new_rule": None})
+                content = message.strip()
+                try:
+                    if content.startswith("```") and content.endswith("```"):
+                        content = content[3:-3].strip()
+                        content = re.sub(
+                            r"^json\s*", "", content, flags=re.IGNORECASE
+                        )
+                    data = json.loads(content)
+                    if not isinstance(data, dict):
+                        raise ValueError
+                    details.append(
+                        {
+                            "category": str(data.get("category", "unknown")),
+                            "new_rule": data.get("new_rule"),
+                        }
+                    )
+                except Exception as exc:
+                    logger.debug("[GeminiAdapter] parse error: %s", exc)
+                    details.append({"category": content.lower(), "new_rule": None})
             except Exception as exc:
                 logger.debug("[GeminiAdapter] error: %s", exc)
                 import traceback
