@@ -1,20 +1,52 @@
+from dataclasses import dataclass, field
+from typing import Any
+
 from bankcleanr.llm.anthropic import AnthropicAdapter
 from bankcleanr.transaction import Transaction
 
 
+@dataclass
+class DummyMessage:
+    text: str = '{"category": "coffee", "new_rule": ".*COFFEE.*"}'
+
+
+@dataclass
+class DummyResponse:
+    content: list[DummyMessage] = field(default_factory=lambda: [DummyMessage()])
+
+
+class DummyMessages:
+    def create(self, *args: Any, **kwargs: Any) -> DummyResponse:  # noqa: D401
+        """Return a static response mimicking Anthropic output."""
+
+        return DummyResponse()
+
+
+@dataclass
 class DummyClient:
-    def __init__(self):
-        class Messages:
-            def create(self, *args, **kwargs):
-                class Msg:
-                    text = '{"category": "coffee", "new_rule": ".*COFFEE.*"}'
+    messages: DummyMessages = field(default_factory=DummyMessages)
 
-                class Resp:
-                    content = [Msg()]
 
-                return Resp()
+@dataclass
+class FailingMessages:
+    calls: dict
 
-        self.messages = Messages()
+    def create(self, *args: Any, **kwargs: Any) -> None:  # noqa: D401
+        """Increment call count and raise an error to simulate failure."""
+
+        self.calls["n"] += 1
+        raise RuntimeError("boom")
+
+
+@dataclass
+class FailingClient:
+    calls: dict
+    messages: FailingMessages = field(init=False)
+
+    def __post_init__(self) -> None:  # noqa: D401
+        """Attach a failing messages handler."""
+
+        self.messages = FailingMessages(self.calls)
 
 
 def test_classify_parses_json():
@@ -29,16 +61,8 @@ def test_classify_parses_json():
 def test_retries_then_unknown():
     calls = {"n": 0}
 
-    class FailingMessages:
-        def create(self, *args, **kwargs):
-            calls["n"] += 1
-            raise RuntimeError("boom")
-
-    class FailingClient:
-        messages = FailingMessages()
-
     adapter = AnthropicAdapter(api_key="dummy")
-    adapter.client = FailingClient()
+    adapter.client = FailingClient(calls)
     tx = Transaction(date="2024-01-01", description="Coffee", amount="-1")
     details = adapter.classify_transactions([tx])
     assert details == [{"category": "unknown", "new_rule": None}]
