@@ -1,5 +1,6 @@
 import gzip
 import json
+import os
 import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import SQLModel, Session, create_engine
@@ -11,6 +12,7 @@ from backend.database import get_session
 
 @pytest.fixture(name="client")
 def client_fixture():
+    os.environ["AUTH_BYPASS"] = "1"
     engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
     SQLModel.metadata.create_all(engine)
 
@@ -22,6 +24,7 @@ def client_fixture():
     with TestClient(app) as c:
         yield c
     app.dependency_overrides.clear()
+    os.environ.pop("AUTH_BYPASS", None)
 
 
 def test_upload_and_status(client: TestClient):

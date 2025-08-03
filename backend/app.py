@@ -2,6 +2,7 @@ import gzip
 from fastapi import FastAPI, Depends, Request, HTTPException
 from sqlmodel import Session, select
 from .database import init_db, get_session
+from .auth import auth_dependency, generate_token
 from .models import (
     Upload,
     ProcessingJob,
@@ -19,7 +20,11 @@ def on_startup() -> None:
 
 
 @app.post("/upload")
-async def upload(request: Request, session: Session = Depends(get_session)) -> dict:
+async def upload(
+    request: Request,
+    session: Session = Depends(get_session),
+    _: None = Depends(auth_dependency),
+) -> dict:
     data = await request.body()
     if request.headers.get("Content-Encoding") == "gzip":
         data = gzip.decompress(data)
@@ -36,7 +41,11 @@ async def upload(request: Request, session: Session = Depends(get_session)) -> d
 
 
 @app.get("/status/{job_id}")
-def status(job_id: int, session: Session = Depends(get_session)) -> dict:
+def status(
+    job_id: int,
+    session: Session = Depends(get_session),
+    _: None = Depends(auth_dependency),
+) -> dict:
     job = session.get(ProcessingJob, job_id)
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
@@ -44,21 +53,29 @@ def status(job_id: int, session: Session = Depends(get_session)) -> dict:
 
 
 @app.get("/download/{job_id}/{type}")
-def download(job_id: int, type: str) -> dict:
+def download(job_id: int, type: str, _: None = Depends(auth_dependency)) -> dict:
     if type not in {"summary", "report"}:
         raise HTTPException(status_code=400, detail="Invalid type")
-    url = f"https://example.com/download/{job_id}/{type}?token=signed"
+    token = generate_token(f"{job_id}:{type}")
+    url = f"https://example.com/download/{job_id}/{type}?token={token}"
     return {"url": url}
 
 
 @app.get("/rules")
-def list_rules(session: Session = Depends(get_session)):
+def list_rules(
+    session: Session = Depends(get_session),
+    _: None = Depends(auth_dependency),
+):
     rules = session.exec(select(UserRule)).all()
     return rules
 
 
 @app.post("/rules")
-def create_rule(rule: UserRule, session: Session = Depends(get_session)):
+def create_rule(
+    rule: UserRule,
+    session: Session = Depends(get_session),
+    _: None = Depends(auth_dependency),
+):
     session.add(rule)
     session.commit()
     session.refresh(rule)
@@ -66,7 +83,11 @@ def create_rule(rule: UserRule, session: Session = Depends(get_session)):
 
 
 @app.post("/classify")
-def classify(req: ClassifyRequest, session: Session = Depends(get_session)) -> dict:
+def classify(
+    req: ClassifyRequest,
+    session: Session = Depends(get_session),
+    _: None = Depends(auth_dependency),
+) -> dict:
     job = session.get(ProcessingJob, req.job_id)
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
