@@ -17,7 +17,13 @@ class ProcessingJob(SQLModel, table=True):
 
 class UserRule(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    rule_text: str
+    user_id: Optional[int] = None
+    label: str
+    pattern: str
+    priority: int = 0
+    confidence: float = 1.0
+    version: int = 1
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 
 class ClassificationResult(SQLModel, table=True):
@@ -29,3 +35,4 @@ class ClassificationResult(SQLModel, table=True):
 
 class ClassifyRequest(SQLModel):
     job_id: int
+    user_id: int = 0
