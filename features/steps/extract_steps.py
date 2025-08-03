@@ -1,10 +1,9 @@
 import os
 import subprocess
 import tempfile
+from behave import given, when, then
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
-from behave import given, when, then
-
 
 def _create_pdf(path: str) -> None:
     lines = [
