@@ -11,6 +11,7 @@ from .models import (
     ClassificationResult,
     ClassifyRequest,
 )
+from rules.engine import load_global_rules, merge_rules, evaluate
 
 app = FastAPI()
 
@@ -18,9 +19,14 @@ MAX_UPLOAD_SIZE = 100 * 1024 * 1024  # 100 MB
 ALLOWED_CONTENT_TYPES = {"application/x-ndjson", "text/plain"}
 
 
+GLOBAL_RULES = []
+
+
 @app.on_event("startup")
 def on_startup() -> None:
     init_db()
+    global GLOBAL_RULES
+    GLOBAL_RULES = load_global_rules()
 
 
 @app.post("/upload")
@@ -112,8 +118,14 @@ def classify(
     job = session.get(ProcessingJob, req.job_id)
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
-    result = ClassificationResult(job_id=req.job_id)
+    upload = session.get(Upload, job.upload_id)
+    user_rules = session.exec(
+        select(UserRule).where(UserRule.user_id == req.user_id)
+    ).all()
+    rules = merge_rules(GLOBAL_RULES, user_rules)
+    label = evaluate(upload.content, rules) or "unknown"
+    result = ClassificationResult(job_id=req.job_id, result=label, status="completed")
     session.add(result)
     session.commit()
     session.refresh(result)
-    return {"classification_id": result.id}
+    return {"classification_id": result.id, "label": label}

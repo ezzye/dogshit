@@ -45,9 +45,9 @@ def test_upload_gzip(client: TestClient):
 
 
 def test_rules(client: TestClient):
-    client.post("/rules", json={"rule_text": "allow"})
+    client.post("/rules", json={"label": "allow", "pattern": "allow"})
     rules = client.get("/rules").json()
-    assert any(r["rule_text"] == "allow" for r in rules)
+    assert any(r["label"] == "allow" for r in rules)
 
 
 def test_classify(client: TestClient):
@@ -55,7 +55,19 @@ def test_classify(client: TestClient):
         "/upload", data="data", headers={"Content-Type": "text/plain"}
     ).json()["job_id"]
     resp = client.post("/classify", json={"job_id": job_id})
-    assert "classification_id" in resp.json()
+    assert resp.json()["label"] == "unknown"
+
+
+def test_classify_applies_user_rule(client: TestClient):
+    job_id = client.post(
+        "/upload", data="coffee shop", headers={"Content-Type": "text/plain"}
+    ).json()["job_id"]
+    client.post(
+        "/rules",
+        json={"user_id": 1, "label": "coffee", "pattern": "coffee", "priority": 5},
+    )
+    resp = client.post("/classify", json={"job_id": job_id, "user_id": 1})
+    assert resp.json()["label"] == "coffee"
 
 def test_download(client: TestClient):
     job_id = client.post(

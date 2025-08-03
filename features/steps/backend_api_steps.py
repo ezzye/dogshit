@@ -46,13 +46,13 @@ def then_job_status(context, status):
 
 @when('I create a rule "{text}"')
 def when_create_rule(context, text):
-    context.client.post("/rules", json={"rule_text": text})
+    context.client.post("/rules", json={"label": text, "pattern": text})
 
 
 @then('the rules list contains "{text}"')
 def then_rules_list(context, text):
     resp = context.client.get("/rules")
-    rules = [r["rule_text"] for r in resp.json()]
+    rules = [r["label"] for r in resp.json()]
     assert text in rules
     context.client.close()
     app.dependency_overrides.clear()

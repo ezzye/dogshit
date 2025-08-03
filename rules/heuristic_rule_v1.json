@@ -1,0 +1,18 @@
+[
+  {
+    "label": "coffee",
+    "pattern": "coffee",
+    "priority": 1,
+    "confidence": 0.9,
+    "version": 1,
+    "updated_at": "2024-01-01T00:00:00Z"
+  },
+  {
+    "label": "tea",
+    "pattern": "tea",
+    "priority": 1,
+    "confidence": 0.8,
+    "version": 1,
+    "updated_at": "2024-01-01T00:00:00Z"
+  }
+]
