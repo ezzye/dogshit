@@ -1,3 +1,4 @@
+import os
 from fastapi.testclient import TestClient
 from sqlmodel import SQLModel, Session, create_engine
 from sqlalchemy.pool import StaticPool
@@ -5,9 +6,11 @@ from behave import given, when, then
 
 from backend.app import app
 from backend.database import get_session
+from backend.signing import generate_signed_url
 
 
 def _setup_client(context):
+    os.environ["AUTH_BYPASS"] = "1"
     engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
     SQLModel.metadata.create_all(engine)
 
@@ -36,6 +39,7 @@ def then_job_status(context, status):
     assert resp.json()["status"] == status
     context.client.close()
     app.dependency_overrides.clear()
+    os.environ.pop("AUTH_BYPASS", None)
 
 
 @when('I create a rule "{text}"')
@@ -50,3 +54,27 @@ def then_rules_list(context, text):
     assert text in rules
     context.client.close()
     app.dependency_overrides.clear()
+    os.environ.pop("AUTH_BYPASS", None)
+
+
+@when("I generate a signed download URL")
+def when_generate_signed_url(context):
+    resp = context.client.post("/upload", data="data")
+    job_id = resp.json()["job_id"]
+    context.url = generate_signed_url(f"/download/{job_id}/summary")
+
+
+@when("I generate an expired signed download URL")
+def when_generate_expired_signed_url(context):
+    resp = context.client.post("/upload", data="data")
+    job_id = resp.json()["job_id"]
+    context.url = generate_signed_url(f"/download/{job_id}/summary", expires_in=-1)
+
+
+@then("accessing the URL returns {status:d}")
+def then_accessing_url_returns(context, status):
+    resp = context.client.get(context.url)
+    assert resp.status_code == status
+    context.client.close()
+    app.dependency_overrides.clear()
+    os.environ.pop("AUTH_BYPASS", None)
