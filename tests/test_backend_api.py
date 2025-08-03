@@ -29,7 +29,7 @@ def client_fixture():
 
 
 def test_upload_and_status(client: TestClient):
-    resp = client.post("/upload", data="hello")
+    resp = client.post("/upload", data="hello", headers={"Content-Type": "text/plain"})
     job_id = resp.json()["job_id"]
     status = client.get(f"/status/{job_id}").json()["status"]
     assert status == "pending"
@@ -37,7 +37,11 @@ def test_upload_and_status(client: TestClient):
 
 def test_upload_gzip(client: TestClient):
     data = gzip.compress(b"foo")
-    resp = client.post("/upload", data=data, headers={"Content-Encoding": "gzip"})
+    resp = client.post(
+        "/upload",
+        data=data,
+        headers={"Content-Encoding": "gzip", "Content-Type": "text/plain"},
+    )
     assert "job_id" in resp.json()
 
 
@@ -48,12 +52,16 @@ def test_rules(client: TestClient):
 
 
 def test_classify(client: TestClient):
-    job_id = client.post("/upload", data="data").json()["job_id"]
+    job_id = client.post(
+        "/upload", data="data", headers={"Content-Type": "text/plain"}
+    ).json()["job_id"]
     resp = client.post("/classify", json={"job_id": job_id})
     assert "classification_id" in resp.json()
 
 def test_download(client: TestClient):
-    job_id = client.post("/upload", data="data").json()["job_id"]
+    job_id = client.post(
+        "/upload", data="data", headers={"Content-Type": "text/plain"}
+    ).json()["job_id"]
     url = generate_signed_url(f"/download/{job_id}/summary", expires_in=60)
     resp = client.get(url)
     assert resp.status_code == 200
@@ -61,7 +69,24 @@ def test_download(client: TestClient):
 
 
 def test_download_expired(client: TestClient):
-    job_id = client.post("/upload", data="data").json()["job_id"]
+    job_id = client.post(
+        "/upload", data="data", headers={"Content-Type": "text/plain"}
+    ).json()["job_id"]
     url = generate_signed_url(f"/download/{job_id}/summary", expires_in=-1)
     resp = client.get(url)
     assert resp.status_code == 403
+
+
+def test_upload_rejects_invalid_content_type(client: TestClient):
+    resp = client.post(
+        "/upload", data="data", headers={"Content-Type": "application/json"}
+    )
+    assert resp.status_code == 415
+
+
+def test_upload_rejects_large_payload(client: TestClient):
+    data = b"x" * (100 * 1024 * 1024 + 1)
+    resp = client.post(
+        "/upload", data=data, headers={"Content-Type": "text/plain"}
+    )
+    assert resp.status_code == 413

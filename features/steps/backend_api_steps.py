@@ -29,7 +29,9 @@ def given_client(context):
 
 @when('I upload text "{text}"')
 def when_upload_text(context, text):
-    resp = context.client.post("/upload", data=text)
+    resp = context.client.post(
+        "/upload", data=text, headers={"Content-Type": "text/plain"}
+    )
     context.job_id = resp.json()["job_id"]
 
 
@@ -59,14 +61,18 @@ def then_rules_list(context, text):
 
 @when("I generate a signed download URL")
 def when_generate_signed_url(context):
-    resp = context.client.post("/upload", data="data")
+    resp = context.client.post(
+        "/upload", data="data", headers={"Content-Type": "text/plain"}
+    )
     job_id = resp.json()["job_id"]
     context.url = generate_signed_url(f"/download/{job_id}/summary")
 
 
 @when("I generate an expired signed download URL")
 def when_generate_expired_signed_url(context):
-    resp = context.client.post("/upload", data="data")
+    resp = context.client.post(
+        "/upload", data="data", headers={"Content-Type": "text/plain"}
+    )
     job_id = resp.json()["job_id"]
     context.url = generate_signed_url(f"/download/{job_id}/summary", expires_in=-1)
 
@@ -75,6 +81,29 @@ def when_generate_expired_signed_url(context):
 def then_accessing_url_returns(context, status):
     resp = context.client.get(context.url)
     assert resp.status_code == status
+    context.client.close()
+    app.dependency_overrides.clear()
+    os.environ.pop("AUTH_BYPASS", None)
+
+
+@when('I upload with content type "{content_type}"')
+def when_upload_with_content_type(context, content_type):
+    context.response = context.client.post(
+        "/upload", data="hello", headers={"Content-Type": content_type}
+    )
+
+
+@when("I upload data of size {size:d} MB")
+def when_upload_data_of_size(context, size):
+    data = b"x" * (size * 1024 * 1024)
+    context.response = context.client.post(
+        "/upload", data=data, headers={"Content-Type": "text/plain"}
+    )
+
+
+@then("the response status is {status:d}")
+def then_response_status(context, status):
+    assert context.response.status_code == status
     context.client.close()
     app.dependency_overrides.clear()
     os.environ.pop("AUTH_BYPASS", None)

@@ -14,6 +14,9 @@ from .models import (
 
 app = FastAPI()
 
+MAX_UPLOAD_SIZE = 100 * 1024 * 1024  # 100 MB
+ALLOWED_CONTENT_TYPES = {"application/x-ndjson", "text/plain"}
+
 
 @app.on_event("startup")
 def on_startup() -> None:
@@ -26,7 +29,16 @@ async def upload(
     session: Session = Depends(get_session),
     _: None = Depends(auth_dependency),
 ) -> dict:
+    content_type = request.headers.get("Content-Type", "").split(";")[0].strip()
+    if content_type not in ALLOWED_CONTENT_TYPES:
+        raise HTTPException(status_code=415, detail="Unsupported Media Type")
+    content_length = int(request.headers.get("Content-Length", 0))
+    if content_length > MAX_UPLOAD_SIZE:
+        raise HTTPException(status_code=413, detail="Payload too large")
+
     data = await request.body()
+    if len(data) > MAX_UPLOAD_SIZE:
+        raise HTTPException(status_code=413, detail="Payload too large")
     if request.headers.get("Content-Encoding") == "gzip":
         data = gzip.decompress(data)
     text = data.decode("utf-8")
