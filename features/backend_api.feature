@@ -8,3 +8,13 @@ Feature: Backend API
     Given the API client
     When I create a rule "allow all"
     Then the rules list contains "allow all"
+
+  Scenario: Downloading with a valid signature
+    Given the API client
+    When I generate a signed download URL
+    Then accessing the URL returns 200
+
+  Scenario: Downloading with an expired signature
+    Given the API client
+    When I generate an expired signed download URL
+    Then accessing the URL returns 403

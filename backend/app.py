@@ -1,8 +1,9 @@
 import gzip
-from fastapi import FastAPI, Depends, Request, HTTPException
+from fastapi import FastAPI, Depends, Request, HTTPException, Query
 from sqlmodel import Session, select
 from .database import init_db, get_session
-from .auth import auth_dependency, generate_token
+from .auth import auth_dependency
+from .signing import verify_signed_url
 from .models import (
     Upload,
     ProcessingJob,
@@ -53,12 +54,20 @@ def status(
 
 
 @app.get("/download/{job_id}/{type}")
-def download(job_id: int, type: str, _: None = Depends(auth_dependency)) -> dict:
+def download(
+    job_id: int,
+    type: str,
+    request: Request,
+    expires: int = Query(...),
+    signature: str = Query(...),
+    _: None = Depends(auth_dependency),
+) -> dict:
     if type not in {"summary", "report"}:
         raise HTTPException(status_code=400, detail="Invalid type")
-    token = generate_token(f"{job_id}:{type}")
-    url = f"https://example.com/download/{job_id}/{type}?token={token}"
-    return {"url": url}
+    path = request.url.path
+    if not verify_signed_url(path, expires, signature):
+        raise HTTPException(status_code=403, detail="Invalid or expired URL")
+    return {"job_id": job_id, "type": type}
 
 
 @app.get("/rules")

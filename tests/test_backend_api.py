@@ -8,6 +8,7 @@ from sqlalchemy.pool import StaticPool
 
 from backend.app import app
 from backend.database import get_session
+from backend.signing import generate_signed_url
 
 
 @pytest.fixture(name="client")
@@ -51,8 +52,16 @@ def test_classify(client: TestClient):
     resp = client.post("/classify", json={"job_id": job_id})
     assert "classification_id" in resp.json()
 
-
 def test_download(client: TestClient):
     job_id = client.post("/upload", data="data").json()["job_id"]
-    url = client.get(f"/download/{job_id}/summary").json()["url"]
-    assert str(job_id) in url and "summary" in url
+    url = generate_signed_url(f"/download/{job_id}/summary", expires_in=60)
+    resp = client.get(url)
+    assert resp.status_code == 200
+    assert resp.json()["job_id"] == job_id
+
+
+def test_download_expired(client: TestClient):
+    job_id = client.post("/upload", data="data").json()["job_id"]
+    url = generate_signed_url(f"/download/{job_id}/summary", expires_in=-1)
+    resp = client.get(url)
+    assert resp.status_code == 403
