@@ -3,15 +3,21 @@ from __future__ import annotations
 import json
 import subprocess
 from pathlib import Path
+
 import typer
+
 from .extractor import extract_transactions
 
 app = typer.Typer()
 
 @app.command()
-def extract(input_pdf: Path, output_jsonl: Path) -> None:
+def extract(
+    input_pdf: Path,
+    output_jsonl: Path,
+    bank: str = typer.Option("barclays", "--bank", help="Bank identifier"),
+) -> None:
     """Extract transactions from PDF and write JSONL."""
-    records = extract_transactions(str(input_pdf))
+    records = extract_transactions(str(input_pdf), bank=bank)
     with output_jsonl.open("w", encoding="utf-8") as fh:
         for item in records:
             fh.write(json.dumps(item) + "\n")
