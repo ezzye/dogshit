@@ -10,7 +10,7 @@ behave:
 	poetry run behave
 
 component:
-	poetry run pytest tests/test_backend_app.py
+	poetry run pytest tests/test_backend_api.py
 
 test: unit component behave
 lint:
