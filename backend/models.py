@@ -20,6 +20,8 @@ class UserRule(SQLModel, table=True):
     user_id: Optional[int] = None
     label: str
     pattern: str
+    match_type: str = "contains"
+    field: str = "description"
     priority: int = 0
     confidence: float = 1.0
     version: int = 1

@@ -6,6 +6,7 @@ from typing import Dict, List
 import pdfplumber
 
 from ..pii import mask_pii
+from ..signature import normalise_signature
 
 _LINE_RE = re.compile(
     r"^(\d{2} \w{3} \d{4})\s+(.*?)\s+(-?\d+\.\d{2})\s+(-?\d+\.\d{2})$"
@@ -24,12 +25,14 @@ class HSBCParser:
                     match = _LINE_RE.match(line.strip())
                     if match:
                         date, desc, amount, balance = match.groups()
+                        clean_desc = mask_pii(desc.strip())
                         records.append(
                             {
                                 "date": date,
-                                "description": mask_pii(desc.strip()),
+                                "description": clean_desc,
                                 "amount": amount,
                                 "balance": balance,
+                                "merchant_signature": normalise_signature(clean_desc),
                             }
                         )
         return records

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Dict, List
 
+from ..signature import normalise_signature
+
 
 class PlaceholderParser:
     """Parser used for tests and as an example."""
@@ -13,6 +15,7 @@ class PlaceholderParser:
                 "description": "placeholder",
                 "amount": "0.00",
                 "balance": "0.00",
+                "merchant_signature": normalise_signature("placeholder"),
             }
         ]
 

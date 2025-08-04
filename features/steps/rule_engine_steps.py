@@ -26,6 +26,7 @@ def when_classify(context, user_id):
 @then('the classification label is "{label}"')
 def then_classification_label(context, label):
     assert context.classification["label"] == label
-    context.client.close()
-    app.dependency_overrides.clear()
-    os.environ.pop("AUTH_BYPASS", None)
+    if not getattr(context, "preserve_client", False):
+        context.client.close()
+        app.dependency_overrides.clear()
+        os.environ.pop("AUTH_BYPASS", None)
