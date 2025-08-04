@@ -17,19 +17,12 @@ jobs:
         run: |
           pip install poetry
           poetry install --with dev
-      - name: Install coverage
-        run: poetry run pip install coverage
-      - name: Install pytest
-        run: poetry run pip install pytest
       - name: Lint
         run: make lint
       - name: Test
         run: make test
       - name: Generate coverage
-        run: |
-          poetry run coverage run -m pytest
-          poetry run coverage run -a -m behave
-          poetry run coverage xml
+        run: poetry run coverage xml
       - name: Upload coverage
         uses: actions/upload-artifact@v4
         with:
