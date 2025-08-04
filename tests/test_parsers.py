@@ -1,10 +1,15 @@
+import json
 import os
-import subprocess
 import tempfile
 
-from behave import given, when, then
+import pytest
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
+import jsonschema
+
+from bankcleanr.extractor import extract_transactions
+
+SCHEMA = json.load(open("schemas/transaction_v1.json"))
 
 
 def _create_pdf(path: str, bank: str) -> None:
@@ -40,35 +45,20 @@ def _create_pdf(path: str, bank: str) -> None:
     c.save()
 
 
-@given("a sample {bank} statement")
-def step_given_sample(context, bank):
-    context.tmpdir = tempfile.TemporaryDirectory()
-    context.pdf_path = os.path.join(context.tmpdir.name, f"{bank}.pdf")
-    _create_pdf(context.pdf_path, bank)
-
-
-@when("I run the {bank} extractor")
-def step_run_extractor(context, bank):
-    context.jsonl_path = os.path.join(context.tmpdir.name, "out.jsonl")
-    subprocess.run(
-        [
-            "python",
-            "-m",
-            "bankcleanr.cli",
-            "extract",
-            "--bank",
-            bank,
-            context.pdf_path,
-            context.jsonl_path,
-        ],
-        check=True,
-        env={**os.environ, "PYTHONPATH": os.getcwd()},
-    )
-
-
-@then("a JSONL file with {count:d} transactions is created")
-def step_then_check(context, count):
-    with open(context.jsonl_path, "r", encoding="utf-8") as fh:
-        lines = fh.readlines()
-    assert len(lines) == count
-    context.tmpdir.cleanup()
+@pytest.mark.parametrize(
+    "bank,expected",
+    [
+        ("barclays", 2),
+        ("hsbc", 2),
+        ("lloyds", 2),
+        ("placeholder", 1),
+    ],
+)
+def test_extract_transactions(bank, expected):
+    with tempfile.TemporaryDirectory() as tmp:
+        pdf_path = os.path.join(tmp, f"{bank}.pdf")
+        _create_pdf(pdf_path, bank)
+        records = extract_transactions(pdf_path, bank=bank)
+        assert len(records) == expected
+        for rec in records:
+            jsonschema.validate(rec, SCHEMA)
