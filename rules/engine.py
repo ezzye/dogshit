@@ -73,6 +73,11 @@ def merge_rules(global_rules: Iterable[Rule], user_rules: Iterable[Rule]) -> Lis
     return sorted(combined.values(), key=_precedence_key)
 
 
+def norm(s: str) -> str:
+    """Normalize a string by stripping non-alphanumeric characters and lowercasing."""
+    return re.sub(r"[^A-Za-z0-9]", "", s).lower()
+
+
 def _match_text(text: str, match: Match) -> bool:
     if match.type == "exact":
         return text == match.pattern
@@ -86,7 +91,6 @@ def _match_text(text: str, match: Match) -> bool:
             flags |= re.MULTILINE
         return re.search(match.pattern, text, flags=flags) is not None
     if match.type == "signature":
-        norm = lambda s: re.sub(r"[^A-Za-z0-9]", "", s).lower()
         return norm(text) == norm(match.pattern)
     return False
 

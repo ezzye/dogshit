@@ -1,7 +1,6 @@
-import os
 import pytest
 
-from backend.llm_adapter import AbstractAdapter, DailyCostTracker, cost_tracker
+from backend.llm_adapter import AbstractAdapter, DailyCostTracker
 
 
 class DummyAdapter(AbstractAdapter):
