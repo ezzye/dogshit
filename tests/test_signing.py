@@ -18,3 +18,11 @@ def test_expired_url():
     url = generate_signed_url("/download/1/summary", expires_in=-1)
     path, expires, signature = _parse(url)
     assert not verify_signed_url(path, expires, signature)
+
+
+def test_tampered_url_fails():
+    """Altering the path should invalidate the signature."""
+    url = generate_signed_url("/download/1/summary", expires_in=60)
+    path, expires, signature = _parse(url)
+    # Tamper with the path after signing
+    assert not verify_signed_url("/download/2/summary", expires, signature)

@@ -25,11 +25,29 @@ def generate_signed_url(path: str, expires_in: int = 3600) -> str:
 
 
 def verify_signed_url(path: str, expires: int, signature: str) -> bool:
-    """Verify a signed URL."""
-    msg = f"{path}:{expires}".encode()
+    """Verify a signed URL ensuring it hasn't expired and wasn't tampered with.
+
+    Args:
+        path: Request path being accessed.
+        expires: Expiration timestamp from the query string.
+        signature: HMAC signature from the query string.
+
+    Returns:
+        ``True`` if the URL is valid and not expired, otherwise ``False``.
+    """
+
+    try:
+        expires_int = int(expires)
+    except (TypeError, ValueError):
+        return False
+
+    msg = f"{path}:{expires_int}".encode()
     expected = hmac.new(SECRET_KEY.encode(), msg, hashlib.sha256).hexdigest()
+
     if not hmac.compare_digest(expected, signature):
         return False
-    if time.time() > int(expires):
+
+    if time.time() > expires_int:
         return False
+
     return True
