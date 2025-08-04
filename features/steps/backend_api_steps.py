@@ -1,4 +1,7 @@
 import os
+import tempfile
+from pathlib import Path
+
 from fastapi.testclient import TestClient
 from sqlmodel import SQLModel, Session, create_engine
 from sqlalchemy.pool import StaticPool
@@ -42,6 +45,7 @@ def then_job_status(context, status):
     context.client.close()
     app.dependency_overrides.clear()
     os.environ.pop("AUTH_BYPASS", None)
+    os.environ.pop("STORAGE_DIR", None)
 
 
 @when('I create a rule "{text}"')
@@ -57,6 +61,7 @@ def then_rules_list(context, text):
     context.client.close()
     app.dependency_overrides.clear()
     os.environ.pop("AUTH_BYPASS", None)
+    os.environ.pop("STORAGE_DIR", None)
 
 
 @when("I generate a signed download URL")
@@ -65,6 +70,9 @@ def when_generate_signed_url(context):
         "/upload", data="data", headers={"Content-Type": "text/plain"}
     )
     job_id = resp.json()["job_id"]
+    storage = Path(tempfile.mkdtemp())
+    os.environ["STORAGE_DIR"] = str(storage)
+    (storage / f"{job_id}_summary.txt").write_text("result")
     context.url = generate_signed_url(f"/download/{job_id}/summary")
 
 
@@ -74,6 +82,9 @@ def when_generate_expired_signed_url(context):
         "/upload", data="data", headers={"Content-Type": "text/plain"}
     )
     job_id = resp.json()["job_id"]
+    storage = Path(tempfile.mkdtemp())
+    os.environ["STORAGE_DIR"] = str(storage)
+    (storage / f"{job_id}_summary.txt").write_text("result")
     context.url = generate_signed_url(f"/download/{job_id}/summary", expires_in=-1)
 
 
@@ -84,6 +95,7 @@ def then_accessing_url_returns(context, status):
     context.client.close()
     app.dependency_overrides.clear()
     os.environ.pop("AUTH_BYPASS", None)
+    os.environ.pop("STORAGE_DIR", None)
 
 
 @when('I upload with content type "{content_type}"')
@@ -107,3 +119,4 @@ def then_response_status(context, status):
     context.client.close()
     app.dependency_overrides.clear()
     os.environ.pop("AUTH_BYPASS", None)
+    os.environ.pop("STORAGE_DIR", None)

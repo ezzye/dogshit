@@ -1,5 +1,9 @@
 import gzip
+import os
+from pathlib import Path
+
 from fastapi import FastAPI, Depends, Request, HTTPException, Query
+from fastapi.responses import FileResponse
 from sqlmodel import Session, select
 from .database import init_db, get_session
 from .auth import auth_dependency
@@ -79,13 +83,22 @@ def download(
     expires: int = Query(...),
     signature: str = Query(...),
     _: None = Depends(auth_dependency),
-) -> dict:
+):
+    """Stream a processed file if the signed URL is valid."""
+
     if type not in {"summary", "report"}:
         raise HTTPException(status_code=400, detail="Invalid type")
+
     path = request.url.path
     if not verify_signed_url(path, expires, signature):
         raise HTTPException(status_code=403, detail="Invalid or expired URL")
-    return {"job_id": job_id, "type": type}
+
+    storage_dir = Path(os.environ.get("STORAGE_DIR", "./storage"))
+    file_path = storage_dir / f"{job_id}_{type}.txt"
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="File not found")
+
+    return FileResponse(file_path)
 
 
 @app.get("/rules")
