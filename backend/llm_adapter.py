@@ -8,7 +8,7 @@ import time
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from datetime import date
-from typing import Callable, Dict, Iterable, List, Tuple
+from typing import Dict, Iterable, List, Tuple
 
 
 logger = logging.getLogger(__name__)
