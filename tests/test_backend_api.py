@@ -8,6 +8,7 @@ from sqlmodel import SQLModel, Session, create_engine
 from sqlalchemy.pool import StaticPool
 
 from backend.app import app
+from backend.llm_adapter import get_adapter, AbstractAdapter
 from backend.database import get_session
 from backend.signing import generate_signed_url
 
@@ -22,12 +23,30 @@ def client_fixture():
         with Session(engine) as session:
             yield session
 
+    class DummyAdapter(AbstractAdapter):
+        def __init__(self):
+            super().__init__("test")
+            self.calls = 0
+
+        def _send(self, prompts):
+            self.calls += 1
+            return {"labels": [("unknown", 0.0)] * len(prompts), "usage": {"total_tokens": 0}}
+
+    dummy_adapter = DummyAdapter()
+
+    def adapter_override():
+        return dummy_adapter
+
     app.dependency_overrides[get_session] = get_session_override
+    app.dependency_overrides[get_adapter] = adapter_override
     with TestClient(app) as c:
+        c.adapter = dummy_adapter
         yield c
     app.dependency_overrides.clear()
     os.environ.pop("AUTH_BYPASS", None)
     os.environ.pop("STORAGE_DIR", None)
+    from backend import app as app_module
+    app_module.SIGNATURE_CACHE.clear()
 
 
 def test_upload_and_status(client: TestClient):
@@ -71,6 +90,15 @@ def test_classify_applies_user_rule(client: TestClient):
     )
     resp = client.post("/classify", json={"job_id": job_id, "user_id": 1})
     assert resp.json()["label"] == "coffee"
+
+
+def test_classify_uses_cache(client: TestClient):
+    job_id = client.post(
+        "/upload", data="mystery shop 123", headers={"Content-Type": "text/plain"}
+    ).json()["job_id"]
+    client.post("/classify", json={"job_id": job_id})
+    client.post("/classify", json={"job_id": job_id})
+    assert client.adapter.calls == 1
 
 def test_download(client: TestClient, tmp_path: Path):
     job_id = client.post(

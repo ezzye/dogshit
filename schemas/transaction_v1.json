@@ -7,8 +7,9 @@
     "date": {"type": "string"},
     "description": {"type": "string"},
     "amount": {"type": "string"},
-    "balance": {"type": ["string", "null"]}
+    "balance": {"type": ["string", "null"]},
+    "merchant_signature": {"type": "string"}
   },
-  "required": ["date", "description", "amount"],
+  "required": ["date", "description", "amount", "merchant_signature"],
   "additionalProperties": false
 }

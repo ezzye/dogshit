@@ -15,7 +15,9 @@ from .models import (
     ClassificationResult,
     ClassifyRequest,
 )
-from rules.engine import load_global_rules, merge_rules, evaluate
+from rules.engine import load_global_rules, merge_rules, evaluate, Rule
+from backend.llm_adapter import get_adapter, AbstractAdapter
+from bankcleanr.signature import normalise_signature
 
 app = FastAPI()
 
@@ -23,7 +25,22 @@ MAX_UPLOAD_SIZE = 100 * 1024 * 1024  # 100 MB
 ALLOWED_CONTENT_TYPES = {"application/x-ndjson", "text/plain"}
 
 
-GLOBAL_RULES = []
+GLOBAL_RULES: list[Rule] = []
+SIGNATURE_CACHE: dict[str, dict] = {}
+
+
+def _convert_user_rule(rule: UserRule) -> Rule:
+    return Rule(
+        scope="user",
+        owner_user_id=str(rule.user_id) if rule.user_id else None,
+        active=True,
+        priority=rule.priority,
+        version=rule.version,
+        provenance="user",
+        confidence=rule.confidence,
+        match={"type": rule.match_type, "pattern": rule.pattern, "fields": [rule.field]},
+        action={"label": rule.label, "category": rule.label},
+    )
 
 
 @app.on_event("startup")
@@ -126,17 +143,68 @@ def create_rule(
 def classify(
     req: ClassifyRequest,
     session: Session = Depends(get_session),
+    adapter: AbstractAdapter = Depends(get_adapter),
     _: None = Depends(auth_dependency),
 ) -> dict:
     job = session.get(ProcessingJob, req.job_id)
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
     upload = session.get(Upload, job.upload_id)
-    user_rules = session.exec(
+    signature = normalise_signature(upload.content)
+    user_rules_all = session.exec(
         select(UserRule).where(UserRule.user_id == req.user_id)
     ).all()
-    rules = merge_rules(GLOBAL_RULES, user_rules)
-    label = evaluate(upload.content, rules) or "unknown"
+    latest: dict[str, UserRule] = {}
+    for r in user_rules_all:
+        if r.pattern not in latest or r.version > latest[r.pattern].version:
+            latest[r.pattern] = r
+    engine_rules = [_convert_user_rule(r) for r in latest.values()]
+    rules = merge_rules(GLOBAL_RULES, engine_rules)
+    record = {"merchant_signature": signature, "description": upload.content}
+    label = evaluate(record, rules)
+    if not label:
+        if signature not in SIGNATURE_CACHE:
+            response = adapter.classify([signature], job_id=req.job_id)[0]
+            SIGNATURE_CACHE[signature] = response
+        response = SIGNATURE_CACHE[signature]
+        label = response["label"]
+        confidence = response.get("confidence", 0.0)
+        if confidence >= 0.85:
+            existing = session.exec(
+                select(UserRule)
+                .where(UserRule.user_id == req.user_id)
+                .where(UserRule.pattern == signature)
+                .order_by(UserRule.version.desc())
+            ).first()
+            if existing:
+                if confidence >= 0.95:
+                    session.add(
+                        UserRule(
+                            user_id=req.user_id,
+                            label=label,
+                            pattern=signature,
+                            match_type="exact",
+                            field="merchant_signature",
+                            priority=existing.priority,
+                            confidence=confidence,
+                            version=existing.version + 1,
+                        )
+                    )
+                    session.commit()
+            else:
+                session.add(
+                    UserRule(
+                        user_id=req.user_id,
+                        label=label,
+                        pattern=signature,
+                        match_type="exact",
+                        field="merchant_signature",
+                        priority=0,
+                        confidence=confidence,
+                        version=1,
+                    )
+                )
+                session.commit()
     result = ClassificationResult(job_id=req.job_id, result=label, status="completed")
     session.add(result)
     session.commit()
