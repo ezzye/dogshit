@@ -1,4 +1,3 @@
-import os
 from behave import given, then
 
 from features.steps.backend_api_steps import _setup_client, app
