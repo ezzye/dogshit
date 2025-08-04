@@ -1,20 +1,42 @@
-import json
 import re
+import json
 from datetime import datetime
 from pathlib import Path
-from typing import Iterable, List, Optional
+from typing import Iterable, List, Optional, Union
+from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
 
-class Rule(BaseModel):
-    label: str
+class Match(BaseModel):
+    type: str
     pattern: str
-    priority: int = 0
-    confidence: float = 1.0
+    flags: List[str] = []
+    fields: List[str]
+
+
+class Action(BaseModel):
+    merchant_canonical: Optional[str] = None
+    label: Optional[str] = None
+    category: str
+    subcategory: Optional[str] = None
+
+
+class Rule(BaseModel):
+    id: UUID = Field(default_factory=uuid4)
+    scope: str
+    owner_user_id: Optional[str] = None
+    active: bool = True
+    priority: int
     version: int = 1
+    created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
-    user_id: Optional[int] = None
+    provenance: str = "system"
+    confidence: float = 1.0
+    title: Optional[str] = None
+    notes: Optional[str] = None
+    match: Match
+    action: Action
 
 
 def load_global_rules(path: Optional[str] = None) -> List[Rule]:
@@ -29,27 +51,56 @@ def load_global_rules(path: Optional[str] = None) -> List[Rule]:
 
 
 def _precedence_key(rule: Rule):
-    # higher values should come first
-    return (rule.priority, rule.confidence, rule.version, rule.updated_at)
+    return (
+        rule.priority,
+        -rule.confidence,
+        -rule.version,
+        -rule.updated_at.timestamp(),
+    )
 
 
 def merge_rules(global_rules: Iterable[Rule], user_rules: Iterable[Rule]) -> List[Rule]:
     """Merge global and user rules applying precedence and overrides."""
     combined: dict[tuple[str, str], Rule] = {}
     for rule in global_rules:
-        key = (rule.label, rule.pattern)
+        key = (rule.action.label, rule.match.pattern)
         existing = combined.get(key)
-        if not existing or _precedence_key(rule) > _precedence_key(existing):
+        if not existing or _precedence_key(rule) < _precedence_key(existing):
             combined[key] = rule
     for rule in user_rules:
-        key = (rule.label, rule.pattern)
-        # user rule always overrides
+        key = (rule.action.label, rule.match.pattern)
         combined[key] = rule
-    return sorted(combined.values(), key=_precedence_key, reverse=True)
+    return sorted(combined.values(), key=_precedence_key)
 
 
-def evaluate(text: str, rules: Iterable[Rule]) -> Optional[str]:
-    for rule in sorted(rules, key=_precedence_key, reverse=True):
-        if re.search(rule.pattern, text, flags=re.IGNORECASE):
-            return rule.label
+def _match_text(text: str, match: Match) -> bool:
+    if match.type == "exact":
+        return text == match.pattern
+    if match.type == "contains":
+        return match.pattern.lower() in text.lower()
+    if match.type == "regex":
+        flags = 0
+        if "i" in match.flags:
+            flags |= re.IGNORECASE
+        if "m" in match.flags:
+            flags |= re.MULTILINE
+        return re.search(match.pattern, text, flags=flags) is not None
+    if match.type == "signature":
+        norm = lambda s: re.sub(r"[^A-Za-z0-9]", "", s).lower()
+        return norm(text) == norm(match.pattern)
+    return False
+
+
+def evaluate(data: Union[str, dict], rules: Iterable[Rule]) -> Optional[str]:
+    if isinstance(data, str):
+        record = {"description": data}
+    else:
+        record = data
+    for rule in sorted(rules, key=_precedence_key):
+        if not rule.active:
+            continue
+        for field in rule.match.fields:
+            value = record.get(field, "")
+            if isinstance(value, str) and _match_text(value, rule.match):
+                return rule.action.label or rule.action.category
     return None
