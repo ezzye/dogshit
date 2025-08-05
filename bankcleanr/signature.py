@@ -12,11 +12,17 @@ _PREFIXES: tuple[str, ...] = (
     "card",
     "payment",
     "purchase",
+    "dd",
+    "so",
+    "sto",
+    "tfr",
 )
 
 _SUFFIXES: tuple[str, ...] = (
     "uk",
     "gb",
+    "co",
+    "ltd",
 )
 
 
@@ -32,6 +38,13 @@ def _remove_tokens(text: str, tokens: Iterable[str], *, prefix: bool) -> str:
         elif not prefix and text.endswith(" " + token):
             text = text[: -(len(token) + 1)]
     return text
+
+
+def _trim_trailing_digits(text: str, *, min_length: int = 5) -> str:
+    tokens = text.split()
+    while tokens and tokens[-1].isdigit() and len(tokens[-1]) >= min_length:
+        tokens.pop()
+    return " ".join(tokens)
 
 
 def normalise_signature(text: str) -> str:
@@ -53,7 +66,7 @@ def normalise_signature(text: str) -> str:
     text = re.sub(r"\s+", " ", text).strip()
     text = _remove_tokens(text, _PREFIXES, prefix=True)
     text = _remove_tokens(text, _SUFFIXES, prefix=False)
-    text = re.sub(r"\b\d+\b", "", text)
+    text = _trim_trailing_digits(text)
     text = re.sub(r"\s+", " ", text).strip()
     return text
 
