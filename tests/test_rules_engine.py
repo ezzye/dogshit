@@ -26,6 +26,17 @@ def test_user_rule_overrides_global():
     assert merged[0].scope == "user"
 
 
+def test_user_rule_overrides_global_with_different_label():
+    g = [_base_rule(match={"type": "contains", "pattern": "coffee", "fields": ["description"]},
+                    action={"label": "global", "category": "drink"})]
+    u = [Rule(scope="user", owner_user_id="1", priority=0, version=1, provenance="user", confidence=1.0,
+             match={"type": "contains", "pattern": "coffee", "fields": ["description"]},
+             action={"label": "user", "category": "drink"})]
+    merged = merge_rules(g, u)
+    assert len(merged) == 1
+    assert merged[0].action.label == "user"
+
+
 def test_precedence_priority_confidence_version_updated():
     now = datetime.utcnow()
     earlier = now - timedelta(days=1)

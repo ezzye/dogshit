@@ -61,14 +61,14 @@ def _precedence_key(rule: Rule):
 
 def merge_rules(global_rules: Iterable[Rule], user_rules: Iterable[Rule]) -> List[Rule]:
     """Merge global and user rules applying precedence and overrides."""
-    combined: dict[tuple[str, str], Rule] = {}
+    combined: dict[tuple[str, tuple[str, ...]], Rule] = {}
     for rule in global_rules:
-        key = (rule.action.label, rule.match.pattern)
+        key = (rule.match.pattern, tuple(sorted(rule.match.fields)))
         existing = combined.get(key)
         if not existing or _precedence_key(rule) < _precedence_key(existing):
             combined[key] = rule
     for rule in user_rules:
-        key = (rule.action.label, rule.match.pattern)
+        key = (rule.match.pattern, tuple(sorted(rule.match.fields)))
         combined[key] = rule
     return sorted(combined.values(), key=_precedence_key)
 
