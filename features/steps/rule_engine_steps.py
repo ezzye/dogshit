@@ -15,6 +15,16 @@ def when_create_user_rule(context, label, pattern, priority, user_id):
     context.user_id = user_id
 
 
+@when('I attempt to create a user rule with label "{label}" pattern "{pattern}" priority {priority:d} for user {user_id:d}')
+def when_attempt_create_user_rule(context, label, pattern, priority, user_id):
+    if not hasattr(context, "client"):
+        _setup_client(context)
+    context.response = context.client.post(
+        "/rules",
+        json={"user_id": user_id, "label": label, "pattern": pattern, "priority": priority},
+    )
+
+
 @when('I classify with user id {user_id:d}')
 def when_classify(context, user_id):
     resp = context.client.post(
