@@ -13,3 +13,13 @@ def test_mask_iban():
 def test_mask_pan():
     masked = mask_pii("card 1234567890123456")
     assert masked == "card XXXXXXXXXXXX3456"
+
+
+def test_mask_name_exact():
+    masked = mask_pii("Paid to John Doe", ["John Doe"])
+    assert masked == "Paid to XX MASKED NAME XX"
+
+
+def test_mask_name_fuzzy():
+    masked = mask_pii("Paid to Jhon Doe", ["John Doe"])
+    assert masked == "Paid to XX MASKED NAME XX"
