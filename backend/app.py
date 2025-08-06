@@ -18,6 +18,7 @@ from .models import (
 from rules.engine import load_global_rules, merge_rules, evaluate, Rule
 from backend.llm_adapter import get_adapter, AbstractAdapter
 from bankcleanr.signature import normalise_signature
+import json
 
 app = FastAPI()
 
@@ -150,7 +151,21 @@ def classify(
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
     upload = session.get(Upload, job.upload_id)
-    signature = normalise_signature(upload.content)
+    # Parse NDJSON content into transaction records
+    transactions = []
+    for line in upload.content.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            tx = json.loads(line)
+        except json.JSONDecodeError as e:
+            raise HTTPException(status_code=400, detail=f"Invalid JSON line: {e}")
+        description = tx.get("description", "")
+        signature = normalise_signature(description)
+        tx_record = {**tx, "merchant_signature": signature}
+        transactions.append(tx_record)
+
     user_rules_all = session.exec(
         select(UserRule).where(UserRule.user_id == req.user_id)
     ).all()
@@ -160,53 +175,71 @@ def classify(
             latest[r.pattern] = r
     engine_rules = [_convert_user_rule(r) for r in latest.values()]
     rules = merge_rules(GLOBAL_RULES, engine_rules)
-    record = {"merchant_signature": signature, "description": upload.content}
-    label = evaluate(record, rules)
-    if not label:
-        if signature not in SIGNATURE_CACHE:
-            response = adapter.classify([signature], job_id=req.job_id)[0]
-            SIGNATURE_CACHE[signature] = response
-        response = SIGNATURE_CACHE[signature]
-        label = response["label"]
-        confidence = response.get("confidence", 0.0)
-        if confidence >= 0.85:
-            existing = session.exec(
-                select(UserRule)
-                .where(UserRule.user_id == req.user_id)
-                .where(UserRule.pattern == signature)
-                .order_by(UserRule.version.desc())
-            ).first()
-            if existing:
-                if confidence >= 0.95:
+
+    results: list[dict] = []
+    unknown_signatures = []
+    for tx in transactions:
+        label = evaluate(tx, rules)
+        tx["_label"] = label
+        if not label:
+            sig = tx["merchant_signature"]
+            if sig not in SIGNATURE_CACHE and sig not in unknown_signatures:
+                unknown_signatures.append(sig)
+
+    if unknown_signatures:
+        responses = adapter.classify(unknown_signatures, job_id=req.job_id)
+        for sig, resp in zip(unknown_signatures, responses):
+            SIGNATURE_CACHE[sig] = resp
+
+    processed_signatures: set[str] = set()
+    for tx in transactions:
+        label = tx.get("_label")
+        sig = tx["merchant_signature"]
+        if not label:
+            response = SIGNATURE_CACHE[sig]
+            label = response["label"]
+            confidence = response.get("confidence", 0.0)
+            if sig not in processed_signatures and confidence >= 0.85:
+                existing = session.exec(
+                    select(UserRule)
+                    .where(UserRule.user_id == req.user_id)
+                    .where(UserRule.pattern == sig)
+                    .order_by(UserRule.version.desc())
+                ).first()
+                if existing:
+                    if confidence >= 0.95:
+                        session.add(
+                            UserRule(
+                                user_id=req.user_id,
+                                label=label,
+                                pattern=sig,
+                                match_type="exact",
+                                field="merchant_signature",
+                                priority=existing.priority,
+                                confidence=confidence,
+                                version=existing.version + 1,
+                            )
+                        )
+                        session.commit()
+                else:
                     session.add(
                         UserRule(
                             user_id=req.user_id,
                             label=label,
-                            pattern=signature,
+                            pattern=sig,
                             match_type="exact",
                             field="merchant_signature",
-                            priority=existing.priority,
+                            priority=0,
                             confidence=confidence,
-                            version=existing.version + 1,
+                            version=1,
                         )
                     )
                     session.commit()
-            else:
-                session.add(
-                    UserRule(
-                        user_id=req.user_id,
-                        label=label,
-                        pattern=signature,
-                        match_type="exact",
-                        field="merchant_signature",
-                        priority=0,
-                        confidence=confidence,
-                        version=1,
-                    )
-                )
-                session.commit()
-    result = ClassificationResult(job_id=req.job_id, result=label, status="completed")
-    session.add(result)
-    session.commit()
-    session.refresh(result)
-    return {"classification_id": result.id, "label": label}
+            processed_signatures.add(sig)
+        result = ClassificationResult(job_id=req.job_id, result=label, status="completed")
+        session.add(result)
+        session.commit()
+        session.refresh(result)
+        results.append({"classification_id": result.id, "label": label})
+
+    return {"results": results}
