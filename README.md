@@ -285,6 +285,33 @@ On Windows use the `.exe` produced in the `dist/windows` directory:
 dist\windows\bankcleanr.exe parse "Redacted bank statements\22b583f5-4060-44eb-a844-945cd612353c (1).pdf" --jsonl tx.jsonl
 ```
 
+## Release process
+
+1. Update the version in `pyproject.toml` and commit the change.
+2. Create a new tag and push it to GitHub:
+
+```bash
+git tag vX.Y.Z
+git push origin vX.Y.Z
+```
+
+The `build` workflow builds executables for Linux, macOS (Intel and ARM) and Windows. Each job uploads its binary and a matching `.sha256` checksum file to the GitHub release associated with the tag.
+
+### Verifying checksums
+
+After downloading an executable and its checksum file, confirm the contents match:
+
+```bash
+# macOS / Linux
+shasum -a 256 -c bankcleanr-linux.sha256
+
+# Windows (PowerShell)
+CertUtil -hashfile bankcleanr-windows.exe SHA256
+Get-Content bankcleanr-windows.exe.sha256
+```
+
+The displayed hash must equal the value stored in the `.sha256` file before running the binary.
+
 ## Disclaimer
 
 Every summary includes the following disclaimer:
