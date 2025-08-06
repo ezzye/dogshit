@@ -16,7 +16,7 @@ from .models import (
     ClassifyRequest,
     LLMCost,
 )
-from rules.engine import load_global_rules, merge_rules, evaluate, Rule
+from rules.engine import load_global_rules, merge_rules, evaluate, Rule, norm
 from backend.llm_adapter import get_adapter, AbstractAdapter
 from bankcleanr.signature import normalise_signature
 import json
@@ -135,6 +135,25 @@ def create_rule(
     session: Session = Depends(get_session),
     _: None = Depends(auth_dependency),
 ):
+    normalised = norm(rule.pattern)
+    if sum(c.isalpha() for c in normalised) < 6:
+        raise HTTPException(
+            status_code=400,
+            detail="Pattern must contain at least 6 alphabetic characters",
+        )
+    existing = session.exec(
+        select(UserRule)
+        .where(UserRule.user_id == rule.user_id)
+        .where(UserRule.pattern == rule.pattern)
+        .order_by(UserRule.version.desc())
+    ).first()
+    if existing:
+        if existing.field != rule.field:
+            raise HTTPException(
+                status_code=400, detail="Field coverage cannot be narrower"
+            )
+        rule.version = existing.version + 1
+        rule.priority = existing.priority
     session.add(rule)
     session.commit()
     session.refresh(rule)
@@ -201,6 +220,9 @@ def classify(
             label = response["label"]
             confidence = response.get("confidence", 0.0)
             if sig not in processed_signatures and confidence >= 0.85:
+                if sum(c.isalpha() for c in norm(sig)) < 6:
+                    processed_signatures.add(sig)
+                    continue
                 existing = session.exec(
                     select(UserRule)
                     .where(UserRule.user_id == req.user_id)
@@ -208,20 +230,22 @@ def classify(
                     .order_by(UserRule.version.desc())
                 ).first()
                 if existing:
-                    if confidence >= 0.95:
-                        session.add(
-                            UserRule(
-                                user_id=req.user_id,
-                                label=label,
-                                pattern=sig,
-                                match_type="exact",
-                                field="merchant_signature",
-                                priority=existing.priority,
-                                confidence=confidence,
-                                version=existing.version + 1,
-                            )
+                    if existing.field != "merchant_signature" or confidence < 0.95:
+                        processed_signatures.add(sig)
+                        continue
+                    session.add(
+                        UserRule(
+                            user_id=req.user_id,
+                            label=label,
+                            pattern=sig,
+                            match_type="exact",
+                            field="merchant_signature",
+                            priority=existing.priority,
+                            confidence=confidence,
+                            version=existing.version + 1,
                         )
-                        session.commit()
+                    )
+                    session.commit()
                 else:
                     session.add(
                         UserRule(
