@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import time
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from datetime import date
-from typing import Dict, Iterable, List, Tuple
+from typing import Dict, Iterable, List, Tuple, Type
 
 from .database import get_session
 from .models import LLMCost
@@ -20,8 +21,9 @@ logger = logging.getLogger(__name__)
 class DailyCostTracker:
     """Track per-job and per-day LLM costs."""
 
-    def __init__(self, limit: float) -> None:
+    def __init__(self, limit: float, job_limit: float = float(os.getenv("MAX_JOB_COST_GBP", "5.0"))) -> None:
         self.limit = limit
+        self.job_limit = job_limit
         self.reset()
 
     def reset(self) -> None:
@@ -35,6 +37,8 @@ class DailyCostTracker:
             self.reset()
         if self.daily_total + cost > self.limit:
             raise RuntimeError("Daily cost limit exceeded")
+        if self.job_costs[job_id] + cost > self.job_limit:
+            raise RuntimeError("Job cost limit exceeded")
         self.daily_total += cost
         self.job_costs[job_id] += cost
         for session in get_session():
@@ -48,15 +52,17 @@ class DailyCostTracker:
             )
             session.commit()
         logger.info(
-            "job %s cost %.4f GBP (daily total %.4f)",
+            "job %s cost %.4f GBP (job total %.4f, daily total %.4f)",
             job_id,
             cost,
+            self.job_costs[job_id],
             self.daily_total,
         )
 
 
 _DAILY_LIMIT = float(os.getenv("MAX_DAILY_COST_GBP", "1.0"))
-cost_tracker = DailyCostTracker(_DAILY_LIMIT)
+_JOB_LIMIT = float(os.getenv("MAX_JOB_COST_GBP", "5.0"))
+cost_tracker = DailyCostTracker(_DAILY_LIMIT, _JOB_LIMIT)
 
 
 def _chunks(items: Iterable[str], size: int) -> Iterable[List[str]]:
@@ -135,20 +141,75 @@ class OpenAIAdapter(AbstractAdapter):
         return {"labels": labels, "usage": {"total_tokens": total_tokens}}
 
 
-_adapter_instance: AbstractAdapter | None = None
+class AnthropicAdapter(AbstractAdapter):
+    """Adapter for Anthropic models."""
+
+    def __init__(self, model: str = "claude-3-haiku", **kwargs):
+        super().__init__(model, **kwargs)
+
+    def _send(self, prompts: List[str]) -> Dict:  # pragma: no cover - external API
+        raise NotImplementedError("Anthropic adapter requires external API access")
 
 
-def get_adapter() -> AbstractAdapter:
-    global _adapter_instance
-    if _adapter_instance is None:
-        _adapter_instance = OpenAIAdapter()
-    return _adapter_instance
+class AzureAdapter(AbstractAdapter):
+    """Adapter for Azure-hosted models."""
+
+    def __init__(self, model: str = "gpt-4o-mini", **kwargs):
+        super().__init__(model, **kwargs)
+
+    def _send(self, prompts: List[str]) -> Dict:  # pragma: no cover - external API
+        raise NotImplementedError("Azure adapter requires external API access")
+
+
+_providers: Dict[str, Type[AbstractAdapter]] = {}
+_adapter_instances: Dict[str, AbstractAdapter] = {}
+
+
+def register_provider(name: str, cls: Type[AbstractAdapter]) -> None:
+    _providers[name.lower()] = cls
+
+
+def get_provider_name() -> str:
+    provider = os.getenv("LLM_PROVIDER")
+    if provider:
+        return provider.lower()
+    config_file = os.getenv("LLM_CONFIG_FILE")
+    if config_file and os.path.exists(config_file):
+        try:
+            with open(config_file) as fh:
+                data = json.load(fh)
+            cfg_provider = data.get("llm_provider")
+            if cfg_provider:
+                return cfg_provider.lower()
+        except Exception:  # pragma: no cover - invalid config
+            pass
+    return "openai"
+
+
+def get_adapter(provider_name: str | None = None) -> AbstractAdapter:
+    name = (provider_name or get_provider_name()).lower()
+    adapter = _adapter_instances.get(name)
+    if adapter is None:
+        cls = _providers.get(name)
+        if cls is None:
+            raise ValueError(f"Unknown LLM provider {name}")
+        adapter = cls()
+        _adapter_instances[name] = adapter
+    return adapter
+
+
+register_provider("openai", OpenAIAdapter)
+register_provider("anthropic", AnthropicAdapter)
+register_provider("azure", AzureAdapter)
 
 
 __all__ = [
     "AbstractAdapter",
     "OpenAIAdapter",
+    "AnthropicAdapter",
+    "AzureAdapter",
     "get_adapter",
+    "register_provider",
     "cost_tracker",
     "DailyCostTracker",
 ]
