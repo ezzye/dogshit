@@ -5,7 +5,7 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 from sqlmodel import SQLModel, Session, create_engine
 from sqlalchemy.pool import StaticPool
-from behave import given, when, then
+from behave import given, when, then  # type: ignore[import-untyped]
 
 from backend.app import app
 from backend.database import get_session

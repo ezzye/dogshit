@@ -3046,6 +3046,18 @@ files = [
 referencing = "*"
 
 [[package]]
+name = "types-reportlab"
+version = "4.4.1.20250602"
+description = "Typing stubs for reportlab"
+optional = false
+python-versions = ">=3.9"
+groups = ["dev"]
+files = [
+    {file = "types_reportlab-4.4.1.20250602-py3-none-any.whl", hash = "sha256:35f23b5a3526fed8cbd5d611673551761280d129ec702467c1d11dd08b8fb971"},
+    {file = "types_reportlab-4.4.1.20250602.tar.gz", hash = "sha256:ef26555384e9114e751ac6587740adcb4f241844cf103dd6f6f141d5254c1644"},
+]
+
+[[package]]
 name = "typing-extensions"
 version = "4.14.0"
 description = "Backported and Experimental Type Hints for Python 3.9+"
@@ -3495,4 +3507,4 @@ cffi = ["cffi (>=1.11)"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "d6832746785fb1f87d4ed367002694da02b9ad628f82c9e3f0c28765740e33e3"
+content-hash = "8d935702ece2edbf0e235a38237e6ef9fe676ad64fb9fff1ac14e2d9eef2b2da"
