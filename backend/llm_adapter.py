@@ -10,6 +10,9 @@ from collections import defaultdict
 from datetime import date
 from typing import Dict, Iterable, List, Tuple
 
+from .database import get_session
+from .models import LLMCost
+
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +29,7 @@ class DailyCostTracker:
         self.daily_total = 0.0
         self.job_costs: Dict[int, float] = defaultdict(float)
 
-    def add(self, job_id: int, cost: float) -> None:
+    def add(self, job_id: int, tokens_in: int, tokens_out: int, cost: float) -> None:
         today = date.today()
         if today != self.day:
             self.reset()
@@ -34,6 +37,16 @@ class DailyCostTracker:
             raise RuntimeError("Daily cost limit exceeded")
         self.daily_total += cost
         self.job_costs[job_id] += cost
+        for session in get_session():
+            session.add(
+                LLMCost(
+                    job_id=job_id,
+                    tokens_in=tokens_in,
+                    tokens_out=tokens_out,
+                    estimated_cost_gbp=cost,
+                )
+            )
+            session.commit()
         logger.info(
             "job %s cost %.4f GBP (daily total %.4f)",
             job_id,
@@ -83,9 +96,11 @@ class AbstractAdapter(ABC):
                         raise
                     time.sleep(2 ** attempt)
             usage = data.get("usage", {})
-            tokens = usage.get("total_tokens", 0)
+            tokens_in = usage.get("prompt_tokens", usage.get("total_tokens", 0))
+            tokens_out = usage.get("completion_tokens", 0)
+            tokens = tokens_in + tokens_out
             cost = tokens / 1000 * self.price_per_1k_tokens_gbp
-            cost_tracker.add(job_id, cost)
+            cost_tracker.add(job_id, tokens_in, tokens_out, cost)
             for label, confidence in data.get("labels", []):
                 responses.append(
                     {

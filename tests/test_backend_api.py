@@ -15,7 +15,7 @@ from backend.signing import generate_signed_url
 
 
 @pytest.fixture(name="client")
-def client_fixture():
+def client_fixture(monkeypatch):
     os.environ["AUTH_BYPASS"] = "1"
     engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
     SQLModel.metadata.create_all(engine)
@@ -40,6 +40,7 @@ def client_fixture():
 
     app.dependency_overrides[get_session] = get_session_override
     app.dependency_overrides[get_adapter] = adapter_override
+    monkeypatch.setattr("backend.llm_adapter.get_session", get_session_override)
     with TestClient(app) as c:
         c.adapter = dummy_adapter
         yield c
