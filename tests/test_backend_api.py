@@ -1,5 +1,6 @@
 import gzip
 import os
+import json
 from pathlib import Path
 
 import pytest
@@ -73,28 +74,54 @@ def test_rules(client: TestClient):
 
 
 def test_classify(client: TestClient):
+    content = "\n".join(
+        [
+            json.dumps({"description": "data"}),
+            json.dumps({"description": "other"}),
+        ]
+    )
     job_id = client.post(
-        "/upload", data="data", headers={"Content-Type": "text/plain"}
+        "/upload",
+        data=content,
+        headers={"Content-Type": "application/x-ndjson"},
     ).json()["job_id"]
     resp = client.post("/classify", json={"job_id": job_id})
-    assert resp.json()["label"] == "unknown"
+    labels = [r["label"] for r in resp.json()["results"]]
+    assert labels == ["unknown", "unknown"]
 
 
 def test_classify_applies_user_rule(client: TestClient):
+    content = "\n".join(
+        [
+            json.dumps({"description": "coffee shop"}),
+            json.dumps({"description": "mystery"}),
+        ]
+    )
     job_id = client.post(
-        "/upload", data="coffee shop", headers={"Content-Type": "text/plain"}
+        "/upload",
+        data=content,
+        headers={"Content-Type": "application/x-ndjson"},
     ).json()["job_id"]
     client.post(
         "/rules",
         json={"user_id": 1, "label": "coffee", "pattern": "coffee", "priority": 5},
     )
     resp = client.post("/classify", json={"job_id": job_id, "user_id": 1})
-    assert resp.json()["label"] == "coffee"
+    labels = [r["label"] for r in resp.json()["results"]]
+    assert labels == ["coffee", "unknown"]
 
 
 def test_classify_uses_cache(client: TestClient):
+    content = "\n".join(
+        [
+            json.dumps({"description": "mystery shop 123"}),
+            json.dumps({"description": "mystery shop 123"}),
+        ]
+    )
     job_id = client.post(
-        "/upload", data="mystery shop 123", headers={"Content-Type": "text/plain"}
+        "/upload",
+        data=content,
+        headers={"Content-Type": "application/x-ndjson"},
     ).json()["job_id"]
     client.post("/classify", json={"job_id": job_id})
     client.post("/classify", json={"job_id": job_id})
