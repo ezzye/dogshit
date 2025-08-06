@@ -12,3 +12,68 @@
 | 9    | Docs & Hand-off            | • Update README (quick start), MODULES.md (architecture), CHANGELOG.md <br>• PR checklist & screencasts/notes for manual checks | Not Started |       | |             |
 
 To be read in conjunction with notes.md and REFACTOR_PLAN.md
+
+This is the contract that needs to be fulfilled.  This contains the goal:
+
+Deliverable: DS/dogshit MVP comprising cross-platform PyInstaller extractor binaries and a Chrome-only WCAG 2.1 AA FastAPI + SQLite web app; must include: an automatic heuristic-first/LLM-second classification loop that updates heuristics in SQLite and generates a ≤30 s, ≤5 MB WeasyPrint savings PDF from PII-masked ISO-formatted `transaction_v1.json`; hard constraint: the user secures the detailed report in exactly **three clicks**.
+
+This is what is expected.  The knowns:
+
+### Current **Knowns**
+
+1. **Desktop Extractor Binaries**
+
+    * Built with **PyInstaller** (one-file) for **macOS (Intel & Apple Silicon), Windows 10/11 x64, and Linux x86-64**.
+    * Unsigned builds are acceptable for the MVP.
+    * Distributed via **GitHub Releases** with published **SHA-256 checksums** (GPG signatures optional).
+
+2. **Parsing & Masking**
+
+    * Processes **100 PDF pages ≤ 2 minutes using ≤ 1 GB RAM** on a typical laptop.
+    * Outputs PII-masked `transaction_v1.jsonl` where:
+
+        * Dates → **ISO 8601 `YYYY-MM-DD`**
+        * Amounts → **signed decimal string `"-123.45"`** (GBP, no symbol)
+        * Sort code / account / IBAN / PAN → masked as `****1234`
+        * User name & other personal strings → replaced with `"XX MASKED NAME XX"`
+    * Masking applied **during extraction**, so no raw PII is uploaded or logged.
+
+3. **Analysis Pipeline**
+
+    * **First pass:** heuristic rule engine stored in **SQLite**.
+    * **Second pass:** **LLM** (cost-capped at **£5/report**) refines labels, totals, and **automatically writes updated heuristics back to the same SQLite DB**—no human review loop.
+    * Web layer supplies LLM with:
+
+        * Individual labelled transactions
+        * Aggregated totals per label
+        * Additional context for report generation.
+
+4. **Web Application**
+
+    * **Backend:** **FastAPI** + SQLite.
+    * **Frontend:** Chrome-only (MVP), meets **WCAG 2.1 AA** accessibility.
+    * **Three-click UX constraint**
+
+        1. **Download** the desktop parsing tool.
+        2. **Upload** the JSONL & start analysis.
+        3. **Download** the generated report.
+    * Generates savings/financial report via **WeasyPrint**:
+
+        * PDF produced in **≤ 30 seconds**
+        * File size **≤ 5 MB**.
+
+5. **Output Artifacts**
+
+    * **Savings report**: PDF (and HTML view) with detailed insights, cancellations list, labelled spending breakdown.
+    * **Updated heuristic rules** persisted in SQLite.
+
+6. **Standards & Testing**
+
+    * Python 3.12, pytest + BDD + E2E tests; TDD workflow.
+    * Privacy & security guardrails (no secrets in repo, masking enforced).
+    * Performance, cost, and accessibility targets as stated above.
+
+These constitute the authoritative **“Knowns”** for the locked MVP contract.
+
+Please ensure contract is met.  The task is not complete until all above conditions implemented.
+
