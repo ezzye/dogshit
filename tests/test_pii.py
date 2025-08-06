@@ -1,4 +1,4 @@
-from bankcleanr.pii import mask_pii
+from bankcleanr.pii import mask_pii, mask_names
 
 
 def test_mask_sort_code():
@@ -15,8 +15,12 @@ def test_mask_pan():
     assert masked == "card XXXXXXXXXXXX3456"
 
 
-def test_mask_name_exact():
-    masked = mask_pii("Paid to John Doe", ["John Doe"])
+def test_mask_names_helper():
+    assert mask_names("John Doe went") == "XX MASKED NAME XX went"
+
+
+def test_mask_name_auto():
+    masked = mask_pii("Paid to John Doe")
     assert masked == "Paid to XX MASKED NAME XX"
 
 

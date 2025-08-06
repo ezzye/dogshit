@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import re
 from typing import Dict, List
+from datetime import datetime
+from decimal import Decimal
 
 import pdfplumber
 
@@ -28,10 +30,10 @@ class LloydsParser:
                         clean_desc = mask_pii(desc.strip())
                         records.append(
                             {
-                                "date": date,
+                                "date": datetime.strptime(date, "%d %b %Y").date().isoformat(),
                                 "description": clean_desc,
-                                "amount": amount,
-                                "balance": balance,
+                                "amount": f"{Decimal(amount):+.2f}",
+                                "balance": f"{Decimal(balance):+.2f}",
                                 "merchant_signature": normalise_signature(clean_desc),
                             }
                         )

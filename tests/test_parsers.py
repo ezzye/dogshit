@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import tempfile
 
 import pytest
@@ -62,3 +63,6 @@ def test_extract_transactions(bank, expected):
         assert len(records) == expected
         for rec in records:
             jsonschema.validate(rec, SCHEMA)
+            assert re.match(r"^\d{4}-\d{2}-\d{2}$", rec["date"])
+            assert re.match(r"^[+-]\d+\.\d{2}$", rec["amount"])
+        assert any(r["amount"].startswith("+") for r in records)
