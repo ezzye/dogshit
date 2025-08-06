@@ -75,3 +75,17 @@ def test_cost_limit(engine, monkeypatch):
         adapter.classify(["a"], job_id=1)
     with Session(engine) as session:
         assert session.exec(select(LLMCost)).first() is None
+
+
+def test_batches_prompts_exceed_batch_size(engine, monkeypatch):
+    tracker = DailyCostTracker(limit=1.0)
+    monkeypatch.setattr("backend.llm_adapter.cost_tracker", tracker)
+    responses = {
+        p: {"label": p, "confidence": 1.0, "tokens": 1}
+        for p in ["a", "b", "c", "d", "e"]
+    }
+    adapter = DummyAdapter(responses)
+    prompts = list(responses.keys())
+    adapter.classify(prompts, job_id=1)
+    expected_calls = (len(prompts) + adapter.batch_size - 1) // adapter.batch_size
+    assert adapter.calls == expected_calls
