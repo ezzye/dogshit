@@ -40,6 +40,10 @@ pytest-asyncio = "^0.23.6"
 [tool.poetry.scripts]
 bankcleanr = "bankcleanr.cli:app"
 
+[tool.mypy]
+explicit_package_bases = true
+packages = ["backend", "bankcleanr", "rules"]
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
