@@ -1,8 +1,21 @@
 import pytest
+import json
+import pytest
+import sys
+from pathlib import Path
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
 from sqlmodel import SQLModel, Session, create_engine, select
 from sqlalchemy.pool import StaticPool
 
-from backend.llm_adapter import AbstractAdapter, DailyCostTracker
+from backend.llm_adapter import (
+    AbstractAdapter,
+    AnthropicAdapter,
+    AzureAdapter,
+    DailyCostTracker,
+    get_adapter,
+    _adapter_instances,
+)
 from backend.models import LLMCost
 
 
@@ -89,3 +102,45 @@ def test_batches_prompts_exceed_batch_size(engine, monkeypatch):
     adapter.classify(prompts, job_id=1)
     expected_calls = (len(prompts) + adapter.batch_size - 1) // adapter.batch_size
     assert adapter.calls == expected_calls
+
+
+def test_job_cost_cap(engine, monkeypatch):
+    tracker = DailyCostTracker(limit=100.0, job_limit=5.0)
+    monkeypatch.setattr("backend.llm_adapter.cost_tracker", tracker)
+
+    class CostlyAdapter(AbstractAdapter):
+        price_per_1k_tokens_gbp = 1.0
+
+        def _send(self, prompts):
+            return {"labels": [("x", 1.0)] * len(prompts), "usage": {"prompt_tokens": 3000, "completion_tokens": 0}}
+
+    adapter = CostlyAdapter("m")
+    adapter.classify(["a"], job_id=1)
+    with pytest.raises(RuntimeError):
+        adapter.classify(["b"], job_id=1)
+
+
+def test_logs_cost(engine, monkeypatch, caplog):
+    tracker = DailyCostTracker(limit=100.0, job_limit=5.0)
+    monkeypatch.setattr("backend.llm_adapter.cost_tracker", tracker)
+    adapter = DummyAdapter({"a": {"label": "x", "confidence": 1.0, "tokens": 100}})
+    with caplog.at_level("INFO"):
+        adapter.classify(["a"], job_id=1)
+    assert any("cost" in r.message for r in caplog.records)
+
+
+def test_provider_selected_via_env(monkeypatch):
+    monkeypatch.setenv("LLM_PROVIDER", "anthropic")
+    _adapter_instances.clear()
+    adapter = get_adapter()
+    assert isinstance(adapter, AnthropicAdapter)
+
+
+def test_provider_selected_via_config(tmp_path, monkeypatch):
+    monkeypatch.delenv("LLM_PROVIDER", raising=False)
+    config = tmp_path / "cfg.json"
+    config.write_text(json.dumps({"llm_provider": "azure"}))
+    monkeypatch.setenv("LLM_CONFIG_FILE", str(config))
+    _adapter_instances.clear()
+    adapter = get_adapter()
+    assert isinstance(adapter, AzureAdapter)
