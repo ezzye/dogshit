@@ -9,6 +9,7 @@ from rapidfuzz import fuzz
 _SORT_CODE_RE = re.compile(r"\b\d{2}-\d{2}-\d{2}\b")
 _IBAN_RE = re.compile(r"\b[A-Z]{2}\d{2}[A-Z0-9]{10,}\b")
 _PAN_RE = re.compile(r"\b\d{12,19}\b")
+_NAME_RE = re.compile(r"\b[A-Z][a-z]+(?:\s+[A-Z][a-z]+)+\b")
 
 _MASKED_NAME = "XX MASKED NAME XX"
 
@@ -65,9 +66,14 @@ def _mask_names(text: str, names: Iterable[str], threshold: int = 85) -> str:
     return text
 
 
+def mask_names(text: str) -> str:
+    """Mask names detected in ``text`` using a simple heuristic."""
+    return _NAME_RE.sub(_MASKED_NAME, text)
+
+
 def mask_pii(text: str, names: Iterable[str] | None = None) -> str:
     """Mask common PII patterns and supplied names in the given text."""
-    for masker in (_mask_sort_code, _mask_iban, _mask_pan):
+    for masker in (_mask_sort_code, _mask_iban, _mask_pan, mask_names):
         text = masker(text)
     if names:
         text = _mask_names(text, names)
