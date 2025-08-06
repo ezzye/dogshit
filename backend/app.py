@@ -14,7 +14,6 @@ from .models import (
     UserRule,
     ClassificationResult,
     ClassifyRequest,
-    LLMCost,
 )
 from rules.engine import load_global_rules, merge_rules, evaluate, Rule, norm
 from backend.llm_adapter import get_adapter, AbstractAdapter
