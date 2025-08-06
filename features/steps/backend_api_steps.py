@@ -10,6 +10,7 @@ from behave import given, when, then
 from backend.app import app
 from backend.database import get_session
 from backend.signing import generate_signed_url
+import backend.llm_adapter as llm_adapter
 
 
 def _setup_client(context):
@@ -22,6 +23,7 @@ def _setup_client(context):
             yield session
 
     app.dependency_overrides[get_session] = get_session_override
+    llm_adapter.get_session = get_session_override
     context.client = TestClient(app)
 
 

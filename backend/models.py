@@ -35,6 +35,14 @@ class ClassificationResult(SQLModel, table=True):
     status: str = Field(default="queued")
 
 
+class LLMCost(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    job_id: int = Field(foreign_key="processingjob.id")
+    tokens_in: int = 0
+    tokens_out: int = 0
+    estimated_cost_gbp: float
+
+
 class ClassifyRequest(SQLModel):
     job_id: int
     user_id: int = 0
