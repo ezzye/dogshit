@@ -4,6 +4,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, Depends, Request, HTTPException, Query
 from fastapi.responses import FileResponse
+from .report import router as report_router
 from sqlmodel import Session, select
 from .database import init_db, get_session
 from .auth import auth_dependency
@@ -29,6 +30,7 @@ ALLOWED_CONTENT_TYPES = {"application/x-ndjson", "text/plain"}
 GLOBAL_RULES: list[Rule] = []
 SIGNATURE_CACHE: dict[str, dict] = {}
 
+app.include_router(report_router)
 
 def _convert_user_rule(rule: UserRule) -> Rule:
     return Rule(

@@ -23,6 +23,7 @@ fastapi = "^0.111.0"
 sqlmodel = "^0.0.16"
 uvicorn = "^0.30.0"
 rapidfuzz = "^3.6.1"
+weasyprint = "^62.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.1.1"
