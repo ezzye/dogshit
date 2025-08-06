@@ -2,7 +2,7 @@ import os
 import subprocess
 import tempfile
 
-from behave import given, when, then
+from behave import given, when, then  # type: ignore[import-untyped]
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 

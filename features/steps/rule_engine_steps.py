@@ -1,5 +1,5 @@
 import os
-from behave import when, then
+from behave import when, then  # type: ignore[import-untyped]
 
 from features.steps.backend_api_steps import _setup_client, app
 

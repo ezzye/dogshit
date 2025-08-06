@@ -1,4 +1,4 @@
-from behave import given, then
+from behave import given, then  # type: ignore[import-untyped]
 
 from features.steps.backend_api_steps import _setup_client, app
 from backend.llm_adapter import AbstractAdapter, get_adapter
