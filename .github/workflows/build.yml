@@ -56,9 +56,10 @@ jobs:
           $hash = Get-FileHash "dist\${{ matrix.artifact }}.exe" -Algorithm SHA256
           "$($hash.Hash)  $($hash.Path | Split-Path -Leaf)" | Out-File -Encoding utf8 "dist\${{ matrix.artifact }}.sha256"
       - name: Upload release assets
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@26994186c0ac3ef5cae75ac16aa32e8153525f77
         with:
           tag_name: ${{ github.ref_name }}
+          fail_on_unmatched_files: true
           files: |
             dist/${{ matrix.artifact }}${{ matrix.ext }}
             dist/${{ matrix.artifact }}.sha256
