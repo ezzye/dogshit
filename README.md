@@ -307,7 +307,7 @@ shasum -a 256 -c bankcleanr-linux.sha256
 
 # Windows (PowerShell)
 CertUtil -hashfile bankcleanr-windows.exe SHA256
-Get-Content bankcleanr-windows.exe.sha256
+Get-Content bankcleanr-windows.sha256
 ```
 
 The displayed hash must equal the value stored in the `.sha256` file before running the binary.
