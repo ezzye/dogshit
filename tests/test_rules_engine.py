@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta  # for date calculations
 
 from rules.engine import Rule, merge_rules, evaluate
 
