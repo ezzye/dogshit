@@ -1,3 +1,5 @@
+"""Utilities for generating and verifying signed URLs."""
+
 import hashlib
 import hmac
 import os
