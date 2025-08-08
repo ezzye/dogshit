@@ -78,3 +78,12 @@ the extractor for Windows and macOS, while section 9 mentions signed builds:
 > **Signed builds** – follow `component_overview.md` for macOS notarisation & Windows EV cert.
 
 This document fulfils those references by detailing the required steps.
+
+## Category Taxonomy
+
+Transaction classification across the project relies on a shared taxonomy
+defined in `data/taxonomy/categories.json`. The file lists sanctioned
+categories such as Income, Housing and Utilities. Both the rules engine and the
+analytics utilities load this list and validate that every rule uses one of the
+approved categories. When introducing new categories update the JSON file and
+ensure the taxonomy tests continue to pass.

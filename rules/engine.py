@@ -7,6 +7,15 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
 
+BASE_DIR = Path(__file__).resolve().parent.parent
+CATEGORIES_PATH = BASE_DIR / "data" / "taxonomy" / "categories.json"
+
+
+def load_categories(path: Path = CATEGORIES_PATH) -> List[str]:
+    """Load canonical category list from JSON file."""
+    with path.open() as f:
+        return json.load(f)
+
 
 class Match(BaseModel):
     type: str
@@ -39,6 +48,16 @@ class Rule(BaseModel):
     action: Action
 
 
+def validate_rule_categories(
+    rules: Iterable[Rule], categories: Optional[Iterable[str]] = None
+) -> None:
+    """Ensure every rule's category is in the sanctioned taxonomy."""
+    categories_set = set(categories or load_categories())
+    unknown = {r.action.category for r in rules if r.action.category not in categories_set}
+    if unknown:
+        raise ValueError(f"Unknown categories: {sorted(unknown)}")
+
+
 def load_global_rules(path: Optional[str] = None) -> List[Rule]:
     """Load global rules from heuristic_rule_v1.json."""
     if path is None:
@@ -47,7 +66,9 @@ def load_global_rules(path: Optional[str] = None) -> List[Rule]:
         path = Path(path)
     with path.open() as f:
         data = json.load(f)
-    return [Rule(**item) for item in data]
+    rules = [Rule(**item) for item in data]
+    validate_rule_categories(rules)
+    return rules
 
 
 def _precedence_key(rule: Rule):

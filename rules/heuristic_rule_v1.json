@@ -16,7 +16,7 @@
     },
     "action": {
       "label": "coffee",
-      "category": "drink"
+      "category": "Groceries"
     }
   },
   {
@@ -36,7 +36,7 @@
     },
     "action": {
       "label": "tea",
-      "category": "drink"
+      "category": "Groceries"
     }
   }
 ]
