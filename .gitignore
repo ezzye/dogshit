@@ -213,3 +213,7 @@ summary.csv
 # Node
 frontend/node_modules/
 frontend/dist/
+
+# Allow frontend lib utilities
+!frontend/src/lib/
+!frontend/src/lib/**
