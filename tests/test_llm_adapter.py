@@ -129,6 +129,32 @@ def test_logs_cost(engine, monkeypatch, caplog):
     assert any("cost" in r.message for r in caplog.records)
 
 
+def test_report_cost_recorded(engine, monkeypatch):
+    tracker = DailyCostTracker(limit=1.0)
+    monkeypatch.setattr("backend.llm_adapter.cost_tracker", tracker)
+    with tracker.track(job_id=1, cost=0.2):
+        pass
+    with Session(engine) as session:
+        entry = session.exec(select(LLMCost)).one()
+        assert entry.job_id == 1
+        assert entry.tokens_in == 0
+        assert entry.tokens_out == 0
+        assert entry.estimated_cost_gbp == pytest.approx(0.2)
+
+
+def test_report_cost_limit(engine, monkeypatch):
+    tracker = DailyCostTracker(limit=1.0, job_limit=0.3)
+    monkeypatch.setattr("backend.llm_adapter.cost_tracker", tracker)
+    with tracker.track(job_id=1, cost=0.2):
+        pass
+    with pytest.raises(RuntimeError):
+        with tracker.track(job_id=1, cost=0.2):
+            pass
+    with Session(engine) as session:
+        entries = list(session.exec(select(LLMCost)))
+        assert len(entries) == 1
+
+
 def test_provider_selected_via_env(monkeypatch):
     monkeypatch.setenv("LLM_PROVIDER", "anthropic")
     _adapter_instances.clear()
