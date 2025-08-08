@@ -77,3 +77,8 @@ These constitute the authoritative **“Knowns”** for the locked MVP contract.
 
 Please ensure contract is met.  The task is not complete until all above conditions implemented.
 
+## Manual Check Notes
+
+- Quick start instructions exercised end-to-end.
+- Screencast reference: `screencasts/three_click_demo.mp4`.
+

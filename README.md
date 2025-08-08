@@ -3,6 +3,27 @@
 A simple tool for analysing bank statements using various LLM adapters. It ships a
 command line interface and a small test-suite.
 
+## Quick Start
+
+```bash
+poetry install --with dev
+docker compose up --build api frontend
+```
+
+Open <http://localhost:5173> and follow the three-click flow:
+
+1. **Download** the desktop extractor.
+2. **Upload** the generated `transaction_v1.jsonl` file.
+3. **Download** the savings report.
+
+### Build
+
+Create self-contained binaries for the extractor:
+
+```bash
+poetry run bash scripts/build_exe.sh
+```
+
 ## Setup with Poetry
 
 1. [Install Poetry](https://python-poetry.org/docs/#installation).
