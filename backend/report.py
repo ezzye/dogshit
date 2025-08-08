@@ -12,8 +12,6 @@ from .auth import auth_dependency
 from .signing import generate_signed_url
 from backend.llm_adapter import cost_tracker
 
-from weasyprint import HTML, CSS
-
 # LLM callable returning generated HTML and usage statistics
 LLMFunc = Callable[[str], Tuple[str, Dict[str, int]]]
 
@@ -61,6 +59,12 @@ def _report_path(job_id: int) -> Path:
 
 def generate_report(job_id: int, llm: LLMFunc) -> Path:
     """Generate a PDF report for the given job using the provided LLM."""
+    try:  # noqa: PLC0415 - imported inside for optional dependency
+        from weasyprint import HTML, CSS
+    except ImportError as exc:  # pragma: no cover - optional dependency
+        raise RuntimeError(
+            "WeasyPrint is required to generate PDF reports"
+        ) from exc
     summary_file = _summary_path(job_id)
     if not summary_file.exists():
         raise FileNotFoundError("Summary not found")
