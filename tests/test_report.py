@@ -1,5 +1,7 @@
 import json
 import os
+import sys
+import types
 from pathlib import Path
 
 import pytest
@@ -53,8 +55,8 @@ def client_fixture(tmp_path: Path, monkeypatch):
     tracker = DailyCostTracker(limit=1.0)
     monkeypatch.setattr("backend.llm_adapter.cost_tracker", tracker)
     monkeypatch.setattr("backend.llm_adapter.get_session", get_session_override)
-    monkeypatch.setattr(report, "HTML", DummyHTML)
-    monkeypatch.setattr(report, "CSS", DummyCSS)
+    dummy_weasy = types.SimpleNamespace(HTML=DummyHTML, CSS=DummyCSS)
+    monkeypatch.setitem(sys.modules, "weasyprint", dummy_weasy)
 
     app.dependency_overrides[get_session] = get_session_override
     app.dependency_overrides[get_llm] = lambda: dummy_llm

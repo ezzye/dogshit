@@ -1,4 +1,7 @@
 import os
+import sys
+import types
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlmodel import SQLModel, Session, create_engine
@@ -6,6 +9,14 @@ from sqlalchemy.pool import StaticPool
 
 from backend.app import app
 from backend.database import get_session
+
+
+@pytest.fixture(autouse=True)
+def _mock_weasyprint(monkeypatch):
+    if "weasyprint" not in sys.modules:
+        monkeypatch.setitem(
+            sys.modules, "weasyprint", types.SimpleNamespace(HTML=None, CSS=None)
+        )
 
 
 @pytest.fixture(name="client")

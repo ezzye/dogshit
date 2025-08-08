@@ -1,6 +1,8 @@
 import gzip
 import os
 import json
+import sys
+import types
 from pathlib import Path
 
 import pytest
@@ -12,6 +14,14 @@ from backend.app import app
 from backend.llm_adapter import get_adapter, AbstractAdapter
 from backend.database import get_session
 from backend.signing import generate_signed_url
+
+
+@pytest.fixture(autouse=True)
+def _mock_weasyprint(monkeypatch):
+    if "weasyprint" not in sys.modules:
+        monkeypatch.setitem(
+            sys.modules, "weasyprint", types.SimpleNamespace(HTML=None, CSS=None)
+        )
 
 
 @pytest.fixture(name="client")
@@ -69,7 +79,7 @@ def test_upload_gzip(client: TestClient):
 
 
 def test_rules(client: TestClient):
-    client.post("/rules", json={"label": "allow", "pattern": "allow"})
+    client.post("/rules", json={"label": "allow", "pattern": "allowed"})
     rules = client.get("/rules").json()
     assert any(r["label"] == "allow" for r in rules)
 
