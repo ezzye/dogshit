@@ -114,11 +114,13 @@ def download(
         raise HTTPException(status_code=403, detail="Invalid or expired URL")
 
     storage_dir = Path(os.environ.get("STORAGE_DIR", "./storage"))
-    file_path = storage_dir / f"{job_id}_{type}.txt"
+    ext = "pdf" if type == "report" else "txt"
+    file_path = storage_dir / f"{job_id}_{type}.{ext}"
     if not file_path.exists():
         raise HTTPException(status_code=404, detail="File not found")
 
-    return FileResponse(file_path)
+    media_type = "application/pdf" if type == "report" else "text/plain"
+    return FileResponse(file_path, media_type=media_type)
 
 
 @app.get("/rules")
