@@ -28,6 +28,22 @@ def load_categories(path: Path = CATEGORIES_PATH) -> List[str]:
         return json.load(f)
 
 
+def validate_rule_categories(
+    rules: Iterable[Dict[str, Any] | Any], categories: Optional[List[str]] = None
+) -> None:
+    """Ensure rules use categories from the sanctioned taxonomy."""
+    categories_set = set(categories or load_categories())
+
+    def _cat(rule: Any) -> str:
+        if isinstance(rule, dict):
+            return rule.get("action", {}).get("category")
+        return getattr(rule.action, "category", None)
+
+    unknown = {c for r in rules if (c := _cat(r)) not in categories_set}
+    if unknown:
+        raise ValueError(f"Unknown categories: {sorted(unknown)}")
+
+
 def compute_monthly_totals(transactions: Iterable[Dict[str, Any]]) -> Dict[str, float]:
     """Aggregate transaction amounts per YYYY-MM."""
     totals: Dict[str, float] = defaultdict(float)
