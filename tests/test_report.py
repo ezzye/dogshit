@@ -98,11 +98,15 @@ def test_report_generation(client: tuple[TestClient, any], tmp_path: Path):
     assert pdf_path.exists()
 
     with Session(engine) as session:
-        entry = session.exec(select(LLMCost)).one()
-        assert entry.job_id == job_id
-        assert entry.tokens_in == 10
-        assert entry.tokens_out == 5
-        assert entry.estimated_cost_gbp > 0
+        entries = list(session.exec(select(LLMCost)))
+        assert len(entries) == 2
+        llm_entry = next(e for e in entries if e.tokens_in == 10)
+        pdf_entry = next(e for e in entries if e.tokens_in == 0)
+        assert llm_entry.job_id == job_id
+        assert pdf_entry.job_id == job_id
+        assert llm_entry.tokens_out == 5
+        assert pdf_entry.tokens_out == 0
+        assert pdf_entry.estimated_cost_gbp > 0
 
 
 def test_report_missing_summary(client: tuple[TestClient, any]):

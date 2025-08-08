@@ -8,6 +8,7 @@ import os
 import time
 from abc import ABC, abstractmethod
 from collections import defaultdict
+from contextlib import contextmanager
 from datetime import date
 from typing import Dict, Iterable, List, Tuple, Type
 
@@ -58,6 +59,18 @@ class DailyCostTracker:
             self.job_costs[job_id],
             self.daily_total,
         )
+
+    def add_raw_cost(self, job_id: int, cost: float) -> None:
+        """Record a non-token-based cost."""
+        self.add(job_id, 0, 0, cost)
+
+    @contextmanager
+    def track(self, job_id: int, cost: float, tokens_in: int = 0, tokens_out: int = 0):
+        """Context manager to record cost after a block completes."""
+        try:
+            yield
+        finally:
+            self.add(job_id, tokens_in, tokens_out, cost)
 
 
 _DAILY_LIMIT = float(os.getenv("MAX_DAILY_COST_GBP", "1.0"))

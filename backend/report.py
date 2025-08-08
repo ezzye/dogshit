@@ -85,7 +85,9 @@ def generate_report(job_id: int, llm: LLMFunc) -> Path:
 
     html_str = content if isinstance(content, str) else str(content)
     css = CSS(string=A4_CSS)
-    pdf_bytes = HTML(string=html_str).write_pdf(stylesheets=[css])
+    pdf_cost = float(os.getenv("WEASYPRINT_COST_GBP", "0.01"))
+    with cost_tracker.track(job_id, pdf_cost):
+        pdf_bytes = HTML(string=html_str).write_pdf(stylesheets=[css])
 
     if len(pdf_bytes) > 5 * 1024 * 1024:
         raise RuntimeError("Generated PDF too large")
