@@ -2,6 +2,7 @@
 
 install:
 	poetry install --with dev
+	cd frontend && npm install
 
 unit:
 	poetry run pytest
