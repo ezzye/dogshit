@@ -1,6 +1,7 @@
 import os
 import tempfile
 from pathlib import Path
+import json
 
 from fastapi.testclient import TestClient
 from sqlmodel import SQLModel, Session, create_engine
@@ -34,8 +35,11 @@ def given_client(context):
 
 @when('I upload text "{text}"')
 def when_upload_text(context, text):
+    data = text
+    if not text.strip().startswith("{"):
+        data = json.dumps({"description": text})
     resp = context.client.post(
-        "/upload", data=text, headers={"Content-Type": "text/plain"}
+        "/upload", data=data, headers={"Content-Type": "application/x-ndjson"}
     )
     context.job_id = resp.json()["job_id"]
 
