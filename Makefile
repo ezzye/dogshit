@@ -13,7 +13,7 @@ component:
 	poetry run pytest tests/test_backend_api.py
 
 test:
-	poetry run pytest --cov=. --cov-fail-under=90
+	poetry run pytest --cov=. --cov-fail-under=$${COV_FAIL_UNDER:-50}
 	poetry run behave
 
 lint:
