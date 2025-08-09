@@ -1,4 +1,4 @@
-.PHONY: install test unit behave component lint e2e
+.PHONY: install test unit behave component lint e2e start
 
 install:
 	poetry install --with dev
@@ -27,5 +27,8 @@ e2e:
 	elif docker compose version >/dev/null 2>&1; then \
 	docker compose up --build frontend e2e; \
 	else \
-	docker-compose up --build frontend e2e; \
-	fi
+        docker-compose up --build frontend e2e; \
+        fi
+
+start:
+	docker compose up --build api frontend
