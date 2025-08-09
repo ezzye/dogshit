@@ -5,16 +5,42 @@ command line interface and a small test-suite.
 
 ## Quick Start
 
-```bash
-poetry install --with dev
-docker compose up --build api frontend
-```
+1. Install the backend and frontend dependencies:
+
+   ```bash
+   poetry install --with dev
+   cd frontend && npm install && cd ..
+   ```
+
+2. Start the API and Vite dev server:
+
+   ```bash
+   docker compose up --build api frontend
+   ```
 
 Open <http://localhost:5173> and follow the three-click flow:
 
 1. **Download** the desktop extractor.
 2. **Upload** the generated `transaction_v1.jsonl` file.
 3. **Download** the savings report.
+
+### Backend and frontend build
+
+Run the services directly without Docker:
+
+#### Backend
+
+```bash
+poetry run uvicorn backend.app:app --reload
+```
+
+#### Frontend
+
+```bash
+cd frontend
+npm run dev   # start Vite dev server
+npm run build # create production assets
+```
 
 ### Build
 
@@ -45,108 +71,23 @@ You can run the tests directly or via the `Makefile`:
 
 ```bash
 make test
-# run Cypress end-to-end tests (requires Docker Desktop or Podman)
+# run Playwright end-to-end tests
 make e2e
 # or run them manually
 poetry run pytest
 poetry run behave
+cd frontend && npm test
 ```
 
 ### Frontend end-to-end tests
 
-Install the JavaScript dependencies and Xvfb before running Cypress:
+The SPA uses [Playwright](https://playwright.dev/) for browser tests. Install the
+JavaScript dependencies and run the suite with:
 
 ```bash
 cd frontend
 npm install
-sudo apt-get update && sudo apt-get install -y xvfb
-xvfb-run -a npm run test:e2e
-```
-Alternatively run everything inside Docker. Start the Vite dev server and Cypress
-with a single command:
-```bash
-docker compose up frontend e2e
-```
-The `e2e` service now runs entirely inside the container and no longer mounts the
-`frontend` directory from the host.
-
-When running the dev server inside Docker or a CI environment set the
-`CI` variable so Vite only allows requests from the `frontend` hostname:
-
-```bash
-CI=1 npm run dev
-```
-Local development does not require this variable.
-The `docker-compose.yml` already sets `CI=1` for the `frontend` service so
-requests from the `e2e` container are allowed.
-
-This starts Cypress in a virtual display so the browser can run in headless
-mode. Use `cypress run --browser chrome --headed` if you prefer a visible
-browser.
-
-### Docker on macOS
-
-The `docker` command is required to run the Cypress container above. If the
-command is missing, install [Docker Desktop for Mac](https://www.docker.com/products/docker-desktop/)
-and then launch the application once so it can finish configuring the CLI. The
-`docker` and `docker compose` commands will then be available in your terminal.
-
-You can verify the installation with:
-
-```bash
-docker --version
-docker compose version
-```
-
-As an alternative you can use [Podman](https://podman.io/). Install it via
-Homebrew and create the default virtual machine:
-
-```bash
-brew install podman
-podman machine init
-podman machine start
-```
-
-After the machine is running you can run the end-to-end tests with:
-
-```bash
-make e2e
-```
-
-
-Installing the `podman-docker` package provides `docker` command compatibility so the rest of the instructions remain the same.
-
-### Running end-to-end tests with Podman/Docker
-
-Rebuild the Cypress container whenever the test files or their dependencies
-change:
-
-```bash
-podman compose build e2e  # or: docker compose build e2e
-```
-
-Then start the Vite dev server and run the tests inside the containers:
-
-```bash
-podman compose up --build frontend e2e
-make e2e
-```
-The `make e2e` command automatically uses Podman when available and falls back
-to Docker otherwise.
-
-If the Cypress container cannot reach the dev server, Vite may be refusing
-connections from external hosts. Update `frontend/vite.config.ts` so the dev
-server listens on all interfaces and set the `CI` variable when running in
-containers:
-
-```ts
-export default defineConfig({
-  server: {
-    host: true,
-    // CI=1 restricts access to the "frontend" hostname
-    allowedHosts: process.env.CI ? ['frontend'] : ['localhost'],
-  },
-});
+npm test
 ```
 
 ## Configuration

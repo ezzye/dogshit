@@ -13,7 +13,7 @@ This document outlines the major components of the project.
 
 - Vite + React + TypeScript + Tailwind located in `frontend/`.
 - Presents the upload → progress → results flow and optional rules editor.
-- Communicates with the API and provides Cypress end-to-end tests.
+- Communicates with the API and provides Playwright end-to-end tests.
 
 ## Extractor
 
