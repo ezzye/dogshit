@@ -1,24 +1,26 @@
-import { test, expect } from '@playwright/test';
-
 // Three-click journey: upload -> progress -> results
+// Uses Cypress to simulate user interactions and network responses.
 
-test('user can upload file and reach results', async ({ page }) => {
-  await page.route('/rules', route => route.fulfill({ json: ['rule one'] }));
-  await page.goto('/');
+describe('user can upload file and reach results', () => {
+  it('navigates through upload, progress and results pages', () => {
+    cy.intercept('GET', '/rules', ['rule one']);
+    cy.visit('/');
 
-  await page.route('/upload', route => route.fulfill({ json: { job_id: '123' } }));
-  await page.route('/status/123', route => route.fulfill({ json: { status: 'completed' } }));
-  await page.route('/download/123/summary', route => route.fulfill({ body: 'summary' }));
-  await page.route('/download/123/details', route => route.fulfill({ body: 'details' }));
+    cy.intercept('POST', '/upload', { job_id: '123' });
+    cy.intercept('GET', '/status/123', { status: 'completed' });
+    cy.intercept('GET', '/download/123/summary', { body: 'summary' });
+    cy.intercept('GET', '/download/123/details', { body: 'details' });
 
-  const filePath = 'index.html';
-  await page.setInputFiles('input[type="file"]', filePath);
-  await page.getByRole('button', { name: /upload/i }).click();
+    const filePath = 'index.html';
+    cy.get('input[type="file"]').selectFile(filePath);
+    cy.contains('button', /upload/i).click();
 
-  await page.waitForURL('**/progress/123');
-  await expect(page.getByRole('status')).toBeVisible();
+    cy.url().should('include', '/progress/123');
+    cy.get('[role="status"]').should('be.visible');
 
-  await page.waitForURL('**/results/123');
-  await expect(page.getByRole('link', { name: /summary/i })).toBeVisible();
-  await expect(page.getByRole('link', { name: /details/i })).toBeVisible();
+    cy.url().should('include', '/results/123');
+    cy.contains('a', /summary/i).should('be.visible');
+    cy.contains('a', /details/i).should('be.visible');
+  });
 });
+
