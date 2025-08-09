@@ -32,7 +32,8 @@ def extract(
     records = extract_transactions(str(input_pdf), bank=bank)
     with output_jsonl.open("w", encoding="utf-8") as fh:
         for item in records:
-            item["description"] = mask_pii(item["description"], names)
+            desc = item.get("description") or ""
+            item["description"] = mask_pii(desc, names)
             jsonschema.validate(item, SCHEMA)
             fh.write(json.dumps(item) + "\n")
 

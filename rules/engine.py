@@ -58,13 +58,13 @@ def validate_rule_categories(
         raise ValueError(f"Unknown categories: {sorted(unknown)}")
 
 
-def load_global_rules(path: Optional[str] = None) -> List[Rule]:
+def load_global_rules(path: str | Path | None = None) -> List[Rule]:
     """Load global rules from heuristic_rule_v1.json."""
     if path is None:
-        path = Path(__file__).with_name("heuristic_rule_v1.json")
+        path_obj = Path(__file__).with_name("heuristic_rule_v1.json")
     else:
-        path = Path(path)
-    with path.open() as f:
+        path_obj = Path(path)
+    with path_obj.open() as f:
         data = json.load(f)
     rules = [Rule(**item) for item in data]
     validate_rule_categories(rules)
