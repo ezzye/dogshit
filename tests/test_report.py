@@ -10,7 +10,6 @@ from sqlalchemy.pool import StaticPool
 from sqlmodel import SQLModel, Session, create_engine, select
 
 from backend.app import app
-from backend import report
 from backend.report import get_llm
 from backend.database import get_session
 from backend.models import LLMCost
