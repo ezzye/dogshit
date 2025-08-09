@@ -10,7 +10,7 @@ from abc import ABC, abstractmethod
 from collections import defaultdict
 from contextlib import contextmanager
 from datetime import date
-from typing import Dict, Iterable, List, Tuple, Type
+from typing import Callable, Dict, Iterable, List, Tuple
 
 from .database import get_session
 from .models import LLMCost
@@ -149,7 +149,8 @@ class OpenAIAdapter(AbstractAdapter):
             resp = self.client.chat.completions.create(
                 model=self.model, messages=[{"role": "user", "content": prompt}]
             )
-            labels.append((resp.choices[0].message.content.strip(), 1.0))
+            content = resp.choices[0].message.content or ""
+            labels.append((content.strip(), 1.0))
             total_tokens += getattr(resp.usage, "total_tokens", 0)
         return {"labels": labels, "usage": {"total_tokens": total_tokens}}
 
@@ -174,12 +175,12 @@ class AzureAdapter(AbstractAdapter):
         raise NotImplementedError("Azure adapter requires external API access")
 
 
-_providers: Dict[str, Type[AbstractAdapter]] = {}
+_providers: Dict[str, Callable[[], AbstractAdapter]] = {}
 _adapter_instances: Dict[str, AbstractAdapter] = {}
 
 
-def register_provider(name: str, cls: Type[AbstractAdapter]) -> None:
-    _providers[name.lower()] = cls
+def register_provider(name: str, factory: Callable[[], AbstractAdapter]) -> None:
+    _providers[name.lower()] = factory
 
 
 def get_provider_name() -> str:
@@ -203,10 +204,10 @@ def get_adapter(provider_name: str | None = None) -> AbstractAdapter:
     name = (provider_name or get_provider_name()).lower()
     adapter = _adapter_instances.get(name)
     if adapter is None:
-        cls = _providers.get(name)
-        if cls is None:
+        factory = _providers.get(name)
+        if factory is None:
             raise ValueError(f"Unknown LLM provider {name}")
-        adapter = cls()
+        adapter = factory()
         _adapter_instances[name] = adapter
     return adapter
 

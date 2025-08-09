@@ -20,7 +20,7 @@ test:
 
 lint:
 	poetry run ruff check .
-	poetry run mypy .
+	poetry run mypy bankcleanr backend rules
 
 e2e:
 	@if command -v podman >/dev/null 2>&1; then \

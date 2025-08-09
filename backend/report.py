@@ -60,7 +60,7 @@ def _report_path(job_id: int) -> Path:
 def generate_report(job_id: int, llm: LLMFunc) -> Path:
     """Generate a PDF report for the given job using the provided LLM."""
     try:  # noqa: PLC0415 - imported inside for optional dependency
-        from weasyprint import HTML, CSS
+        from weasyprint import HTML, CSS  # type: ignore[import-untyped]
     except ImportError as exc:  # pragma: no cover - optional dependency
         raise RuntimeError(
             "WeasyPrint is required to generate PDF reports"

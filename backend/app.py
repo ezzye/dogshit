@@ -16,7 +16,15 @@ from .models import (
     ClassificationResult,
     ClassifyRequest,
 )
-from rules.engine import load_global_rules, merge_rules, evaluate, Rule, norm
+from rules.engine import (
+    load_global_rules,
+    merge_rules,
+    evaluate,
+    Rule,
+    norm,
+    Match,
+    Action,
+)
 from backend.llm_adapter import get_adapter, AbstractAdapter
 from bankcleanr.signature import normalise_signature
 import json
@@ -41,8 +49,8 @@ def _convert_user_rule(rule: UserRule) -> Rule:
         version=rule.version,
         provenance="user",
         confidence=rule.confidence,
-        match={"type": rule.match_type, "pattern": rule.pattern, "fields": [rule.field]},
-        action={"label": rule.label, "category": rule.label},
+        match=Match(type=rule.match_type, pattern=rule.pattern, fields=[rule.field]),
+        action=Action(label=rule.label, category=rule.label),
     )
 
 
@@ -148,7 +156,7 @@ def create_rule(
         select(UserRule)
         .where(UserRule.user_id == rule.user_id)
         .where(UserRule.pattern == rule.pattern)
-        .order_by(UserRule.version.desc())
+        .order_by(UserRule.version.desc())  # type: ignore[attr-defined]
     ).first()
     if existing:
         if existing.field != rule.field:
@@ -174,6 +182,8 @@ def classify(
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
     upload = session.get(Upload, job.upload_id)
+    if upload is None:
+        raise HTTPException(status_code=404, detail="Upload not found")
     # Parse NDJSON content into transaction records
     transactions = []
     for line in upload.content.splitlines():
@@ -230,7 +240,7 @@ def classify(
                     select(UserRule)
                     .where(UserRule.user_id == req.user_id)
                     .where(UserRule.pattern == sig)
-                    .order_by(UserRule.version.desc())
+                    .order_by(UserRule.version.desc())  # type: ignore[attr-defined]
                 ).first()
                 if existing:
                     if existing.field != "merchant_signature" or confidence < 0.95:

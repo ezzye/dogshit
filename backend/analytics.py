@@ -34,12 +34,12 @@ def validate_rule_categories(
     """Ensure rules use categories from the sanctioned taxonomy."""
     categories_set = set(categories or load_categories())
 
-    def _cat(rule: Any) -> str:
+    def _cat(rule: Any) -> str | None:
         if isinstance(rule, dict):
             return rule.get("action", {}).get("category")
         return getattr(rule.action, "category", None)
 
-    unknown = {c for r in rules if (c := _cat(r)) not in categories_set}
+    unknown = {c for r in rules if (c := _cat(r)) and c not in categories_set}
     if unknown:
         raise ValueError(f"Unknown categories: {sorted(unknown)}")
 

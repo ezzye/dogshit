@@ -39,7 +39,7 @@ def _mask_pan(text: str) -> str:
 def _find_fuzzy_span(text: str, name: str, threshold: int) -> Tuple[int, int] | None:
     """Return the start/end span of the best fuzzy match or ``None``."""
     name_len = len(name)
-    best_score = threshold
+    best_score: float = float(threshold)
     best_span: Tuple[int, int] | None = None
     for start in range(len(text)):
         for end in range(start + max(1, name_len - 2), min(len(text), start + name_len + 2) + 1):
