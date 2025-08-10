@@ -68,6 +68,7 @@ poetry run bankcleanr build
 The extractor ships with parsers for a few UK banks:
 
 - `barclays`
+- `coop` (separate `Moneyout` and `Moneyin` columns)
 - `hsbc`
 - `lloyds`
 
