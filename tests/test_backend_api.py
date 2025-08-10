@@ -99,6 +99,9 @@ def test_classify(client: TestClient):
     resp = client.post("/classify", json={"job_id": job_id})
     labels = [r["label"] for r in resp.json()["results"]]
     assert labels == ["unknown", "unknown"]
+    # ensure the job status is updated once processing is complete
+    status = client.get(f"/status/{job_id}").json()["status"]
+    assert status == "completed"
 
 
 def test_classify_applies_user_rule(client: TestClient):
