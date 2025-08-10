@@ -29,6 +29,13 @@ def _create_pdf(path: str, bank: str) -> None:
             "01 Jan 2024 Rent -500.00 500.00",
             "02 Jan 2024 Salary 2000.00 2500.00",
         ]
+    elif bank == "coop":
+        lines = [
+            "Co-op Bank",
+            "Date Description Moneyout Moneyin Balance",
+            "01 Jan 2024 Coffee Shop 3.50 0.00 996.50",
+            "02 Jan 2024 Salary 0.00 2000.00 2996.50",
+        ]
     else:
         lines = ["Placeholder Bank"]
 
