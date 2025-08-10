@@ -47,7 +47,7 @@ npm run build # create production assets
 Create self-contained binaries for the extractor:
 
 ```bash
-poetry run bash scripts/build_exe.sh
+poetry run bankcleanr build
 ```
 
 ## Setup with Poetry
@@ -197,54 +197,47 @@ rule to the database.
 
 ## Building standalone executables
 
-Run `scripts/build_exe.sh` to create single-file binaries for Linux, macOS and
-Windows. Install `pyinstaller` first (either via `pip install pyinstaller` or
-`poetry install --with dev`). Because PyInstaller cannot cross compile you must
-execute the script on the operating system you want to target. The resulting
-files are written to the `dist/` directory.
-
-For macOS builds the architecture can be customised by setting the
-`MACOS_ARCH` environment variable (defaults to `universal2`). For example to
-produce an ARM64-only binary run:
+Run `bankcleanr build` to create a single-file binary for the current operating
+system:
 
 ```bash
-MACOS_ARCH=arm64 poetry run bash scripts/build_exe.sh --target macos
+poetry run bankcleanr build
 ```
 
-Ensure your Python interpreter matches the requested architecture. First locate
-the active interpreter:
+Install `pyinstaller` first (either via `pip install pyinstaller` or
+`poetry install --with dev`). Because PyInstaller cannot cross compile you must
+execute this command on the operating system you want to target. The resulting
+file is written to the `dist/` directory.
+
+For macOS builds ensure the Python interpreter matches the desired architecture
+(`arm64` or `x86_64`). First locate the active interpreter:
 
 ```bash
 pyenv which python3
 ```
 
-Then inspect the binary to confirm it is universal:
+Then inspect the binary to confirm its architecture:
 
 ```bash
 file $(pyenv which python3)
 ```
 
-The output should mention both `arm64` and `x86_64` when using
-`MACOS_ARCH=universal2`. Installing Python from
-[python.org](https://www.python.org) provides such a universal build.
+The output should mention both `arm64` and `x86_64` when using a universal
+build. Installing Python from
+[python.org](https://www.python.org) provides such an interpreter.
 
-To verify a build you can run the Linux binary on the included sample PDF:
+To verify a build you can run the binary on the included sample PDF:
 
 ```bash
-./dist/linux/bankcleanr parse "Redacted bank statements/22b583f5-4060-44eb-a844-945cd612353c (1).pdf" --jsonl tx.jsonl
+./dist/bankcleanr parse "Redacted bank statements/22b583f5-4060-44eb-a844-945cd612353c (1).pdf" --jsonl tx.jsonl
 ```
 This command produces a `tx.jsonl` file containing the parsed transactions.
 
-macOS users can verify the universal binary in the same way:
-
-```bash
-./dist/macos/bankcleanr parse "Redacted bank statements/22b583f5-4060-44eb-a844-945cd612353c (1).pdf" --jsonl tx.jsonl
-```
-
-On Windows use the `.exe` produced in the `dist/windows` directory:
+macOS users can run the same command. On Windows use the `.exe` produced in the
+`dist` directory:
 
 ```cmd
-dist\windows\bankcleanr.exe parse "Redacted bank statements\22b583f5-4060-44eb-a844-945cd612353c (1).pdf" --jsonl tx.jsonl
+dist\bankcleanr.exe parse "Redacted bank statements\22b583f5-4060-44eb-a844-945cd612353c (1).pdf" --jsonl tx.jsonl
 ```
 
 ## Release process
