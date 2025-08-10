@@ -47,8 +47,8 @@ npm run build # create production assets
 Create self-contained binaries for the extractor:
 
 ```bash
-poetry run bankcleanr build
-```
+   poetry run bankcleanr build
+   ```
 
 ## Setup with Poetry
 
@@ -61,6 +61,24 @@ poetry run bankcleanr build
    ```
 
    Alternatively, run `make install` if you prefer using the new Makefile.
+
+## Supported banks
+
+The extractor ships with parsers for a few UK banks:
+
+- `barclays`
+- `hsbc`
+- `lloyds`
+
+Select the appropriate parser with the `--bank` option:
+
+```bash
+poetry run bankcleanr extract statement.pdf tx.jsonl --bank hsbc
+```
+
+Unit tests for these parsers live in [`tests/test_parsers.py`](tests/test_parsers.py).
+Contributors adding a new bank should extend that file with corresponding
+coverage.
 
 ## Running the tests
 
