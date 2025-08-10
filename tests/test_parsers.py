@@ -59,10 +59,20 @@ def test_extract_transactions(bank, expected):
     with tempfile.TemporaryDirectory() as tmp:
         pdf_path = os.path.join(tmp, f"{bank}.pdf")
         _create_pdf(pdf_path, bank)
-        records = extract_transactions(pdf_path, bank=bank)
+        records = list(extract_transactions(pdf_path, bank=bank))
         assert len(records) == expected
         for rec in records:
             jsonschema.validate(rec, SCHEMA)
             assert re.match(r"^\d{4}-\d{2}-\d{2}$", rec["date"])
             assert re.match(r"^[+-]\d+\.\d{2}$", rec["amount"])
         assert any(r["amount"].startswith("+") for r in records)
+
+
+def test_extract_transactions_directory():
+    with tempfile.TemporaryDirectory() as tmp:
+        pdf1 = os.path.join(tmp, "a.pdf")
+        pdf2 = os.path.join(tmp, "b.pdf")
+        _create_pdf(pdf1, "barclays")
+        _create_pdf(pdf2, "barclays")
+        records = list(extract_transactions(tmp, bank="barclays"))
+        assert len(records) == 4
