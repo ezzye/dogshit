@@ -1,15 +1,16 @@
 """High level extraction helpers."""
 from __future__ import annotations
 
-from typing import Dict, List
+from pathlib import Path
+from typing import Dict, Iterator
 
 from .parsers import PARSER_REGISTRY
 
 
 def extract_transactions(
     pdf_path: str, bank: str = "barclays"
-) -> List[Dict[str, str | None]]:
-    """Extract transactions from a PDF statement using the configured parser."""
+) -> Iterator[Dict[str, str | None]]:
+    """Yield transactions from a PDF or directory of PDFs using the configured parser."""
     try:
         parser_cls = PARSER_REGISTRY[bank]
     except KeyError as exc:
@@ -18,4 +19,16 @@ def extract_transactions(
             f"Unsupported bank '{bank}'. Available banks: {available}"
         ) from exc
     parser = parser_cls()
-    return parser.parse(pdf_path)
+    path = Path(pdf_path)
+
+    def _iter() -> Iterator[Dict[str, str | None]]:
+        if path.is_dir():
+            pdf_files = sorted(path.glob("*.pdf"))
+            for pdf_file in pdf_files:
+                for record in parser.parse(str(pdf_file)):
+                    yield record
+        else:
+            for record in parser.parse(str(path)):
+                yield record
+
+    return _iter()

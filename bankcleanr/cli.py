@@ -20,8 +20,11 @@ app = typer.Typer()
 
 @app.command()
 def extract(
-    input_pdf: Path,
-    output_jsonl: Path,
+    input_pdf: Path = typer.Argument(
+        ..., exists=True, file_okay=True, dir_okay=True, readable=True,
+        help="Path to a PDF file or directory of PDFs",
+    ),
+    output_jsonl: Path = typer.Argument(..., help="Output JSONL file"),
     bank: str = typer.Option(
         "barclays",
         "--bank",
@@ -29,13 +32,12 @@ def extract(
     ),
     mask_names: str = typer.Option("", "--mask-names", help="Comma-separated names to mask"),
 ) -> None:
-    """Extract transactions from PDF and write JSONL."""
+    """Extract transactions from PDFs and write JSONL."""
     if not mask_names and sys.stdin.isatty():
         mask_names = typer.prompt("Enter comma-separated names to mask", default="")
     names = [n.strip() for n in mask_names.split(",") if n.strip()]
-    records = extract_transactions(str(input_pdf), bank=bank)
     with output_jsonl.open("w", encoding="utf-8") as fh:
-        for item in records:
+        for item in extract_transactions(str(input_pdf), bank=bank):
             desc = item.get("description") or ""
             item["description"] = mask_pii(desc, names)
             jsonschema.validate(item, SCHEMA)
