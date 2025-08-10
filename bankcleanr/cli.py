@@ -22,7 +22,11 @@ app = typer.Typer()
 def extract(
     input_pdf: Path,
     output_jsonl: Path,
-    bank: str = typer.Option("barclays", "--bank", help="Bank identifier"),
+    bank: str = typer.Option(
+        "barclays",
+        "--bank",
+        help="Bank identifier (barclays, hsbc, lloyds)",
+    ),
     mask_names: str = typer.Option("", "--mask-names", help="Comma-separated names to mask"),
 ) -> None:
     """Extract transactions from PDF and write JSONL."""
