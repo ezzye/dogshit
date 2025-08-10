@@ -1,0 +1,177 @@
+[
+  {
+    "date": "2025-06-18",
+    "description": "TESCO STORES 3458",
+    "amount": "-4.00",
+    "balance": null,
+    "merchant_signature": "tesco stores 3458"
+  },
+  {
+    "date": "2025-06-18",
+    "description": "TFC EDMONTON",
+    "amount": "-5.28",
+    "balance": null,
+    "merchant_signature": "tfc edmonton"
+  },
+  {
+    "date": "2025-06-18",
+    "description": "THAMES WATER",
+    "amount": "+16.00",
+    "balance": "+208.10",
+    "merchant_signature": "thames water"
+  },
+  {
+    "date": "2025-06-19",
+    "description": "PAYPAL *7DIGITAL",
+    "amount": "-1.49",
+    "balance": null,
+    "merchant_signature": "paypal 7digital"
+  },
+  {
+    "date": "2025-06-19",
+    "description": "PPOINT_*VICTORIA F",
+    "amount": "-2.99",
+    "balance": null,
+    "merchant_signature": "ppointvictoria f"
+  },
+  {
+    "date": "2025-06-19",
+    "description": "PEOPLES CHOICE",
+    "amount": "-5.00",
+    "balance": null,
+    "merchant_signature": "peoples choice"
+  },
+  {
+    "date": "2025-06-19",
+    "description": "XX MASKED NAME XX",
+    "amount": "-6.50",
+    "balance": null,
+    "merchant_signature": "xx masked name xx"
+  },
+  {
+    "date": "2025-06-19",
+    "description": "VICTORIA CAFE",
+    "amount": "-7.50",
+    "balance": null,
+    "merchant_signature": "victoria cafe"
+  },
+  {
+    "date": "2025-06-19",
+    "description": "TFL TRAVEL CH",
+    "amount": "+9.20",
+    "balance": "+175.42",
+    "merchant_signature": "tfl travel ch"
+  },
+  {
+    "date": "2025-06-20",
+    "description": "MNK*XX MASKED NAME XX",
+    "amount": "-1.70",
+    "balance": null,
+    "merchant_signature": "mnkxx masked name xx"
+  },
+  {
+    "date": "2025-06-20",
+    "description": "SAINSBURYS S/MKTS",
+    "amount": "-3.95",
+    "balance": null,
+    "merchant_signature": "sainsburys smkts"
+  },
+  {
+    "date": "2025-06-20",
+    "description": "COSTA COFFEE 43011",
+    "amount": "-5.35",
+    "balance": null,
+    "merchant_signature": "costa coffee"
+  },
+  {
+    "date": "2025-06-20",
+    "description": "XX MASKED NAME XX",
+    "amount": "-5.99",
+    "balance": null,
+    "merchant_signature": "xx masked name xx"
+  },
+  {
+    "date": "2025-06-20",
+    "description": "CHALET",
+    "amount": "-13.00",
+    "balance": null,
+    "merchant_signature": "chalet"
+  },
+  {
+    "date": "2025-06-20",
+    "description": "LIDL GB EDMONTON",
+    "amount": "+39.46",
+    "balance": "+105.97",
+    "merchant_signature": "lidl gb edmonton"
+  },
+  {
+    "date": "2025-06-23",
+    "description": "PAYPAL *7DIGITAL",
+    "amount": "-0.99",
+    "balance": null,
+    "merchant_signature": "paypal 7digital"
+  },
+  {
+    "date": "2025-06-23",
+    "description": "PAYPAL *7DIGITAL",
+    "amount": "-1.49",
+    "balance": null,
+    "merchant_signature": "paypal 7digital"
+  },
+  {
+    "date": "2025-06-23",
+    "description": "BAKERS + BARISTAS",
+    "amount": "-4.20",
+    "balance": null,
+    "merchant_signature": "bakers baristas"
+  },
+  {
+    "date": "2025-06-23",
+    "description": "MCDONALDS",
+    "amount": "-4.27",
+    "balance": null,
+    "merchant_signature": "mcdonalds"
+  },
+  {
+    "date": "2025-06-23",
+    "description": "AMAAR COFFEE",
+    "amount": "-5.50",
+    "balance": null,
+    "merchant_signature": "amaar coffee"
+  },
+  {
+    "date": "2025-06-23",
+    "description": "VICTORIA CAFE",
+    "amount": "-6.60",
+    "balance": null,
+    "merchant_signature": "victoria cafe"
+  },
+  {
+    "date": "2025-06-23",
+    "description": "TFL TRAVEL CH",
+    "amount": "-7.55",
+    "balance": null,
+    "merchant_signature": "tfl travel ch"
+  },
+  {
+    "date": "2025-06-23",
+    "description": "BIM S",
+    "amount": "-7.99",
+    "balance": null,
+    "merchant_signature": "bim s"
+  },
+  {
+    "date": "2025-06-23",
+    "description": "A TASTE OF PASSION",
+    "amount": "-8.00",
+    "balance": null,
+    "merchant_signature": "a taste of passion"
+  },
+  {
+    "date": "2025-06-23",
+    "description": "XX MASKED NAME XX   S",
+    "amount": "+8.50",
+    "balance": "+50.88",
+    "merchant_signature": "xx masked name xx s"
+  }
+]

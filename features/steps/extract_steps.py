@@ -1,57 +1,28 @@
 import os
+import shutil
 import subprocess
 import tempfile
+from pathlib import Path
 
 from behave import given, when, then  # type: ignore[import-untyped]
-from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
 
-
-def _create_pdf(path: str, bank: str) -> None:
-    if bank == "barclays":
-        lines = [
-            "Barclays Bank PLC",
-            "Date Description Amount Balance",
-            "01 Jan 2024 Coffee Shop -3.50 996.50",
-            "02 Jan 2024 Salary 2000.00 2996.50",
-        ]
-    elif bank == "hsbc":
-        lines = [
-            "HSBC Bank",
-            "Date Description Amount Balance",
-            "01 Jan 2024 Groceries -10.00 990.00",
-            "02 Jan 2024 Salary 2000.00 2990.00",
-        ]
-    elif bank == "lloyds":
-        lines = [
-            "Lloyds Bank",
-            "Date Description Amount Balance",
-            "01 Jan 2024 Rent -500.00 500.00",
-            "02 Jan 2024 Salary 2000.00 2500.00",
-        ]
-    elif bank == "coop":
-        lines = [
-            "Co-op Bank",
-            "Date Description Moneyout Moneyin Balance",
-            "01 Jan 2024 Coffee Shop 3.50 0.00 996.50",
-            "02 Jan 2024 Salary 0.00 2000.00 2996.50",
-        ]
-    else:
-        lines = ["Placeholder Bank"]
-
-    c = canvas.Canvas(path, pagesize=letter)
-    y = 750
-    for line in lines:
-        c.drawString(50, y, line)
-        y -= 15
-    c.save()
+FIXTURES = {
+    "coop": [
+        Path("tests/fixtures/coop/statement_1.pdf"),
+        Path("tests/fixtures/coop/statement_2.pdf"),
+    ]
+}
 
 
 @given("a sample {bank} statement")
 def step_given_sample(context, bank):
+    fixtures = FIXTURES.get(bank)
+    if not fixtures:
+        raise NotImplementedError(f"No fixtures for bank {bank}")
     context.tmpdir = tempfile.TemporaryDirectory()
-    context.pdf_path = os.path.join(context.tmpdir.name, f"{bank}.pdf")
-    _create_pdf(context.pdf_path, bank)
+    fixture = fixtures[0]
+    context.pdf_path = os.path.join(context.tmpdir.name, fixture.name)
+    shutil.copy(fixture, context.pdf_path)
 
 
 @when("I run the {bank} extractor")
@@ -84,10 +55,13 @@ def step_then_check(context, count):
 
 @given("multiple {bank} statements")
 def step_given_multiple(context, bank):
+    fixtures = FIXTURES.get(bank)
+    if not fixtures:
+        raise NotImplementedError(f"No fixtures for bank {bank}")
     context.tmpdir = tempfile.TemporaryDirectory()
     context.pdf_dir = context.tmpdir.name
-    for name in ["a.pdf", "b.pdf"]:
-        _create_pdf(os.path.join(context.pdf_dir, name), bank)
+    for fixture in fixtures[:2]:
+        shutil.copy(fixture, os.path.join(context.pdf_dir, fixture.name))
 
 
 @when("I run the {bank} extractor on the directory")

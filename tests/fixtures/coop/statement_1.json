@@ -1,0 +1,65 @@
+[
+  {
+    "date": "2025-06-12",
+    "description": "MR E ELLIOTT",
+    "amount": "+100.00",
+    "balance": "+133.72",
+    "merchant_signature": "mr e elliott"
+  },
+  {
+    "date": "2025-06-13",
+    "description": "PAYPAL *7DIGITAL",
+    "amount": "-1.49",
+    "balance": null,
+    "merchant_signature": "paypal 7digital"
+  },
+  {
+    "date": "2025-06-13",
+    "description": "BAKERS + BARISTAS",
+    "amount": "-2.80",
+    "balance": null,
+    "merchant_signature": "bakers baristas"
+  },
+  {
+    "date": "2025-06-13",
+    "description": "GREGGS PLC",
+    "amount": "-5.25",
+    "balance": null,
+    "merchant_signature": "greggs plc"
+  },
+  {
+    "date": "2025-06-13",
+    "description": "NOW 04E7D GB Ultra",
+    "amount": "-6.00",
+    "balance": null,
+    "merchant_signature": "now 04e7d gb ultra"
+  },
+  {
+    "date": "2025-06-13",
+    "description": "VICTORIA CAF",
+    "amount": "-8.90",
+    "balance": null,
+    "merchant_signature": "victoria caf"
+  },
+  {
+    "date": "2025-06-13",
+    "description": "TFL TRAVEL CH",
+    "amount": "-9.20",
+    "balance": null,
+    "merchant_signature": "tfl travel ch"
+  },
+  {
+    "date": "2025-06-13",
+    "description": "A TASTE OF PASSION",
+    "amount": "-28.00",
+    "balance": null,
+    "merchant_signature": "a taste of passion"
+  },
+  {
+    "date": "2025-06-13",
+    "description": "MR E ELLIOTT",
+    "amount": "+50.00",
+    "balance": "+122.08",
+    "merchant_signature": "mr e elliott"
+  }
+]

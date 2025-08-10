@@ -1,0 +1,177 @@
+[
+  {
+    "date": "2025-06-16",
+    "description": "PAYPAL *7DIGITAL",
+    "amount": "-1.49",
+    "balance": null,
+    "merchant_signature": "paypal 7digital"
+  },
+  {
+    "date": "2025-06-16",
+    "description": "PAYPAL *7DIGITAL",
+    "amount": "-1.99",
+    "balance": null,
+    "merchant_signature": "paypal 7digital"
+  },
+  {
+    "date": "2025-06-16",
+    "description": "COSTA COFFEE",
+    "amount": "-2.80",
+    "balance": null,
+    "merchant_signature": "costa coffee"
+  },
+  {
+    "date": "2025-06-16",
+    "description": "XX MASKED NAME XX",
+    "amount": "-5.00",
+    "balance": null,
+    "merchant_signature": "xx masked name xx"
+  },
+  {
+    "date": "2025-06-16",
+    "description": "AMAAR COFFEE",
+    "amount": "-5.50",
+    "balance": null,
+    "merchant_signature": "amaar coffee"
+  },
+  {
+    "date": "2025-06-16",
+    "description": "COSTA COFFEE",
+    "amount": "-6.25",
+    "balance": null,
+    "merchant_signature": "costa coffee"
+  },
+  {
+    "date": "2025-06-16",
+    "description": "VICTORIA CAFE",
+    "amount": "-6.60",
+    "balance": null,
+    "merchant_signature": "victoria cafe"
+  },
+  {
+    "date": "2025-06-16",
+    "description": "CAFE KAM 46 LTD",
+    "amount": "-8.70",
+    "balance": null,
+    "merchant_signature": "cafe kam 46"
+  },
+  {
+    "date": "2025-06-16",
+    "description": "Netflix.com",
+    "amount": "-12.99",
+    "balance": null,
+    "merchant_signature": "netflixcom"
+  },
+  {
+    "date": "2025-06-16",
+    "description": "BEST GRILL EDMONTO",
+    "amount": "-13.00",
+    "balance": null,
+    "merchant_signature": "best grill edmonto"
+  },
+  {
+    "date": "2025-06-16",
+    "description": "LIDL GB EDMONTON",
+    "amount": "-48.79",
+    "balance": null,
+    "merchant_signature": "lidl gb edmonton"
+  },
+  {
+    "date": "2025-06-16",
+    "description": "LINK 16 JUN 14:50",
+    "amount": "-40.00",
+    "balance": null,
+    "merchant_signature": "link 16 jun 1450"
+  },
+  {
+    "date": "2025-06-16",
+    "description": "MR E ELLIOTT",
+    "amount": "+150.00",
+    "balance": "+118.97",
+    "merchant_signature": "mr e elliott"
+  },
+  {
+    "date": "2025-06-17",
+    "description": "CCC GBP",
+    "amount": "+14.80",
+    "balance": "+0.40",
+    "merchant_signature": "ccc gbp"
+  },
+  {
+    "date": "2025-06-17",
+    "description": "MCDONALDS",
+    "amount": "-2.88",
+    "balance": null,
+    "merchant_signature": "mcdonalds"
+  },
+  {
+    "date": "2025-06-17",
+    "description": "VICTORIA CAFE",
+    "amount": "-11.60",
+    "balance": null,
+    "merchant_signature": "victoria cafe"
+  },
+  {
+    "date": "2025-06-17",
+    "description": "XX MASKED NAME XX",
+    "amount": "-14.00",
+    "balance": null,
+    "merchant_signature": "xx masked name xx"
+  },
+  {
+    "date": "2025-06-17",
+    "description": "CURSOR, AI POWERED",
+    "amount": "-14.80",
+    "balance": null,
+    "merchant_signature": "cursor ai powered"
+  },
+  {
+    "date": "2025-06-17",
+    "description": "BRITISH GAS",
+    "amount": "-114.26",
+    "balance": null,
+    "merchant_signature": "british gas"
+  },
+  {
+    "date": "2025-06-17",
+    "description": "RATESETTER",
+    "amount": "-299.95",
+    "balance": null,
+    "merchant_signature": "ratesetter"
+  },
+  {
+    "date": "2025-06-17",
+    "description": "SCOTTISH WIDOWS",
+    "amount": "-19.49",
+    "balance": null,
+    "merchant_signature": "scottish widows"
+  },
+  {
+    "date": "2025-06-17",
+    "description": "MR E ELLIOTT",
+    "amount": "+600.00",
+    "balance": "+241.59",
+    "merchant_signature": "mr e elliott"
+  },
+  {
+    "date": "2025-06-18",
+    "description": "PAYPAL *7DIGITAL",
+    "amount": "-1.49",
+    "balance": null,
+    "merchant_signature": "paypal 7digital"
+  },
+  {
+    "date": "2025-06-18",
+    "description": "PPOINT_*VICTORIA F",
+    "amount": "-3.17",
+    "balance": null,
+    "merchant_signature": "ppointvictoria f"
+  },
+  {
+    "date": "2025-06-18",
+    "description": "XX MASKED NAME XX   S",
+    "amount": "+3.55",
+    "balance": "+233.38",
+    "merchant_signature": "xx masked name xx s"
+  }
+]
