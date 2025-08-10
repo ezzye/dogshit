@@ -28,7 +28,7 @@ def extract(
     bank: str = typer.Option(
         "barclays",
         "--bank",
-        help="Bank identifier (barclays, hsbc, lloyds)",
+        help="Bank identifier (barclays, hsbc, lloyds, coop)",
     ),
     mask_names: str = typer.Option("", "--mask-names", help="Comma-separated names to mask"),
 ) -> None:
