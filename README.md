@@ -20,7 +20,7 @@ command line interface and a small test-suite.
 
 Open <http://localhost:5173> and follow the three-click flow:
 
-1. **Download** the desktop extractor.
+1. **Download** the desktop extractor from the project's [GitHub releases](https://github.com/OWNER/REPO/releases) page.
 2. **Upload** the generated `transaction_v1.jsonl` file.
 3. **Download** the savings report.
 
@@ -42,13 +42,14 @@ npm run dev   # start Vite dev server
 npm run build # create production assets
 ```
 
-### Build
+### Python CLI
 
-Create self-contained binaries for the extractor:
+Run the extractor directly from source or build a self-contained binary:
 
 ```bash
-   poetry run bankcleanr build
-   ```
+poetry run bankcleanr extract statement.pdf tx.jsonl
+poetry run bankcleanr build
+```
 
 ## Setup with Poetry
 
@@ -215,8 +216,8 @@ rule to the database.
 
 ## Building standalone executables
 
-Run `bankcleanr build` to create a single-file binary for the current operating
-system:
+Pre-built binaries for common platforms are available on the project's [GitHub releases](https://github.com/OWNER/REPO/releases) page.
+Run `bankcleanr build` to create a single-file binary for the current operating system:
 
 ```bash
 poetry run bankcleanr build
@@ -247,15 +248,15 @@ build. Installing Python from
 To verify a build you can run the binary on the included sample PDF:
 
 ```bash
-./dist/bankcleanr parse "Redacted bank statements/22b583f5-4060-44eb-a844-945cd612353c (1).pdf" --jsonl tx.jsonl
+./dist/bankcleanr extract "Redacted bank statements/22b583f5-4060-44eb-a844-945cd612353c (1).pdf" tx.jsonl
 ```
-This command produces a `tx.jsonl` file containing the parsed transactions.
+This command produces a `tx.jsonl` file containing the extracted transactions.
 
 macOS users can run the same command. On Windows use the `.exe` produced in the
 `dist` directory:
 
 ```cmd
-dist\bankcleanr.exe parse "Redacted bank statements\22b583f5-4060-44eb-a844-945cd612353c (1).pdf" --jsonl tx.jsonl
+dist\bankcleanr.exe extract "Redacted bank statements\22b583f5-4060-44eb-a844-945cd612353c (1).pdf" tx.jsonl
 ```
 
 ## Release process
