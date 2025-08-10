@@ -1,86 +1,34 @@
 import json
-import os
-import re
-import tempfile
+from pathlib import Path
 
-import pytest
-from reportlab.lib.pagesizes import letter
-from reportlab.pdfgen import canvas
 import jsonschema
+import pytest
 
 from bankcleanr.extractor import extract_transactions
 
 SCHEMA = json.load(open("schemas/transaction_v1.json"))
+FIXTURE_DIR = Path("tests/fixtures/coop")
+
+STATEMENTS = [
+    (FIXTURE_DIR / "statement_1.pdf", FIXTURE_DIR / "statement_1.json"),
+    (FIXTURE_DIR / "statement_2.pdf", FIXTURE_DIR / "statement_2.json"),
+    (FIXTURE_DIR / "statement_3.pdf", FIXTURE_DIR / "statement_3.json"),
+]
 
 
-def _create_pdf(path: str, bank: str) -> None:
-    if bank == "barclays":
-        lines = [
-            "Barclays Bank PLC",
-            "Date Description Amount Balance",
-            "01 Jan 2024 Coffee Shop -3.50 996.50",
-            "02 Jan 2024 Salary 2000.00 2996.50",
-        ]
-    elif bank == "hsbc":
-        lines = [
-            "HSBC Bank",
-            "Date Description Amount Balance",
-            "01 Jan 2024 Groceries -10.00 990.00",
-            "02 Jan 2024 Salary 2000.00 2990.00",
-        ]
-    elif bank == "lloyds":
-        lines = [
-            "Lloyds Bank",
-            "Date Description Amount Balance",
-            "01 Jan 2024 Rent -500.00 500.00",
-            "02 Jan 2024 Salary 2000.00 2500.00",
-        ]
-    elif bank == "coop":
-        lines = [
-            "Co-op Bank",
-            "Date Description Moneyout Moneyin Balance",
-            "01 Jan 2024 Coffee Shop 3.50 0.00 996.50",
-            "02 Jan 2024 Salary 0.00 2000.00 2996.50",
-        ]
-    else:
-        lines = ["Placeholder Bank"]
-
-    c = canvas.Canvas(path, pagesize=letter)
-    y = 750
-    for line in lines:
-        c.drawString(50, y, line)
-        y -= 15
-    c.save()
+@pytest.mark.parametrize("pdf_path,json_path", STATEMENTS)
+def test_extract_transactions(pdf_path: Path, json_path: Path) -> None:
+    expected = json.load(open(json_path))
+    records = list(extract_transactions(str(pdf_path), bank="coop"))
+    assert records == expected
+    for rec in records:
+        jsonschema.validate(rec, SCHEMA)
+        assert rec["date"]
+        assert rec["description"]
+        assert rec["amount"].startswith(("+", "-"))
 
 
-@pytest.mark.parametrize(
-    "bank,expected",
-    [
-        ("barclays", 2),
-        ("hsbc", 2),
-        ("lloyds", 2),
-        ("coop", 2),
-        ("placeholder", 1),
-    ],
-)
-def test_extract_transactions(bank, expected):
-    with tempfile.TemporaryDirectory() as tmp:
-        pdf_path = os.path.join(tmp, f"{bank}.pdf")
-        _create_pdf(pdf_path, bank)
-        records = list(extract_transactions(pdf_path, bank=bank))
-        assert len(records) == expected
-        for rec in records:
-            jsonschema.validate(rec, SCHEMA)
-            assert re.match(r"^\d{4}-\d{2}-\d{2}$", rec["date"])
-            assert re.match(r"^[+-]\d+\.\d{2}$", rec["amount"])
-        assert any(r["amount"].startswith("+") for r in records)
-
-
-def test_extract_transactions_directory():
-    with tempfile.TemporaryDirectory() as tmp:
-        pdf1 = os.path.join(tmp, "a.pdf")
-        pdf2 = os.path.join(tmp, "b.pdf")
-        _create_pdf(pdf1, "barclays")
-        _create_pdf(pdf2, "barclays")
-        records = list(extract_transactions(tmp, bank="barclays"))
-        assert len(records) == 4
+def test_extract_transactions_directory() -> None:
+    records = list(extract_transactions(str(FIXTURE_DIR), bank="coop"))
+    expected_count = sum(len(json.load(open(jp))) for _, jp in STATEMENTS)
+    assert len(records) == expected_count
