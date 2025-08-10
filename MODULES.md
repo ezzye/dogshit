@@ -19,4 +19,4 @@ This document outlines the major components of the project.
 
 - CLI in `bankcleanr/` parses PDF statements with a registry of bank-specific parsers.
 - Masks PII and writes `transaction_v1.jsonl` files for analysis.
-- Packaged into standalone binaries via `scripts/build_exe.sh` using PyInstaller.
+- Packaged into standalone binaries via `poetry run bankcleanr build` using PyInstaller.
