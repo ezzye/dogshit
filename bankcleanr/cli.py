@@ -9,8 +9,8 @@ from pathlib import Path
 import jsonschema
 import typer
 
-from .extractor import extract_transactions
-from .pii import mask_pii
+from bankcleanr.extractor import extract_transactions
+from bankcleanr.pii import mask_pii
 
 SCHEMA_PATH = Path(__file__).resolve().parent.parent / "schemas" / "transaction_v1.json"
 SCHEMA = json.loads(SCHEMA_PATH.read_text())
