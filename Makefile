@@ -14,9 +14,9 @@ component:
 	poetry run pytest tests/test_backend_api.py
 
 test:
-	poetry run pytest --cov=. --cov-fail-under=$${COV_FAIL_UNDER:-50}
-	poetry run behave
-	cd frontend && npm ci && npm test
+        poetry run pytest --cov=. --cov-fail-under=$${COV_FAIL_UNDER:-50}
+        poetry run behave
+        cd frontend && npm ci && npm test
 
 lint:
 	poetry run ruff check .
@@ -35,4 +35,7 @@ start:
 	docker compose up --build api frontend
 
 frontend-test:
-	cd frontend && npm ci && npm test
+        cd frontend && npm ci && npm test
+
+build-linux:
+	./scripts/build_linux.sh

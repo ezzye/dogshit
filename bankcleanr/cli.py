@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
+import platform
 from importlib import resources
 from pathlib import Path
 
@@ -13,7 +14,10 @@ import typer
 from bankcleanr.extractor import extract_transactions
 from bankcleanr.pii import mask_pii
 
-SCHEMA_PATH = resources.files("bankcleanr.schemas").joinpath("transaction_v1.json")
+if getattr(sys, "frozen", False):
+    SCHEMA_PATH = Path(sys._MEIPASS) / "schemas" / "transaction_v1.json"  # type: ignore[attr-defined]
+else:
+    SCHEMA_PATH = resources.files("bankcleanr.schemas").joinpath("transaction_v1.json")
 SCHEMA = json.loads(SCHEMA_PATH.read_text())
 
 app = typer.Typer()
@@ -52,13 +56,23 @@ app.command(name="parse")(extract)
 @app.command()
 def build() -> None:
     """Build standalone executable using PyInstaller."""
+    system = platform.system().lower()
+    if system == "darwin":
+        system = "macos"
+    machine = platform.machine().lower()
+    name = f"bankcleanr-{system}-{machine}"
+    sep = ";" if system.startswith("win") else ":"
     subprocess.run(
         [
             "pyinstaller",
             "--name",
-            "bankcleanr",
+            name,
             "--onefile",
-            "--collect-data",
+            "--add-data",
+            f"bankcleanr/schemas/transaction_v1.json{sep}schemas",
+            "--collect-submodules",
+            "bankcleanr.parsers",
+            "--hidden-import",
             "bankcleanr.schemas",
             "bankcleanr/cli.py",
         ],
