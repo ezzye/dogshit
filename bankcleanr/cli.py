@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
+from importlib import resources
 from pathlib import Path
 
 import jsonschema
@@ -12,7 +13,7 @@ import typer
 from bankcleanr.extractor import extract_transactions
 from bankcleanr.pii import mask_pii
 
-SCHEMA_PATH = Path(__file__).resolve().parent.parent / "schemas" / "transaction_v1.json"
+SCHEMA_PATH = resources.files("bankcleanr.schemas").joinpath("transaction_v1.json")
 SCHEMA = json.loads(SCHEMA_PATH.read_text())
 
 app = typer.Typer()
@@ -57,6 +58,8 @@ def build() -> None:
             "--name",
             "bankcleanr",
             "--onefile",
+            "--collect-data",
+            "bankcleanr.schemas",
             "bankcleanr/cli.py",
         ],
         check=True,

@@ -1,6 +1,7 @@
 import json
 from datetime import datetime
 from decimal import Decimal
+from importlib import resources
 from pathlib import Path
 
 import jsonschema
@@ -9,7 +10,9 @@ from reportlab.pdfgen import canvas
 
 from bankcleanr.extractor import extract_transactions
 
-SCHEMA = json.load(open("schemas/transaction_v1.json"))
+SCHEMA = json.loads(
+    resources.files("bankcleanr.schemas").joinpath("transaction_v1.json").read_text()
+)
 FIXTURE_DIR = Path("tests/fixtures/coop")
 
 STATEMENTS = [
