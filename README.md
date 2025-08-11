@@ -48,8 +48,12 @@ Run the extractor directly from source or build a self-contained binary:
 
 ```bash
 poetry run bankcleanr extract statement.pdf tx.jsonl
+poetry run bankcleanr parse statement.pdf tx.jsonl  # alias for extract
 poetry run bankcleanr build
 ```
+
+The `extract` command is also available as `parse` for backwards
+compatibility with existing workflows.
 
 ## Setup with Poetry
 
@@ -76,6 +80,7 @@ Select the appropriate parser with the `--bank` option:
 
 ```bash
 poetry run bankcleanr extract statement.pdf tx.jsonl --bank hsbc
+poetry run bankcleanr parse statement.pdf tx.jsonl --bank hsbc
 ```
 
 Unit tests for these parsers live in [`tests/test_parsers.py`](tests/test_parsers.py).

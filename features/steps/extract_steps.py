@@ -45,6 +45,26 @@ def step_run_extractor(context, bank):
     )
 
 
+@when("I parse the {bank} statement")
+def step_parse_statement(context, bank):
+    context.jsonl_path = os.path.join(context.tmpdir.name, "out.jsonl")
+    subprocess.run(
+        [
+            "python",
+            "-m",
+            "bankcleanr.cli",
+            "parse",
+            "--bank",
+            bank,
+            context.pdf_path,
+            context.jsonl_path,
+        ],
+        check=True,
+        env={**os.environ, "PYTHONPATH": os.getcwd()},
+        stdin=subprocess.DEVNULL,
+    )
+
+
 @then("a JSONL file with {count:d} transactions is created")
 def step_then_check(context, count):
     with open(context.jsonl_path, "r", encoding="utf-8") as fh:
