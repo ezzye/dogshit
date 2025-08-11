@@ -6,6 +6,7 @@ import subprocess
 import sys
 import platform
 from importlib import resources
+from importlib.abc import Traversable
 from pathlib import Path
 
 import jsonschema
@@ -14,6 +15,7 @@ import typer
 from bankcleanr.extractor import extract_transactions
 from bankcleanr.pii import mask_pii
 
+SCHEMA_PATH: Path | Traversable
 if getattr(sys, "frozen", False):
     SCHEMA_PATH = Path(sys._MEIPASS) / "schemas" / "transaction_v1.json"  # type: ignore[attr-defined]
 else:
