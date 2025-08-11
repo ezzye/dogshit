@@ -223,11 +223,19 @@ rule to the database.
 ## Building standalone executables
 
 Pre-built binaries for common platforms are available on the project's [GitHub releases](https://github.com/OWNER/REPO/releases) page.
-Run `bankcleanr build` to create a single-file binary for the current operating system:
+Run `bankcleanr build` to create a single-file binary for the current operating system. The output embeds the platform and architecture in its name, e.g. `bankcleanr-linux-x86_64`:
 
 ```bash
 poetry run bankcleanr build
 ```
+
+For Linux builds you can also run the helper script which performs the build inside Docker:
+
+```bash
+./scripts/build_linux.sh
+```
+
+macOS and Windows binaries must be built on their respective operating systems.
 
 Install `pyinstaller` first (either via `pip install pyinstaller` or
 `poetry install --with dev`). Because PyInstaller cannot cross compile you must
@@ -254,7 +262,7 @@ build. Installing Python from
 To verify a build you can run the binary on the included sample PDF:
 
 ```bash
-./dist/bankcleanr extract "Redacted bank statements/22b583f5-4060-44eb-a844-945cd612353c (1).pdf" tx.jsonl
+./dist/bankcleanr-linux-x86_64 extract "Redacted bank statements/22b583f5-4060-44eb-a844-945cd612353c (1).pdf" tx.jsonl --bank coop
 ```
 This command produces a `tx.jsonl` file containing the extracted transactions.
 
