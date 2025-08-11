@@ -10,22 +10,15 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: macos-latest
-            artifact: bankcleanr-macos-intel
-            macos_arch: x86_64
+          - os: ubuntu-latest
+            artifact: bankcleanr-linux
             ext: ""
           - os: macos-latest
-            artifact: bankcleanr-macos-arm
-            macos_arch: arm64
+            artifact: bankcleanr-macos
             ext: ""
           - os: windows-latest
             artifact: bankcleanr-windows
-            macos_arch: ""
             ext: ".exe"
-          - os: ubuntu-latest
-            artifact: bankcleanr-linux
-            macos_arch: ""
-            ext: ""
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -37,11 +30,9 @@ jobs:
       - name: Install dependencies
         run: |
           pip install poetry
-          poetry install --only main
+          poetry install
       - name: Build executable
-        run: poetry run bankcleanr.cli build
-        env:
-          MACOS_ARCH: ${{ matrix.macos_arch }}
+        run: poetry run bankcleanr build
       - name: Prepare artifact (Unix)
         if: matrix.os != 'windows-latest'
         run: |

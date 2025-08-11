@@ -1,0 +1,16 @@
+FROM python:3.12-slim
+WORKDIR /app
+
+# Disable virtual environments so dependencies install directly into the container image.
+ENV POETRY_VIRTUALENVS_CREATE=false
+
+# Install dependencies first to leverage Docker layer caching.
+COPY pyproject.toml poetry.lock README.md ./
+RUN pip install poetry \
+    && poetry install --with dev
+
+# Copy the project source.
+COPY . .
+
+# Default command builds the CLI binary. Override the command to run tests or other tasks.
+CMD ["poetry", "run", "bankcleanr", "build"]
