@@ -64,6 +64,9 @@ def build() -> None:
     machine = platform.machine().lower()
     name = f"bankcleanr-{system}-{machine}"
     sep = ";" if system.startswith("win") else ":"
+    root = Path(__file__).resolve().parent
+    schema = root / "schemas" / "transaction_v1.json"
+    cli_path = Path(__file__).resolve()
     subprocess.run(
         [
             "pyinstaller",
@@ -71,12 +74,12 @@ def build() -> None:
             name,
             "--onefile",
             "--add-data",
-            f"bankcleanr/schemas/transaction_v1.json{sep}schemas",
+            f"{schema}{sep}schemas",
             "--collect-submodules",
             "bankcleanr.parsers",
             "--hidden-import",
             "bankcleanr.schemas",
-            "bankcleanr/cli.py",
+            str(cli_path),
         ],
         check=True,
     )
