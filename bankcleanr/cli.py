@@ -44,6 +44,10 @@ def extract(
             fh.write(json.dumps(item) + "\n")
 
 
+# register an alias so older workflows using "parse" still function
+app.command(name="parse")(extract)
+
+
 @app.command()
 def build() -> None:
     """Build standalone executable using PyInstaller."""
