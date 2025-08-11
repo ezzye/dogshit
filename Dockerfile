@@ -16,6 +16,7 @@ RUN pip install poetry \
 
 COPY backend ./backend
 COPY bankcleanr ./bankcleanr
+COPY rules ./rules
 
 # Document which port the FastAPI app listens on
 EXPOSE 8000
