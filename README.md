@@ -55,6 +55,12 @@ poetry run bankcleanr build
 The `extract` command is also available as `parse` for backwards
 compatibility with existing workflows.
 
+The CLI can also process an entire directory of statements in one go:
+
+```bash
+bankcleanr extract "My Statements/" tx.jsonl --bank coop
+```
+
 ## Setup with Poetry
 
 1. [Install Poetry](https://python-poetry.org/docs/#installation).
@@ -222,7 +228,20 @@ rule to the database.
 
 ## Building standalone executables
 
-Pre-built binaries for common platforms are available on the project's [GitHub releases](https://github.com/OWNER/REPO/releases) page.
+Pre-built binaries for common platforms are available on the project's [GitHub releases](https://github.com/OWNER/REPO/releases) page. The latest release provides:
+
+| Platform | Binary | Checksum |
+| --- | --- | --- |
+| Linux | [bankcleanr-linux](https://github.com/OWNER/REPO/releases/latest/download/bankcleanr-linux) | [bankcleanr-linux.sha256](https://github.com/OWNER/REPO/releases/latest/download/bankcleanr-linux.sha256) |
+| macOS (ARM64) | [bankcleanr-macos-arm64](https://github.com/OWNER/REPO/releases/latest/download/bankcleanr-macos-arm64) | [bankcleanr-macos-arm64.sha256](https://github.com/OWNER/REPO/releases/latest/download/bankcleanr-macos-arm64.sha256) |
+| Windows | [bankcleanr-windows.exe](https://github.com/OWNER/REPO/releases/latest/download/bankcleanr-windows.exe) | [bankcleanr-windows.exe.sha256](https://github.com/OWNER/REPO/releases/latest/download/bankcleanr-windows.exe.sha256) |
+
+GitHub Actions builds these binaries using Docker images and publishes matching `.sha256` files. Verify the Linux build in a clean container:
+
+```bash
+docker run --rm -v "$PWD:/work" ubuntu:22.04 /work/bankcleanr-linux --version
+```
+
 Run `bankcleanr build` to create a single-file binary for the current operating system. The output embeds the platform and architecture in its name, e.g. `bankcleanr-linux-x86_64`:
 
 ```bash
