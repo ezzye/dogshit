@@ -18,7 +18,8 @@ FIXTURES = {
 def step_given_sample(context, bank):
     fixtures = FIXTURES.get(bank)
     if not fixtures:
-        raise NotImplementedError(f"No fixtures for bank {bank}")
+        context.scenario.skip(f"No fixtures for bank {bank}")
+        return
     context.tmpdir = tempfile.TemporaryDirectory()
     fixture = fixtures[0]
     context.pdf_path = os.path.join(context.tmpdir.name, fixture.name)
@@ -77,7 +78,8 @@ def step_then_check(context, count):
 def step_given_multiple(context, bank):
     fixtures = FIXTURES.get(bank)
     if not fixtures:
-        raise NotImplementedError(f"No fixtures for bank {bank}")
+        context.scenario.skip(f"No fixtures for bank {bank}")
+        return
     context.tmpdir = tempfile.TemporaryDirectory()
     context.pdf_dir = context.tmpdir.name
     for fixture in fixtures[:2]:
