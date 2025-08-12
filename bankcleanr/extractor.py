@@ -24,6 +24,8 @@ def extract_transactions(
     def _iter() -> Iterator[Dict[str, str | None]]:
         if path.is_dir():
             pdf_files = sorted(path.glob("*.pdf"))
+            if not pdf_files:
+                raise ValueError(f"No PDFs found in directory: {path}")
             for pdf_file in pdf_files:
                 for record in parser.parse(str(pdf_file)):
                     yield record
