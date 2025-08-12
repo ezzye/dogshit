@@ -24,6 +24,7 @@ from rules.engine import (
     norm,
     Match,
     Action,
+    CATEGORIES,
 )
 from backend.llm_adapter import get_adapter, AbstractAdapter
 from bankcleanr.signature import normalise_signature
@@ -152,6 +153,8 @@ def create_rule(
             status_code=400,
             detail="Pattern must contain at least 6 alphabetic characters",
         )
+    if rule.label not in CATEGORIES:
+        raise HTTPException(status_code=400, detail="Unknown category label")
     existing = session.exec(
         select(UserRule)
         .where(UserRule.user_id == rule.user_id)
