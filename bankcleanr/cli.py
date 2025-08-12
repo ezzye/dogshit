@@ -43,12 +43,17 @@ def extract(
     if not mask_names and sys.stdin.isatty():
         mask_names = typer.prompt("Enter comma-separated names to mask", default="")
     names = [n.strip() for n in mask_names.split(",") if n.strip()]
+    count = 0
     with output_jsonl.open("w", encoding="utf-8") as fh:
         for item in extract_transactions(str(input_pdf), bank=bank):
             desc = item.get("description") or ""
             item["description"] = mask_pii(desc, names)
             jsonschema.validate(item, SCHEMA)
             fh.write(json.dumps(item) + "\n")
+            count += 1
+    if count == 0:
+        typer.secho("No transactions extracted", err=True)
+        raise typer.Exit(code=1)
 
 
 # register an alias so older workflows using "parse" still function
