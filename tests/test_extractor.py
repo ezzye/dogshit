@@ -11,3 +11,9 @@ def test_extract_transactions_unknown_bank():
     assert str(excinfo.value) == (
         f"Unsupported bank 'unknown'. Available banks: {available}"
     )
+
+
+def test_extract_transactions_empty_directory(tmp_path):
+    with pytest.raises(ValueError) as excinfo:
+        list(extract_transactions(tmp_path))
+    assert str(excinfo.value) == f"No PDFs found in directory: {tmp_path}"
