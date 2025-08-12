@@ -79,9 +79,19 @@ def test_upload_gzip(client: TestClient):
 
 
 def test_rules(client: TestClient):
-    client.post("/rules", json={"label": "allow", "pattern": "allowed"})
+    client.post("/rules", json={"label": "Groceries", "pattern": "allowed"})
     rules = client.get("/rules").json()
-    assert any(r["label"] == "allow" for r in rules)
+    assert any(r["label"] == "Groceries" for r in rules)
+
+
+def test_rule_rejects_unknown_label(client: TestClient):
+    resp = client.post("/rules", json={"label": "UnknownLabel", "pattern": "allowed"})
+    assert resp.status_code == 400
+
+
+def test_rule_rejects_short_pattern(client: TestClient):
+    resp = client.post("/rules", json={"label": "Groceries", "pattern": "abc"})
+    assert resp.status_code == 400
 
 
 def test_classify(client: TestClient):

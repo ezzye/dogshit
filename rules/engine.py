@@ -17,6 +17,10 @@ def load_categories(path: Path = CATEGORIES_PATH) -> List[str]:
         return json.load(f)
 
 
+# Preload categories at import time to avoid repeated disk access.
+CATEGORIES: List[str] = load_categories()
+
+
 class Match(BaseModel):
     type: str
     pattern: str
