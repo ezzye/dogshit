@@ -254,6 +254,12 @@ For Linux builds you can also run the helper script which performs the build ins
 ./scripts/build_linux.sh
 ```
 
+For macOS builds use the helper script that runs on the host Python interpreter:
+
+```bash
+./scripts/build_macos.sh
+```
+
 macOS and Windows binaries must be built on their respective operating systems.
 
 Install `pyinstaller` first (either via `pip install pyinstaller` or
