@@ -6,7 +6,7 @@ import subprocess
 import sys
 import platform
 from importlib import resources
-from importlib.abc import Traversable
+from importlib.resources.abc import Traversable
 from pathlib import Path
 
 import jsonschema
