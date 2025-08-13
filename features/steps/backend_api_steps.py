@@ -37,7 +37,7 @@ def given_client(context):
 def when_upload_text(context, text):
     data = text
     if not text.strip().startswith("{"):
-        data = json.dumps({"description": text})
+        data = json.dumps({"description": text, "type": "debit"})
     resp = context.client.post(
         "/upload", data=data, headers={"Content-Type": "application/x-ndjson"}
     )

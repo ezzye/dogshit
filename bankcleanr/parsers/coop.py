@@ -74,13 +74,15 @@ class CoopParser:
                         balance = None
                         sign = -1
                     clean_desc = mask_pii(description)
+                    tx_amount = amount * sign
                     records.append(
                         {
                             "date": date.isoformat(),
                             "description": clean_desc,
-                            "amount": f"{(amount * sign):+.2f}",
+                            "amount": f"{tx_amount:+.2f}",
                             "balance": f"{balance:+.2f}" if balance is not None else None,
                             "merchant_signature": normalise_signature(clean_desc),
+                            "type": "credit" if tx_amount > 0 else "debit",
                         }
                     )
         return records

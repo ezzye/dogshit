@@ -28,13 +28,15 @@ class LloydsParser:
                     if match:
                         date, desc, amount, balance = match.groups()
                         clean_desc = mask_pii(desc.strip())
+                        amt = Decimal(amount)
                         records.append(
                             {
                                 "date": datetime.strptime(date, "%d %b %Y").date().isoformat(),
                                 "description": clean_desc,
-                                "amount": f"{Decimal(amount):+.2f}",
+                                "amount": f"{amt:+.2f}",
                                 "balance": f"{Decimal(balance):+.2f}",
                                 "merchant_signature": normalise_signature(clean_desc),
+                                "type": "credit" if amt > 0 else "debit",
                             }
                         )
         return records

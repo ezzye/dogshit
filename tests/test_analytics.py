@@ -15,9 +15,9 @@ from backend.analytics import (
 
 def test_compute_monthly_totals():
     transactions = [
-        {"date": "2024-01-10", "amount": "10", "merchant_signature": "a"},
-        {"date": "2024-01-15", "amount": "-5", "merchant_signature": "b"},
-        {"date": "2024-02-01", "amount": "3", "merchant_signature": "c"},
+        {"date": "2024-01-10", "amount": "10", "merchant_signature": "a", "type": "credit"},
+        {"date": "2024-01-15", "amount": "5", "merchant_signature": "b", "type": "debit"},
+        {"date": "2024-02-01", "amount": "3", "merchant_signature": "c", "type": "credit"},
     ]
     totals = compute_monthly_totals(transactions)
     assert totals == {"2024-01": 5.0, "2024-02": 3.0}
@@ -25,9 +25,9 @@ def test_compute_monthly_totals():
 
 def test_detect_recurring():
     transactions = [
-        {"date": "2024-01-01", "amount": "-10", "merchant_signature": "netflix"},
-        {"date": "2024-02-01", "amount": "-10", "merchant_signature": "netflix"},
-        {"date": "2024-03-01", "amount": "-10", "merchant_signature": "netflix"},
+        {"date": "2024-01-01", "amount": "10", "merchant_signature": "netflix", "type": "debit"},
+        {"date": "2024-02-01", "amount": "10", "merchant_signature": "netflix", "type": "debit"},
+        {"date": "2024-03-01", "amount": "10", "merchant_signature": "netflix", "type": "debit"},
     ]
     recurring = detect_recurring(transactions)
     assert recurring and recurring[0]["merchant"] == "netflix"
@@ -37,15 +37,15 @@ def test_detect_recurring():
 
 def test_detect_overspending(tmp_path: Path):
     transactions = [
-        {"date": "2024-01-10", "amount": "-50", "merchant_signature": "grocer1", "category": "Groceries"},
-        {"date": "2024-02-10", "amount": "-50", "merchant_signature": "grocer1", "category": "Groceries"},
-        {"date": "2024-03-10", "amount": "-150", "merchant_signature": "grocer1", "category": "Groceries"},
-        {"date": "2024-01-05", "amount": "-5", "merchant_signature": "coffee", "category": "Groceries"},
-        {"date": "2024-02-05", "amount": "-5", "merchant_signature": "coffee", "category": "Groceries"},
-        {"date": "2024-03-05", "amount": "-20", "merchant_signature": "coffee", "category": "Groceries"},
-        {"date": "2024-01-01", "amount": "-10", "merchant_signature": "netflix", "category": "Subscriptions"},
-        {"date": "2024-02-01", "amount": "-10", "merchant_signature": "netflix", "category": "Subscriptions"},
-        {"date": "2024-03-01", "amount": "-12", "merchant_signature": "netflix", "category": "Subscriptions"},
+        {"date": "2024-01-10", "amount": "50", "merchant_signature": "grocer1", "category": "Groceries", "type": "debit"},
+        {"date": "2024-02-10", "amount": "50", "merchant_signature": "grocer1", "category": "Groceries", "type": "debit"},
+        {"date": "2024-03-10", "amount": "150", "merchant_signature": "grocer1", "category": "Groceries", "type": "debit"},
+        {"date": "2024-01-05", "amount": "5", "merchant_signature": "coffee", "category": "Groceries", "type": "debit"},
+        {"date": "2024-02-05", "amount": "5", "merchant_signature": "coffee", "category": "Groceries", "type": "debit"},
+        {"date": "2024-03-05", "amount": "20", "merchant_signature": "coffee", "category": "Groceries", "type": "debit"},
+        {"date": "2024-01-01", "amount": "10", "merchant_signature": "netflix", "category": "Subscriptions", "type": "debit"},
+        {"date": "2024-02-01", "amount": "10", "merchant_signature": "netflix", "category": "Subscriptions", "type": "debit"},
+        {"date": "2024-03-01", "amount": "12", "merchant_signature": "netflix", "category": "Subscriptions", "type": "debit"},
     ]
 
     recurring = detect_recurring(transactions)

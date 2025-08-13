@@ -329,7 +329,7 @@ def classify(
                 label = "unknown"
                 source = "unknown"
             tx["label"] = label
-            tx["type"] = source
+            tx["classification_type"] = source
             transaction = Transaction(
                 job_id=req.job_id,
                 description=tx.get("description"),

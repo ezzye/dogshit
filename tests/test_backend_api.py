@@ -143,8 +143,8 @@ def test_rule_overwrites_higher_confidence(client: TestClient):
 def test_classify(client: TestClient):
     content = "\n".join(
         [
-            json.dumps({"description": "data"}),
-            json.dumps({"description": "other"}),
+            json.dumps({"description": "data", "type": "debit"}),
+            json.dumps({"description": "other", "type": "debit"}),
         ]
     )
     job_id = client.post(
@@ -153,8 +153,10 @@ def test_classify(client: TestClient):
         headers={"Content-Type": "application/x-ndjson"},
     ).json()["job_id"]
     resp = client.post("/classify", json={"job_id": job_id})
-    labels = [r["label"] for r in resp.json()["transactions"]]
+    data = resp.json()["transactions"]
+    labels = [r["label"] for r in data]
     assert labels == ["unknown", "unknown"]
+    assert all(r["type"] == "debit" for r in data)
     # ensure the job status is updated once processing is complete
     status = client.get(f"/status/{job_id}").json()["status"]
     assert status == "completed"
@@ -163,8 +165,8 @@ def test_classify(client: TestClient):
 def test_classify_applies_user_rule(client: TestClient):
     content = "\n".join(
         [
-            json.dumps({"description": "coffee shop"}),
-            json.dumps({"description": "mystery"}),
+            json.dumps({"description": "coffee shop", "type": "debit"}),
+            json.dumps({"description": "mystery", "type": "debit"}),
         ]
     )
     job_id = client.post(
@@ -184,8 +186,8 @@ def test_classify_applies_user_rule(client: TestClient):
 def test_transactions_endpoint_filters(client: TestClient):
     content = "\n".join(
         [
-            json.dumps({"description": "alpha"}),
-            json.dumps({"description": "beta"}),
+            json.dumps({"description": "alpha", "type": "debit"}),
+            json.dumps({"description": "beta", "type": "debit"}),
         ]
     )
     job_id = client.post(
@@ -209,8 +211,8 @@ def test_transactions_endpoint_filters(client: TestClient):
 def test_classify_uses_cache(client: TestClient):
     content = "\n".join(
         [
-            json.dumps({"description": "mystery shop 123"}),
-            json.dumps({"description": "mystery shop 123"}),
+            json.dumps({"description": "mystery shop 123", "type": "debit"}),
+            json.dumps({"description": "mystery shop 123", "type": "debit"}),
         ]
     )
     job_id = client.post(
@@ -247,7 +249,7 @@ def test_classify_overwrites_higher_confidence_rule(
     app.dependency_overrides[get_adapter] = lambda: adapter
     monkeypatch.setattr("backend.app.evaluate", lambda *args, **kwargs: None)
 
-    content = json.dumps({"description": "Coffee Shop"})
+    content = json.dumps({"description": "Coffee Shop", "type": "debit"})
     job_id = client.post(
         "/upload",
         data=content,

@@ -25,5 +25,5 @@ def test_pyinstaller_extract(tmp_path):
     lines = out_jsonl.read_text().strip().splitlines()
     assert lines
     first = json.loads(lines[0])
-    assert {"date", "description", "amount", "balance"} <= first.keys()
+    assert {"date", "description", "amount", "balance", "type"} <= first.keys()
 

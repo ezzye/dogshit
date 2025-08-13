@@ -18,6 +18,7 @@ class PlaceholderParser:
                 "amount": f"{Decimal('0.00'):+.2f}",
                 "balance": f"{Decimal('0.00'):+.2f}",
                 "merchant_signature": normalise_signature("placeholder"),
+                "type": "credit",
             }
         ]
 

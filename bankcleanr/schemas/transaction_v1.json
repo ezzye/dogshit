@@ -8,8 +8,9 @@
     "description": {"type": "string"},
     "amount": {"type": "string"},
     "balance": {"type": ["string", "null"]},
-    "merchant_signature": {"type": "string"}
+    "merchant_signature": {"type": "string"},
+    "type": {"enum": ["credit", "debit"]}
   },
-  "required": ["date", "description", "amount", "merchant_signature"],
+  "required": ["date", "description", "amount", "merchant_signature", "type"],
   "additionalProperties": false
 }

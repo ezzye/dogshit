@@ -44,12 +44,23 @@ def validate_rule_categories(
         raise ValueError(f"Unknown categories: {sorted(unknown)}")
 
 
+def _signed_amount(tx: Dict[str, Any]) -> float:
+    """Return the transaction amount with sign based on ``type``."""
+    amt = float(tx["amount"])
+    t = tx.get("type")
+    if t == "credit":
+        return abs(amt)
+    if t == "debit":
+        return -abs(amt)
+    return amt
+
+
 def compute_monthly_totals(transactions: Iterable[Dict[str, Any]]) -> Dict[str, float]:
     """Aggregate transaction amounts per YYYY-MM."""
     totals: Dict[str, float] = defaultdict(float)
     for tx in transactions:
         month = tx["date"][:7]
-        totals[month] += float(tx["amount"])
+        totals[month] += _signed_amount(tx)
     return dict(totals)
 
 
@@ -94,7 +105,7 @@ def detect_recurring(
         if not cadence:
             continue
 
-        amounts = [abs(float(t["amount"])) for t in txs]
+        amounts = [abs(_signed_amount(t)) for t in txs]
         avg_amount = mean(amounts)
         if any(abs(a - avg_amount) > amount_tolerance * abs(avg_amount) for a in amounts):
             continue
@@ -141,7 +152,7 @@ def detect_overspending(
         if not cat:
             continue
         month = tx["date"][:7]
-        cat_month[cat][month] += abs(float(tx["amount"]))
+        cat_month[cat][month] += abs(_signed_amount(tx))
 
     for cat, months in cat_month.items():
         items = sorted(months.items())
@@ -161,7 +172,7 @@ def detect_overspending(
     for tx in transactions:
         merchant = tx["merchant_signature"]
         month = tx["date"][:7]
-        merch_month[merchant][month] += abs(float(tx["amount"]))
+        merch_month[merchant][month] += abs(_signed_amount(tx))
 
     for merchant, months in merch_month.items():
         totals = list(months.values())
@@ -199,8 +210,8 @@ def generate_summary(
 
     categories = load_categories()
 
-    income = sum(float(t["amount"]) for t in transactions if float(t["amount"]) > 0)
-    expenses = sum(float(t["amount"]) for t in transactions if float(t["amount"]) < 0)
+    income = sum(_signed_amount(t) for t in transactions if t.get("type") == "credit")
+    expenses = sum(_signed_amount(t) for t in transactions if t.get("type") == "debit")
     totals = {"income": income, "expenses": expenses, "net": income + expenses}
 
     # category breakdown
@@ -210,7 +221,7 @@ def generate_summary(
     for tx in transactions:
         cat = tx.get("category")
         if cat in cat_totals:
-            amt = float(tx["amount"])
+            amt = _signed_amount(tx)
             cat_totals[cat]["total"] += amt
             cat_totals[cat]["count"] += 1
             cat_totals[cat]["merchants"].add(tx["merchant_signature"])
