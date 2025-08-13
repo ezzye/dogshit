@@ -48,7 +48,8 @@ def extract(
         for item in extract_transactions(str(input_pdf), bank=bank):
             desc = item.get("description") or ""
             item["description"] = mask_pii(desc, names)
-            amt = float(item.get("amount", 0))
+            amt_raw = item.get("amount")
+            amt = float(amt_raw) if amt_raw is not None else 0.0
             if "type" not in item:
                 item["type"] = "credit" if amt > 0 else "debit"
             jsonschema.validate(item, SCHEMA)
