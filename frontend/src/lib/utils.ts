@@ -5,9 +5,11 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export const JOB_STATUS_UPLOADED = "uploaded";
+
 export async function waitForJobStatus(
   jobId: string,
-  target = "uploaded",
+  target = JOB_STATUS_UPLOADED,
   interval = 1000,
 ): Promise<{ status: string }> {
   while (true) {

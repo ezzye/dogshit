@@ -64,10 +64,13 @@ def client_fixture(monkeypatch):
 
 
 def test_upload_and_status(client: TestClient):
-    resp = client.post("/upload", data="hello", headers={"Content-Type": "text/plain"})
+    resp = client.post(
+        "/upload",
+        files={"file": ("test.jsonl", "hello", "text/plain")},
+    )
     job_id = resp.json()["job_id"]
     status = client.get(f"/status/{job_id}").json()["status"]
-    assert status == "pending"
+    assert status == "uploaded"
 
 
 def test_upload_gzip(client: TestClient):
