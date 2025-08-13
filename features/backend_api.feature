@@ -6,8 +6,8 @@ Feature: Backend API
 
   Scenario: Managing user rules
     Given the API client
-    When I create a rule "allow all"
-    Then the rules list contains "allow all"
+    When I create a rule "Groceries"
+    Then the rules list contains "Groceries"
 
   Scenario: Downloading with a valid signature
     Given the API client
