@@ -243,7 +243,8 @@ def test_classify_overwrites_higher_confidence_rule(
         assert rule.provenance == "llm"
 
 
-def test_costs_endpoint(client: TestClient):
+def test_costs_endpoint_aggregates_entries(client: TestClient):
+    """Costs endpoint should sum multiple LLMCost rows for a job."""
     job_id = client.post(
         "/upload", data="data", headers={"Content-Type": "text/plain"}
     ).json()["job_id"]
@@ -265,6 +266,7 @@ def test_costs_endpoint(client: TestClient):
             )
         )
         session.commit()
+
     resp = client.get(f"/costs/{job_id}")
     assert resp.status_code == 200
     data = resp.json()

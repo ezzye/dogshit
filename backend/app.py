@@ -118,12 +118,13 @@ def costs(
     entries = session.exec(select(LLMCost).where(LLMCost.job_id == job_id)).all()
     tokens_in = sum(e.tokens_in for e in entries)
     tokens_out = sum(e.tokens_out for e in entries)
-    estimated_cost = sum(e.estimated_cost_gbp for e in entries)
+    total_tokens = tokens_in + tokens_out
+    estimated_cost_gbp = sum(e.estimated_cost_gbp for e in entries)
     return {
         "tokens_in": tokens_in,
         "tokens_out": tokens_out,
-        "total_tokens": tokens_in + tokens_out,
-        "estimated_cost_gbp": estimated_cost,
+        "total_tokens": total_tokens,
+        "estimated_cost_gbp": estimated_cost_gbp,
     }
 
 
