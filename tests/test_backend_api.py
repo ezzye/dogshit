@@ -153,7 +153,7 @@ def test_classify(client: TestClient):
         headers={"Content-Type": "application/x-ndjson"},
     ).json()["job_id"]
     resp = client.post("/classify", json={"job_id": job_id})
-    labels = [r["label"] for r in resp.json()["results"]]
+    labels = [r["label"] for r in resp.json()["transactions"]]
     assert labels == ["unknown", "unknown"]
     # ensure the job status is updated once processing is complete
     status = client.get(f"/status/{job_id}").json()["status"]
@@ -177,8 +177,33 @@ def test_classify_applies_user_rule(client: TestClient):
         json={"user_id": 1, "label": "coffee", "pattern": "coffee", "priority": 5},
     )
     resp = client.post("/classify", json={"job_id": job_id, "user_id": 1})
-    labels = [r["label"] for r in resp.json()["results"]]
+    labels = [r["label"] for r in resp.json()["transactions"]]
     assert labels == ["coffee", "unknown"]
+
+
+def test_transactions_endpoint_filters(client: TestClient):
+    content = "\n".join(
+        [
+            json.dumps({"description": "alpha"}),
+            json.dumps({"description": "beta"}),
+        ]
+    )
+    job_id = client.post(
+        "/upload",
+        data=content,
+        headers={"Content-Type": "application/x-ndjson"},
+    ).json()["job_id"]
+    client.post("/classify", json={"job_id": job_id})
+    all_txs = client.get(f"/transactions/{job_id}").json()
+    assert len(all_txs) == 2
+    filtered_desc = client.get(
+        f"/transactions/{job_id}", params={"description": "alpha"}
+    ).json()
+    assert len(filtered_desc) == 1
+    filtered_type = client.get(
+        f"/transactions/{job_id}", params={"type": "llm"}
+    ).json()
+    assert len(filtered_type) == 2
 
 
 def test_classify_uses_cache(client: TestClient):
