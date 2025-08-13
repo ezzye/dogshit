@@ -7,14 +7,14 @@ from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlmodel import SQLModel, Session, create_engine
+from sqlmodel import SQLModel, Session, create_engine, select
 from sqlalchemy.pool import StaticPool
 
 from backend.app import app
 from backend.llm_adapter import get_adapter, AbstractAdapter
 from backend.database import get_session
 from backend.signing import generate_signed_url
-from backend.models import LLMCost
+from backend.models import LLMCost, UserRule
 
 
 @pytest.fixture(autouse=True)
@@ -193,6 +193,54 @@ def test_classify_uses_cache(client: TestClient):
     client.post("/classify", json={"job_id": job_id})
     client.post("/classify", json={"job_id": job_id})
     assert client.adapter.calls == 1
+
+
+def test_classify_overwrites_higher_confidence_rule(
+    client: TestClient, monkeypatch
+):
+    class SeqAdapter(AbstractAdapter):
+        def __init__(self):
+            super().__init__("test")
+            self.responses = [
+                {"label": "coffee", "confidence": 0.9},
+                {"label": "coffee", "confidence": 0.99},
+            ]
+            self.calls = 0
+
+        def _send(self, prompts):
+            resp = self.responses[self.calls]
+            self.calls += 1
+            return {
+                "labels": [(resp["label"], resp["confidence"]) for _ in prompts],
+                "usage": {"total_tokens": 0},
+            }
+
+    adapter = SeqAdapter()
+    app.dependency_overrides[get_adapter] = lambda: adapter
+    monkeypatch.setattr("backend.app.evaluate", lambda *args, **kwargs: None)
+
+    content = json.dumps({"description": "Coffee Shop"})
+    job_id = client.post(
+        "/upload",
+        data=content,
+        headers={"Content-Type": "application/x-ndjson"},
+    ).json()["job_id"]
+
+    client.post("/classify", json={"job_id": job_id, "user_id": 1})
+    with Session(client.engine) as session:
+        rule = session.exec(select(UserRule)).one()
+        assert rule.confidence == pytest.approx(0.9)
+        assert rule.version == 1
+
+    from backend import app as app_module
+
+    app_module.SIGNATURE_CACHE.clear()
+    client.post("/classify", json={"job_id": job_id, "user_id": 1})
+    with Session(client.engine) as session:
+        rule = session.exec(select(UserRule)).one()
+        assert rule.confidence == pytest.approx(0.99)
+        assert rule.version == 2
+        assert rule.provenance == "llm"
 
 
 def test_costs_endpoint(client: TestClient):
