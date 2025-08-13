@@ -2,7 +2,7 @@ from pathlib import Path
 import json
 import re
 from datetime import datetime
-from typing import Iterable, List, Optional, Union
+from typing import Iterable, List, Optional, Union, Set
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -18,7 +18,8 @@ def load_categories(path: Path = CATEGORIES_PATH) -> List[str]:
 
 
 # Preload categories at import time to avoid repeated disk access.
-CATEGORIES: List[str] = load_categories()
+# Stored as a set for efficient membership checks while remaining iterable.
+CATEGORIES: Set[str] = set(load_categories())
 
 
 class Match(BaseModel):

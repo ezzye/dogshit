@@ -96,6 +96,22 @@ def test_rule_rejects_short_pattern(client: TestClient):
     assert resp.status_code == 400
 
 
+def test_rule_rejects_pattern_with_digits(client: TestClient):
+    """Digits and symbols should not count toward the minimum pattern length."""
+    resp = client.post(
+        "/rules", json={"label": "Groceries", "pattern": "ab12cd"}
+    )
+    assert resp.status_code == 400
+
+
+def test_rule_normalises_pattern(client: TestClient):
+    resp = client.post(
+        "/rules", json={"label": "Groceries", "pattern": "Coffee-Shop!"}
+    )
+    assert resp.status_code == 200
+    assert resp.json()["pattern"] == "coffeeshop"
+
+
 def test_rule_overwrites_higher_confidence(client: TestClient):
     low = client.post(
         "/rules",

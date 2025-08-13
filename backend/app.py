@@ -175,6 +175,8 @@ def create_rule(
             status_code=400,
             detail="Pattern must contain at least 6 alphabetic characters",
         )
+    # store the normalised pattern so duplicates are matched consistently
+    rule.pattern = normalised
     if rule.label not in CATEGORIES:
         raise HTTPException(status_code=400, detail="Unknown category label")
     existing = session.exec(
