@@ -162,6 +162,46 @@ def test_classify(client: TestClient):
     assert status == "completed"
 
 
+def test_summary_endpoints(client: TestClient, tmp_path: Path):
+    os.environ["STORAGE_DIR"] = str(tmp_path)
+    content = "\n".join(
+        [
+            json.dumps(
+                {
+                    "date": "2024-01-01",
+                    "amount": "10",
+                    "description": "coffee",
+                    "type": "debit",
+                }
+            ),
+            json.dumps(
+                {
+                    "date": "2024-01-02",
+                    "amount": "5",
+                    "description": "salary",
+                    "type": "credit",
+                }
+            ),
+        ]
+    )
+    job_id = client.post(
+        "/upload",
+        data=content,
+        headers={"Content-Type": "application/x-ndjson"},
+    ).json()["job_id"]
+    client.post("/classify", json={"job_id": job_id})
+    resp = client.get(f"/summary/{job_id}")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "totals" in data
+    # regenerate via POST
+    (tmp_path / f"{job_id}_summary_v1.json").unlink()
+    (tmp_path / f"{job_id}_summary.csv").unlink()
+    resp = client.post("/summary", json={"job_id": job_id})
+    assert resp.status_code == 200
+    assert (tmp_path / f"{job_id}_summary_v1.json").exists()
+
+
 def test_classify_applies_user_rule(client: TestClient):
     content = "\n".join(
         [

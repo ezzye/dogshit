@@ -14,6 +14,7 @@ from .models import (
     ProcessingJob,
     UserRule,
     ClassifyRequest,
+    SummaryRequest,
     LLMCost,
     Transaction,
 )
@@ -29,6 +30,7 @@ from rules.engine import (
 )
 from backend.llm_adapter import get_adapter, AbstractAdapter
 from bankcleanr.signature import normalise_signature
+from .analytics import generate_summary
 import json
 from datetime import datetime
 
@@ -47,6 +49,15 @@ GLOBAL_RULES: list[Rule] = []
 SIGNATURE_CACHE: dict[str, dict] = {}
 
 app.include_router(report_router)
+
+
+def _summary_paths(job_id: int) -> tuple[Path, Path]:
+    """Return output paths for a job's summary JSON and CSV files."""
+    storage_dir = Path(os.environ.get("STORAGE_DIR", "./storage"))
+    storage_dir.mkdir(parents=True, exist_ok=True)
+    json_path = storage_dir / f"{job_id}_summary_v1.json"
+    csv_path = storage_dir / f"{job_id}_summary.csv"
+    return json_path, csv_path
 
 def _convert_user_rule(rule: UserRule) -> Rule:
     return Rule(
@@ -340,6 +351,21 @@ def classify(
             session.add(transaction)
             session.commit()
             enriched.append(tx)
+        # Generate analytics summary and persist outputs
+        dated = [t for t in enriched if t.get("date")]
+        dates = [t["date"] for t in dated]
+        period = {"start": min(dates), "end": max(dates)} if dates else {"start": "", "end": ""}
+        json_path, csv_path = _summary_paths(req.job_id)
+        summary_dir = json_path.parent
+        generate_summary(
+            dated,
+            job_id=str(req.job_id),
+            user_id=str(req.user_id),
+            period=period,
+            output_dir=summary_dir,
+        )
+        (summary_dir / "summary_v1.json").replace(json_path)
+        (summary_dir / "summary.csv").replace(csv_path)
 
         # Mark completion
         job.status = "completed"
@@ -351,6 +377,41 @@ def classify(
         session.add(job)
         session.commit()
         raise
+
+
+@app.post("/summary")
+def create_summary(
+    req: SummaryRequest,
+    session: Session = Depends(get_session),
+    _: None = Depends(auth_dependency),
+):
+    entries = session.exec(select(Transaction).where(Transaction.job_id == req.job_id)).all()
+    if not entries:
+        raise HTTPException(status_code=404, detail="Transactions not found")
+    txs = [e.data for e in entries]
+    dated = [t for t in txs if t.get("date")]
+    dates = [t["date"] for t in dated]
+    period = {"start": min(dates), "end": max(dates)} if dates else {"start": "", "end": ""}
+    json_path, csv_path = _summary_paths(req.job_id)
+    summary_dir = json_path.parent
+    generate_summary(
+        dated,
+        job_id=str(req.job_id),
+        user_id=str(req.user_id),
+        period=period,
+        output_dir=summary_dir,
+    )
+    (summary_dir / "summary_v1.json").replace(json_path)
+    (summary_dir / "summary.csv").replace(csv_path)
+    return json.loads(json_path.read_text())
+
+
+@app.get("/summary/{job_id}")
+def get_summary(job_id: int, _: None = Depends(auth_dependency)):
+    json_path, _ = _summary_paths(job_id)
+    if not json_path.exists():
+        raise HTTPException(status_code=404, detail="Summary not found")
+    return json.loads(json_path.read_text())
 
 
 @app.get("/transactions/{job_id}")
