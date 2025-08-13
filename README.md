@@ -42,6 +42,16 @@ npm run dev   # start Vite dev server
 npm run build # create production assets
 ```
 
+### Summary API
+
+The backend exposes endpoints to generate and retrieve spending summaries:
+
+- `POST /summary` – run analytics for a job and persist JSON/CSV outputs.
+- `GET /summary/{job_id}` – fetch the stored summary for further processing.
+
+Summaries are automatically produced after classification so `report.generate_report`
+can operate on the saved files.
+
 ### Python CLI
 
 Run the extractor directly from source or build a self-contained binary:

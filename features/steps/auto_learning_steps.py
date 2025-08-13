@@ -31,7 +31,7 @@ def then_adapter_called(context, n):
     assert context.fake_adapter.calls == n
 
 
-@when("I upload NDJSON:")
+@when("I upload NDJSON")
 def when_upload_ndjson(context):
     if not hasattr(context, "client"):
         _setup_client(context)

@@ -1,7 +1,7 @@
-import os
 import tempfile
 from pathlib import Path
 import json
+import os
 
 from fastapi.testclient import TestClient
 from sqlmodel import SQLModel, Session, create_engine
@@ -25,6 +25,20 @@ def _setup_client(context):
 
     app.dependency_overrides[get_session] = get_session_override
     llm_adapter.get_session = get_session_override
+
+    class DummyAdapter(llm_adapter.AbstractAdapter):
+        def __init__(self):
+            super().__init__("test")
+
+        def _send(self, prompts):
+            return {"labels": [("unknown", 0.0)] * len(prompts), "usage": {"total_tokens": 0}}
+
+    dummy_adapter = DummyAdapter()
+
+    def adapter_override():
+        return dummy_adapter
+
+    app.dependency_overrides[llm_adapter.get_adapter] = adapter_override
     context.client = TestClient(app)
 
 
@@ -122,6 +136,21 @@ def when_upload_data_of_size(context, size):
 @then("the response status is {status:d}")
 def then_response_status(context, status):
     assert context.response.status_code == status
+    context.client.close()
+    app.dependency_overrides.clear()
+    os.environ.pop("AUTH_BYPASS", None)
+    os.environ.pop("STORAGE_DIR", None)
+
+
+@when("I request the summary")
+def when_request_summary(context):
+    resp = context.client.get(f"/summary/{context.job_id}")
+    context.summary = resp.json()
+
+
+@then('the summary response has key "{key}"')
+def then_summary_has_key(context, key):
+    assert key in context.summary
     context.client.close()
     app.dependency_overrides.clear()
     os.environ.pop("AUTH_BYPASS", None)

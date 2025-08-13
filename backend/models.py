@@ -58,3 +58,8 @@ class LLMCost(SQLModel, table=True):
 class ClassifyRequest(SQLModel):
     job_id: int
     user_id: int = 0
+
+
+class SummaryRequest(SQLModel):
+    job_id: int
+    user_id: int = 0

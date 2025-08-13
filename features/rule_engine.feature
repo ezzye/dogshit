@@ -1,10 +1,10 @@
 Feature: Rule engine
   Scenario: User rule overrides global rule
     Given the API client
-    When I create a user rule with label "coffee" pattern "coffee" priority 5 for user 1
+    When I create a user rule with label "Groceries" pattern "coffee" priority 5 for user 1
     And I upload text "coffee shop"
     And I classify with user id 1
-    Then the classification label is "coffee"
+    Then the classification label is "Groceries"
 
   Scenario: Reject rule with short pattern
      Given the API client

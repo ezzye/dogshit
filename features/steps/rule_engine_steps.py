@@ -35,7 +35,7 @@ def when_classify(context, user_id):
 
 @then('the classification label is "{label}"')
 def then_classification_label(context, label):
-    assert context.classification["results"][0]["label"] == label
+    assert context.classification["transactions"][0]["label"] == label
     if not getattr(context, "preserve_client", False):
         context.client.close()
         app.dependency_overrides.clear()

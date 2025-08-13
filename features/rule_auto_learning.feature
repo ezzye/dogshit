@@ -6,7 +6,7 @@ Feature: Rule auto-learning
       """
       {"description": "Corner Shop 123", "type": "debit"}
       """
-    Then the job status should be "pending"
+    Then the job status should be "uploaded"
     When I classify with user id 1
     Then the job status should be "completed"
     And the classification label is "snacks"
