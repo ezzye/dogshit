@@ -13,9 +13,9 @@ from .models import (
     Upload,
     ProcessingJob,
     UserRule,
-    ClassificationResult,
     ClassifyRequest,
     LLMCost,
+    Transaction,
 )
 from rules.engine import (
     load_global_rules,
@@ -260,7 +260,6 @@ def classify(
         engine_rules = [_convert_user_rule(r) for r in latest.values()]
         rules = merge_rules(GLOBAL_RULES, engine_rules)
 
-        results: list[dict] = []
         unknown_signatures = []
         for tx in transactions:
             label = evaluate(tx, rules)
@@ -276,8 +275,10 @@ def classify(
                 SIGNATURE_CACHE[sig] = resp
 
         processed_signatures: set[str] = set()
+        enriched: list[dict] = []
         for tx in transactions:
             label = tx.get("_label")
+            source = "rule" if label else "llm"
             sig = tx["merchant_signature"]
             if not label:
                 response = SIGNATURE_CACHE[sig]
@@ -286,57 +287,84 @@ def classify(
                 if sig not in processed_signatures and confidence >= 0.85:
                     if sum(c.isalpha() for c in norm(sig)) < 6:
                         processed_signatures.add(sig)
-                        continue
-                    existing = session.exec(
-                        select(UserRule)
-                        .where(UserRule.user_id == req.user_id)
-                        .where(UserRule.pattern == sig)
-                        .order_by(UserRule.version.desc())  # type: ignore[attr-defined]
-                    ).first()
-                    if existing:
-                        if (
-                            existing.field != "merchant_signature"
-                            or confidence < 0.95
-                            or confidence <= existing.confidence
-                        ):
-                            processed_signatures.add(sig)
-                            continue
-                        existing.label = label
-                        existing.confidence = confidence
-                        existing.version = existing.version + 1
-                        existing.provenance = "llm"
-                        existing.updated_at = datetime.utcnow()
-                        session.add(existing)
-                        session.commit()
                     else:
-                        session.add(
-                            UserRule(
-                                user_id=req.user_id,
-                                label=label,
-                                pattern=sig,
-                                match_type="exact",
-                                field="merchant_signature",
-                                priority=0,
-                                confidence=confidence,
-                                version=1,
-                                provenance="llm",
+                        existing = session.exec(
+                            select(UserRule)
+                            .where(UserRule.user_id == req.user_id)
+                            .where(UserRule.pattern == sig)
+                            .order_by(UserRule.version.desc())  # type: ignore[attr-defined]
+                        ).first()
+                        if existing:
+                            if (
+                                existing.field != "merchant_signature"
+                                or confidence < 0.95
+                                or confidence <= existing.confidence
+                            ):
+                                processed_signatures.add(sig)
+                            else:
+                                existing.label = label
+                                existing.confidence = confidence
+                                existing.version = existing.version + 1
+                                existing.provenance = "llm"
+                                existing.updated_at = datetime.utcnow()
+                                session.add(existing)
+                                session.commit()
+                        else:
+                            session.add(
+                                UserRule(
+                                    user_id=req.user_id,
+                                    label=label,
+                                    pattern=sig,
+                                    match_type="exact",
+                                    field="merchant_signature",
+                                    priority=0,
+                                    confidence=confidence,
+                                    version=1,
+                                    provenance="llm",
+                                )
                             )
-                        )
-                        session.commit()
+                            session.commit()
                 processed_signatures.add(sig)
-            result = ClassificationResult(job_id=req.job_id, result=label, status="completed")
-            session.add(result)
+            if not label:
+                label = "unknown"
+                source = "unknown"
+            tx["label"] = label
+            tx["type"] = source
+            transaction = Transaction(
+                job_id=req.job_id,
+                description=tx.get("description"),
+                data=tx,
+                label=label,
+                classification_type=source,
+            )
+            session.add(transaction)
             session.commit()
-            session.refresh(result)
-            results.append({"classification_id": result.id, "label": label})
+            enriched.append(tx)
 
         # Mark completion
         job.status = "completed"
         session.add(job)
         session.commit()
-        return {"results": results}
+        return {"transactions": enriched}
     except Exception:
         job.status = "failed"
         session.add(job)
         session.commit()
         raise
+
+
+@app.get("/transactions/{job_id}")
+def list_transactions(
+    job_id: int,
+    type: str | None = Query(None),
+    description: str | None = Query(None),
+    session: Session = Depends(get_session),
+    _: None = Depends(auth_dependency),
+):
+    query = select(Transaction).where(Transaction.job_id == job_id)
+    if type:
+        query = query.where(Transaction.classification_type == type)
+    if description:
+        query = query.where(Transaction.description.contains(description))
+    entries = session.exec(query).all()
+    return [t.data for t in entries]
