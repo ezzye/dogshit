@@ -4,7 +4,7 @@ Feature: Rule auto-learning
     And a fake adapter returning label "snacks" with confidence 0.9
     When I upload NDJSON:
       """
-      {"description": "Corner Shop 123"}
+      {"description": "Corner Shop 123", "type": "debit"}
       """
     Then the job status should be "pending"
     When I classify with user id 1

@@ -8,7 +8,7 @@ def test_cli_validates_records(tmp_path, monkeypatch):
     runner = CliRunner()
 
     def fake_extract(pdf_path: str, bank: str = "barclays"):
-        return [{"date": "01 Jan 2024", "description": "x"}]  # missing amount
+        return [{"date": "01 Jan 2024", "description": "x", "type": "credit"}]  # missing amount
 
     monkeypatch.setattr(cli, "extract_transactions", fake_extract)
 
@@ -30,6 +30,7 @@ def test_cli_parse_alias(tmp_path, monkeypatch):
                 "description": "x",
                 "amount": "1",
                 "merchant_signature": "",
+                "type": "credit",
             }
         ]
 
@@ -42,5 +43,5 @@ def test_cli_parse_alias(tmp_path, monkeypatch):
     assert result.exit_code == 0
     assert (
         out.read_text()
-        == '{"date": "01 Jan 2024", "description": "x", "amount": "1", "merchant_signature": ""}\n'
+        == '{"date": "01 Jan 2024", "description": "x", "amount": "1", "merchant_signature": "", "type": "credit"}\n'
     )

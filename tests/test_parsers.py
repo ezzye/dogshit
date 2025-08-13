@@ -47,6 +47,8 @@ for pdf, jsn in STATEMENTS:
 @pytest.mark.parametrize("pdf_path,json_path", STATEMENTS)
 def test_extract_transactions(pdf_path: Path, json_path: Path) -> None:
     expected = json.load(open(json_path))
+    for r in expected:
+        r["type"] = "credit" if Decimal(r["amount"]) > 0 else "debit"
     records = list(extract_transactions(str(pdf_path), bank="coop"))
     def _norm(desc: str) -> str:
         return " ".join(desc.split())
@@ -58,6 +60,7 @@ def test_extract_transactions(pdf_path: Path, json_path: Path) -> None:
         assert rec["date"]
         assert rec["description"]
         assert rec["amount"].startswith(("+", "-"))
+        assert rec["type"] in {"credit", "debit"}
 
 
 def test_extract_transactions_directory() -> None:
