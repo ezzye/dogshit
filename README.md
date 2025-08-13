@@ -3,6 +3,19 @@
 A simple tool for analysing bank statements using various LLM adapters. It ships a
 command line interface and a small test-suite.
 
+## Status
+
+### Implemented
+
+- CLI extraction for PDF statements to `transaction_v1.jsonl`
+- Heuristic rule engine
+- Basic transaction classification
+
+### Pending
+
+- Automatic summary and report pipeline
+- End-to-end upload flow that links extraction to report download
+
 ## Quick Start
 
 1. Install the backend and frontend dependencies:
@@ -18,10 +31,10 @@ command line interface and a small test-suite.
    docker compose up --build api frontend
    ```
 
-Open <http://localhost:5173> and follow the three-click flow:
+Open <http://localhost:5173> and follow the three-click flow (some steps are still manual):
 
 1. **Download** the desktop extractor from the project's [GitHub releases](https://github.com/OWNER/REPO/releases) page.
-2. **Upload** the generated `transaction_v1.jsonl` file.
+2. **Upload** the generated `transaction_v1.jsonl` file to `/upload` using `Content-Type: application/x-ndjson`, then trigger `/classify` and `/summary/{job_id}` manually until this is automated.
 3. **Download** the savings report.
 
 ### Backend and frontend build
@@ -130,6 +143,10 @@ cd frontend
 npm install
 npm test
 ```
+
+## Troubleshooting
+
+- **415 Unsupported Media Type**: the `/upload` endpoint accepts `Content-Type: application/x-ndjson` (or `text/plain`). A mismatched header will cause the upload to fail.
 
 ## Configuration
 
