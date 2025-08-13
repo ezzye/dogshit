@@ -48,7 +48,7 @@ def _convert_user_rule(rule: UserRule) -> Rule:
         active=True,
         priority=rule.priority,
         version=rule.version,
-        provenance="user",
+        provenance=rule.provenance,
         confidence=rule.confidence,
         match=Match(type=rule.match_type, pattern=rule.pattern, fields=[rule.field]),
         action=Action(label=rule.label, category=rule.label),
@@ -166,6 +166,8 @@ def create_rule(
             raise HTTPException(
                 status_code=400, detail="Field coverage cannot be narrower"
             )
+        if rule.confidence <= existing.confidence:
+            return existing
         rule.version = existing.version + 1
         rule.priority = existing.priority
     session.add(rule)
@@ -251,7 +253,11 @@ def classify(
                         .order_by(UserRule.version.desc())  # type: ignore[attr-defined]
                     ).first()
                     if existing:
-                        if existing.field != "merchant_signature" or confidence < 0.95:
+                        if (
+                            existing.field != "merchant_signature"
+                            or confidence < 0.95
+                            or confidence <= existing.confidence
+                        ):
                             processed_signatures.add(sig)
                             continue
                         session.add(
@@ -264,6 +270,7 @@ def classify(
                                 priority=existing.priority,
                                 confidence=confidence,
                                 version=existing.version + 1,
+                                provenance="llm",
                             )
                         )
                         session.commit()
@@ -278,6 +285,7 @@ def classify(
                                 priority=0,
                                 confidence=confidence,
                                 version=1,
+                                provenance="llm",
                             )
                         )
                         session.commit()

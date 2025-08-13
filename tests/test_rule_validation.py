@@ -44,14 +44,14 @@ def test_create_rule_rejects_short_pattern(client: TestClient):
 def test_create_rule_rejects_narrower_field(client: TestClient):
     resp = client.post(
         "/rules",
-        json={"user_id": 1, "label": "coffee", "pattern": "coffeeshop", "field": "description"},
+        json={"user_id": 1, "label": "Groceries", "pattern": "coffeeshop", "field": "description"},
     )
     assert resp.status_code == 200
     resp = client.post(
         "/rules",
         json={
             "user_id": 1,
-            "label": "coffee",
+            "label": "Groceries",
             "pattern": "coffeeshop",
             "field": "merchant_signature",
         },

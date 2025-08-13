@@ -25,6 +25,7 @@ class UserRule(SQLModel, table=True):
     priority: int = 0
     confidence: float = 1.0
     version: int = 1
+    provenance: str = "user"
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 
