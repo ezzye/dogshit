@@ -17,8 +17,11 @@ export default function Upload() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!file) return;
+    const typedFile = new File([file], file.name, {
+      type: 'application/x-ndjson',
+    });
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append('file', typedFile);
     const res = await fetch('/upload', { method: 'POST', body: formData });
     const data = await res.json();
     setJobId(data.job_id);

@@ -2,7 +2,7 @@ import gzip
 import os
 from pathlib import Path
 
-from fastapi import FastAPI, Depends, Request, HTTPException, Query
+from fastapi import FastAPI, Depends, Request, HTTPException, Query, UploadFile, File
 from fastapi.responses import FileResponse
 from .report import router as report_router
 from sqlmodel import Session, select
@@ -35,7 +35,12 @@ from datetime import datetime
 app = FastAPI()
 
 MAX_UPLOAD_SIZE = 100 * 1024 * 1024  # 100 MB
-ALLOWED_CONTENT_TYPES = {"application/x-ndjson", "text/plain"}
+ALLOWED_CONTENT_TYPES = {
+    "application/x-ndjson",
+    "text/plain",
+    "application/octet-stream",
+    "",
+}
 
 
 GLOBAL_RULES: list[Rule] = []
@@ -67,27 +72,37 @@ def on_startup() -> None:
 @app.post("/upload")
 async def upload(
     request: Request,
+    file: UploadFile | None = File(None),
     session: Session = Depends(get_session),
     _: None = Depends(auth_dependency),
 ) -> dict:
-    content_type = request.headers.get("Content-Type", "").split(";")[0].strip()
-    if content_type not in ALLOWED_CONTENT_TYPES:
-        raise HTTPException(status_code=415, detail="Unsupported Media Type")
+    base_content_type = request.headers.get("Content-Type", "").split(";")[0].strip()
     content_length = int(request.headers.get("Content-Length", 0))
     if content_length > MAX_UPLOAD_SIZE:
         raise HTTPException(status_code=413, detail="Payload too large")
 
-    data = await request.body()
+    if base_content_type.startswith("multipart/form-data"):
+        if file is None:
+            raise HTTPException(status_code=400, detail="No file provided")
+        if file.content_type not in ALLOWED_CONTENT_TYPES:
+            raise HTTPException(status_code=415, detail="Unsupported Media Type")
+        data = await file.read()
+    else:
+        if base_content_type not in ALLOWED_CONTENT_TYPES:
+            raise HTTPException(status_code=415, detail="Unsupported Media Type")
+        data = await request.body()
+
     if len(data) > MAX_UPLOAD_SIZE:
         raise HTTPException(status_code=413, detail="Payload too large")
     if request.headers.get("Content-Encoding") == "gzip":
         data = gzip.decompress(data)
+
     text = data.decode("utf-8")
     upload = Upload(content=text)
     session.add(upload)
     session.commit()
     session.refresh(upload)
-    job = ProcessingJob(upload_id=upload.id)
+    job = ProcessingJob(upload_id=upload.id, status="uploaded")
     session.add(job)
     session.commit()
     session.refresh(job)
