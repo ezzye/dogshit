@@ -408,7 +408,7 @@ def create_summary(
 
 @app.get("/summary/{job_id}")
 def get_summary(job_id: int, _: None = Depends(auth_dependency)):
-    json_path, _ = _summary_paths(job_id)
+    json_path, _csv_path = _summary_paths(job_id)
     if not json_path.exists():
         raise HTTPException(status_code=404, detail="Summary not found")
     return json.loads(json_path.read_text())

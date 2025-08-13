@@ -193,7 +193,18 @@ def test_summary_endpoints(client: TestClient, tmp_path: Path):
     resp = client.get(f"/summary/{job_id}")
     assert resp.status_code == 200
     data = resp.json()
-    assert "totals" in data
+    generated_at = data.pop("generated_at")
+    assert isinstance(generated_at, str)
+    assert data == {
+        "job_id": str(job_id),
+        "user_id": "0",
+        "period": {"start": "2024-01-01", "end": "2024-01-02"},
+        "currency": "GBP",
+        "totals": {"income": 5.0, "expenses": -10.0, "net": -5.0},
+        "categories": [],
+        "recurring": [],
+        "highlights": {"overspending": [], "anomalies": []},
+    }
     # regenerate via POST
     (tmp_path / f"{job_id}_summary_v1.json").unlink()
     (tmp_path / f"{job_id}_summary.csv").unlink()
