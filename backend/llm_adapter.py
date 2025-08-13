@@ -32,40 +32,46 @@ class DailyCostTracker:
         self.daily_total = 0.0
         self.job_costs: Dict[int, float] = defaultdict(float)
 
-    def add(self, job_id: int, tokens_in: int, tokens_out: int, cost: float) -> None:
+    def add(self, job_id: int, tokens_in: int, tokens_out: int, cost_gbp: float) -> None:
         today = date.today()
         if today != self.day:
             self.reset()
-        if self.daily_total + cost > self.limit:
+        if self.daily_total + cost_gbp > self.limit:
             raise RuntimeError("Daily cost limit exceeded")
-        if self.job_costs[job_id] + cost > self.job_limit:
+        if self.job_costs[job_id] + cost_gbp > self.job_limit:
             raise RuntimeError("Job cost limit exceeded")
-        self.daily_total += cost
-        self.job_costs[job_id] += cost
+        self.daily_total += cost_gbp
+        self.job_costs[job_id] += cost_gbp
         for session in get_session():
             session.add(
                 LLMCost(
                     job_id=job_id,
                     tokens_in=tokens_in,
                     tokens_out=tokens_out,
-                    estimated_cost_gbp=cost,
+                    estimated_cost_gbp=cost_gbp,
                 )
             )
             session.commit()
         logger.info(
             "job %s cost %.4f GBP (job total %.4f, daily total %.4f)",
             job_id,
-            cost,
+            cost_gbp,
             self.job_costs[job_id],
             self.daily_total,
         )
 
-    def add_raw_cost(self, job_id: int, cost: float) -> None:
+    def add_raw_cost(self, job_id: int, cost_gbp: float) -> None:
         """Record a non-token-based cost."""
-        self.add(job_id, 0, 0, cost)
+        self.add(job_id, 0, 0, cost_gbp)
 
     @contextmanager
-    def track(self, job_id: int, cost: float, tokens_in: int = 0, tokens_out: int = 0):
+    def track(
+        self,
+        job_id: int,
+        cost: float,
+        tokens_in: int = 0,
+        tokens_out: int = 0,
+    ):
         """Context manager to record cost after a block completes."""
         try:
             yield
@@ -118,15 +124,15 @@ class AbstractAdapter(ABC):
             tokens_in = usage.get("prompt_tokens", usage.get("total_tokens", 0))
             tokens_out = usage.get("completion_tokens", 0)
             tokens = tokens_in + tokens_out
-            cost = tokens / 1000 * self.price_per_1k_tokens_gbp
-            cost_tracker.add(job_id, tokens_in, tokens_out, cost)
+            cost_gbp = tokens / 1000 * self.price_per_1k_tokens_gbp
+            cost_tracker.add(job_id, tokens_in, tokens_out, cost_gbp)
             for label, confidence in data.get("labels", []):
                 responses.append(
                     {
                         "label": label,
                         "confidence": confidence,
                         "tokens": tokens,
-                        "cost": cost,
+                        "cost": cost_gbp,
                     }
                 )
         return responses
