@@ -14,6 +14,7 @@ from backend.app import app
 from backend.llm_adapter import get_adapter, AbstractAdapter
 from backend.database import get_session
 from backend.signing import generate_signed_url
+from backend.models import LLMCost
 
 
 @pytest.fixture(autouse=True)
@@ -53,6 +54,7 @@ def client_fixture(monkeypatch):
     monkeypatch.setattr("backend.llm_adapter.get_session", get_session_override)
     with TestClient(app) as c:
         c.adapter = dummy_adapter
+        c.engine = engine
         yield c
     app.dependency_overrides.clear()
     os.environ.pop("AUTH_BYPASS", None)
@@ -175,6 +177,37 @@ def test_classify_uses_cache(client: TestClient):
     client.post("/classify", json={"job_id": job_id})
     client.post("/classify", json={"job_id": job_id})
     assert client.adapter.calls == 1
+
+
+def test_costs_endpoint(client: TestClient):
+    job_id = client.post(
+        "/upload", data="data", headers={"Content-Type": "text/plain"}
+    ).json()["job_id"]
+    with Session(client.engine) as session:
+        session.add(
+            LLMCost(
+                job_id=job_id,
+                tokens_in=10,
+                tokens_out=5,
+                estimated_cost_gbp=0.01,
+            )
+        )
+        session.add(
+            LLMCost(
+                job_id=job_id,
+                tokens_in=20,
+                tokens_out=15,
+                estimated_cost_gbp=0.03,
+            )
+        )
+        session.commit()
+    resp = client.get(f"/costs/{job_id}")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["tokens_in"] == 30
+    assert data["tokens_out"] == 20
+    assert data["total_tokens"] == 50
+    assert data["estimated_cost_gbp"] == pytest.approx(0.04)
 
 def test_download(client: TestClient, tmp_path: Path):
     job_id = client.post(
