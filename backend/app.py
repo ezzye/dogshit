@@ -30,6 +30,7 @@ from rules.engine import (
 from backend.llm_adapter import get_adapter, AbstractAdapter
 from bankcleanr.signature import normalise_signature
 import json
+from datetime import datetime
 
 app = FastAPI()
 
@@ -284,19 +285,12 @@ def classify(
                         ):
                             processed_signatures.add(sig)
                             continue
-                        session.add(
-                            UserRule(
-                                user_id=req.user_id,
-                                label=label,
-                                pattern=sig,
-                                match_type="exact",
-                                field="merchant_signature",
-                                priority=existing.priority,
-                                confidence=confidence,
-                                version=existing.version + 1,
-                                provenance="llm",
-                            )
-                        )
+                        existing.label = label
+                        existing.confidence = confidence
+                        existing.version = existing.version + 1
+                        existing.provenance = "llm"
+                        existing.updated_at = datetime.utcnow()
+                        session.add(existing)
                         session.commit()
                     else:
                         session.add(
