@@ -15,6 +15,7 @@ from .models import (
     UserRule,
     ClassificationResult,
     ClassifyRequest,
+    LLMCost,
 )
 from rules.engine import (
     load_global_rules,
@@ -102,6 +103,27 @@ def status(
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
     return {"status": job.status}
+
+
+@app.get("/costs/{job_id}")
+def costs(
+    job_id: int,
+    session: Session = Depends(get_session),
+    _: None = Depends(auth_dependency),
+) -> dict:
+    job = session.get(ProcessingJob, job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    entries = session.exec(select(LLMCost).where(LLMCost.job_id == job_id)).all()
+    tokens_in = sum(e.tokens_in for e in entries)
+    tokens_out = sum(e.tokens_out for e in entries)
+    estimated_cost = sum(e.estimated_cost_gbp for e in entries)
+    return {
+        "tokens_in": tokens_in,
+        "tokens_out": tokens_out,
+        "total_tokens": tokens_in + tokens_out,
+        "estimated_cost_gbp": estimated_cost,
+    }
 
 
 @app.get("/download/{job_id}/{type}")
