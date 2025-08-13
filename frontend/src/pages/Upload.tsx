@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Button } from '../components/ui/button';
+import { waitForJobStatus } from '../lib/utils';
 
 export default function Upload() {
   const [file, setFile] = useState<File | null>(null);
   const [rules, setRules] = useState<string[]>([]);
+  const [jobId, setJobId] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/rules')
@@ -19,6 +21,13 @@ export default function Upload() {
     formData.append('file', file);
     const res = await fetch('/upload', { method: 'POST', body: formData });
     const data = await res.json();
+    setJobId(data.job_id);
+    await waitForJobStatus(data.job_id);
+    await fetch('/classify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ job_id: data.job_id }),
+    });
     window.location.href = `/progress/${data.job_id}`;
   };
 
@@ -33,6 +42,7 @@ export default function Upload() {
           <input
             id="file"
             type="file"
+            accept=".jsonl"
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
             className="mt-1 block w-full rounded border p-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             aria-label="Bank statement file"
@@ -42,6 +52,11 @@ export default function Upload() {
           Upload
         </Button>
       </form>
+      {jobId && (
+        <p>
+          Job ID: <span>{jobId}</span>
+        </p>
+      )}
       <section aria-labelledby="rules-heading" className="space-y-2">
         <h2 id="rules-heading" className="text-xl font-semibold">
           Rules
