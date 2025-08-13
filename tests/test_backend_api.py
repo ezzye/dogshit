@@ -94,6 +94,31 @@ def test_rule_rejects_short_pattern(client: TestClient):
     assert resp.status_code == 400
 
 
+def test_rule_overwrites_higher_confidence(client: TestClient):
+    low = client.post(
+        "/rules",
+        json={
+            "label": "Groceries",
+            "pattern": "coffee shop",
+            "confidence": 0.5,
+            "provenance": "llm",
+        },
+    ).json()
+    assert low["version"] == 1
+    high = client.post(
+        "/rules",
+        json={
+            "label": "Groceries",
+            "pattern": "coffee shop",
+            "confidence": 0.9,
+            "provenance": "llm",
+        },
+    ).json()
+    assert high["version"] == 2
+    assert high["confidence"] == 0.9
+    assert high["provenance"] == "llm"
+
+
 def test_classify(client: TestClient):
     content = "\n".join(
         [
