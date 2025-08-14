@@ -425,7 +425,9 @@ def list_transactions(
     query = select(Transaction).where(Transaction.job_id == job_id)
     if type:
         query = query.where(Transaction.classification_type == type)
-    if description:
-        query = query.where(Transaction.description.contains(description))
+    if description is not None:
+        query = query.where(
+            Transaction.description.contains(str(description))  # type: ignore[attr-defined]
+        )
     entries = session.exec(query).all()
     return [t.data for t in entries]
