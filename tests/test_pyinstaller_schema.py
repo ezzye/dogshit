@@ -1,7 +1,17 @@
 import os
 import platform
+import shutil
 import subprocess
 from pathlib import Path
+
+import pytest
+
+
+if shutil.which("pyinstaller") is None:
+    pytest.skip(
+        "PyInstaller is not installed; skipping PyInstaller integration tests.",
+        allow_module_level=True,
+    )
 
 
 def test_schema_bundled_with_pyinstaller(tmp_path):
