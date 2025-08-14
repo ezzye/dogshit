@@ -1,6 +1,7 @@
 import gzip
 import os
 from pathlib import Path
+from typing import Any, cast
 
 from fastapi import FastAPI, Depends, Request, HTTPException, Query, UploadFile, File
 from fastapi.responses import FileResponse
@@ -426,8 +427,7 @@ def list_transactions(
     if type:
         query = query.where(Transaction.classification_type == type)
     if description is not None:
-        query = query.where(
-            Transaction.description.contains(str(description))  # type: ignore[attr-defined]
-        )
+        desc_column = cast(Any, Transaction.description)
+        query = query.where(desc_column.contains(description))
     entries = session.exec(query).all()
     return [t.data for t in entries]
