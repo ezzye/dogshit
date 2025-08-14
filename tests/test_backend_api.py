@@ -238,7 +238,7 @@ def test_transactions_endpoint_filters(client: TestClient):
     content = "\n".join(
         [
             json.dumps({"description": "alpha", "type": "debit"}),
-            json.dumps({"description": "beta", "type": "debit"}),
+            json.dumps({"description": "coffee", "type": "debit"}),
         ]
     )
     job_id = client.post(
@@ -246,6 +246,7 @@ def test_transactions_endpoint_filters(client: TestClient):
         data=content,
         headers={"Content-Type": "application/x-ndjson"},
     ).json()["job_id"]
+    client.post("/rules", json={"label": "coffee", "pattern": "coffee"})
     client.post("/classify", json={"job_id": job_id})
     all_txs = client.get(f"/transactions/{job_id}").json()
     assert len(all_txs) == 2
@@ -253,10 +254,17 @@ def test_transactions_endpoint_filters(client: TestClient):
         f"/transactions/{job_id}", params={"description": "alpha"}
     ).json()
     assert len(filtered_desc) == 1
-    filtered_type = client.get(
-        f"/transactions/{job_id}", params={"type": "llm"}
+    assert filtered_desc[0]["description"] == "alpha"
+    filtered_type_rule = client.get(
+        f"/transactions/{job_id}", params={"type": "rule"}
     ).json()
-    assert len(filtered_type) == 2
+    assert len(filtered_type_rule) == 1
+    assert filtered_type_rule[0]["description"] == "coffee"
+    filtered_both = client.get(
+        f"/transactions/{job_id}", params={"type": "rule", "description": "coffee"}
+    ).json()
+    assert len(filtered_both) == 1
+    assert filtered_both[0]["description"] == "coffee"
 
 
 def test_classify_uses_cache(client: TestClient):
