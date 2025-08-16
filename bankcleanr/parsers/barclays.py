@@ -11,7 +11,7 @@ from ..pii import mask_pii
 from ..signature import normalise_signature
 
 _LINE_RE = re.compile(
-    r"^(\d{2} \w{3} \d{4})\s+(.*?)\s+(-?\d+\.\d{2})\s+(-?\d+\.\d{2})$"
+    r"^(\d{2} \w{3} \d{4})\s+(.*?)\s+(-?[£]?\d{1,3}(?:,\d{3})*\.\d{2})\s+(-?[£]?\d{1,3}(?:,\d{3})*\.\d{2})$"
 )
 
 
@@ -28,13 +28,14 @@ class BarclaysParser:
                     if match:
                         date, desc, amount, balance = match.groups()
                         clean_desc = mask_pii(desc.strip())
-                        amt = Decimal(amount)
+                        amt = Decimal(amount.replace("£", "").replace(",", ""))
+                        bal = Decimal(balance.replace("£", "").replace(",", ""))
                         records.append(
                             {
                                 "date": datetime.strptime(date, "%d %b %Y").date().isoformat(),
                                 "description": clean_desc,
                                 "amount": f"{amt:+.2f}",
-                                "balance": f"{Decimal(balance):+.2f}",
+                                "balance": f"{bal:+.2f}",
                                 "merchant_signature": normalise_signature(clean_desc),
                                 "type": "credit" if amt > 0 else "debit",
                             }
