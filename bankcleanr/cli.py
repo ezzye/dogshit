@@ -42,10 +42,12 @@ def extract(
         help="Path to a PDF file or directory of PDFs",
     ),
     output_jsonl: Path = typer.Argument(..., help="Output JSONL file"),
-    bank: str = typer.Option(
-        ...,  # type: ignore[arg-type]
+    bank: str | None = typer.Option(
+        None,  # type: ignore[arg-type]
         "--bank",
-        help="Bank identifier (barclays, hsbc, lloyds, coop). Required.",
+        help=(
+            "Bank identifier (barclays, hsbc, lloyds, coop) or 'auto' to detect from the statement."
+        ),
     ),
     mask_names: str = typer.Option("", "--mask-names", help="Comma-separated names to mask"),
 ) -> None:

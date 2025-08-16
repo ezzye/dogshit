@@ -7,7 +7,7 @@ from bankcleanr import cli
 def test_cli_validates_records(tmp_path, monkeypatch):
     runner = CliRunner()
 
-    def fake_extract(pdf_path: str, bank: str = "barclays"):
+    def fake_extract(pdf_path: str, bank: str | None = None):
         return [{"date": "01 Jan 2024", "description": "x", "type": "credit"}]  # missing amount
 
     monkeypatch.setattr(cli, "extract_transactions", fake_extract)
@@ -25,7 +25,7 @@ def test_cli_validates_records(tmp_path, monkeypatch):
 def test_cli_handles_missing_amount(tmp_path, monkeypatch):
     runner = CliRunner()
 
-    def fake_extract(pdf_path: str, bank: str = "barclays"):
+    def fake_extract(pdf_path: str, bank: str | None = None):
         return [
             {
                 "date": "01 Jan 2024",
@@ -50,7 +50,7 @@ def test_cli_handles_missing_amount(tmp_path, monkeypatch):
 def test_cli_parse_alias(tmp_path, monkeypatch):
     runner = CliRunner()
 
-    def fake_extract(pdf_path: str, bank: str = "barclays"):
+    def fake_extract(pdf_path: str, bank: str | None = None):
         return [
             {
                 "date": "01 Jan 2024",
