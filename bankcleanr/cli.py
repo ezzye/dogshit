@@ -2,11 +2,9 @@
 from __future__ import annotations
 
 import json
+import platform
 import subprocess
 import sys
-import platform
-from importlib import resources
-from importlib.resources.abc import Traversable
 from pathlib import Path
 
 import jsonschema
@@ -15,12 +13,24 @@ import typer
 from bankcleanr.extractor import extract_transactions
 from bankcleanr.pii import mask_pii
 
-SCHEMA_PATH: Path | Traversable
-if getattr(sys, "frozen", False):
-    SCHEMA_PATH = Path(sys._MEIPASS) / "schemas" / "transaction_v1.json"  # type: ignore[attr-defined]
-else:
-    SCHEMA_PATH = resources.files("bankcleanr.schemas").joinpath("transaction_v1.json")
-SCHEMA = json.loads(SCHEMA_PATH.read_text())
+
+def _load_schema() -> dict:
+    """Return the transaction schema as a dictionary.
+
+    Loading the schema at runtime avoids relying on importlib resources which can
+    cache outdated copies when the package is installed in editable mode.  Using
+    paths relative to this file ensures the latest schema is always used both in
+    development and when packaged with PyInstaller.
+    """
+
+    if getattr(sys, "frozen", False):
+        path = Path(sys._MEIPASS) / "schemas" / "transaction_v1.json"  # type: ignore[attr-defined]
+    else:
+        path = Path(__file__).resolve().parent / "schemas" / "transaction_v1.json"
+    return json.loads(Path(path).read_text(encoding="utf-8"))
+
+
+SCHEMA = _load_schema()
 
 app = typer.Typer()
 
