@@ -71,6 +71,7 @@ Run the extractor directly from source or build a self-contained binary:
 
 ```bash
 poetry run bankcleanr extract statement.pdf tx.jsonl --bank hsbc
+poetry run bankcleanr extract statement.pdf tx.jsonl           # auto-detect bank
 poetry run bankcleanr parse statement.pdf tx.jsonl --bank hsbc  # alias for extract
 poetry run bankcleanr build
 ```
@@ -78,7 +79,9 @@ poetry run bankcleanr build
 The `extract` command is also available as `parse` for backwards
 compatibility with existing workflows.
 
-The `--bank` option is required to specify which parser to use. The CLI can also process an entire directory of statements in one go:
+The `--bank` option can be used to specify which parser to use, or omitted to
+let the extractor detect the bank automatically. The CLI can also process an
+entire directory of statements in one go:
 
 ```bash
 bankcleanr extract "My Statements/" tx.jsonl --bank coop
@@ -104,8 +107,10 @@ The extractor ships with parsers for a few UK banks:
 - `coop` (separate `Moneyout` and `Moneyin` columns)
 - `hsbc`
 - `lloyds`
+- `auto` (detect from statement)
 
-Select the appropriate parser with the required `--bank` option:
+Select the appropriate parser with the `--bank` option or omit it for
+auto-detection:
 
 ```bash
 poetry run bankcleanr extract statement.pdf tx.jsonl --bank hsbc
@@ -285,6 +290,12 @@ For macOS builds use the helper script that runs on the host Python interpreter:
 
 ```bash
 ./scripts/build_macos.sh
+```
+
+For Windows builds use the PowerShell script:
+
+```powershell
+./scripts/build_windows.ps1
 ```
 
 macOS and Windows binaries must be built on their respective operating systems.
