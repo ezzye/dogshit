@@ -21,6 +21,11 @@ export default function Progress() {
     <main className="p-4" aria-busy="true">
       <h1 className="text-2xl font-bold">Processing...</h1>
       <p role="status">We are processing your file. This may take a moment.</p>
+      {jobId && (
+        <p>
+          Job ID: <span>{jobId}</span>
+        </p>
+      )}
     </main>
   );
 }
