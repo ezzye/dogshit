@@ -26,3 +26,13 @@ def test_tampered_url_fails():
     path, expires, signature = _parse(url)
     # Tamper with the path after signing
     assert not verify_signed_url("/download/2/summary", expires, signature)
+
+
+def test_path_normalisation_is_consistent():
+    """Both generation and verification should normalise paths."""
+    url = generate_signed_url("/download/1/../1/summary", expires_in=60)
+    path, expires, signature = _parse(url)
+    # The generated URL should contain the normalised path
+    assert path == "/download/1/summary"
+    # Verification should also normalise incoming paths
+    assert verify_signed_url("/download/./1/summary", expires, signature)
