@@ -37,6 +37,35 @@ Open <http://localhost:5173> and follow the three-click flow (some steps are sti
 2. **Upload** the generated `transaction_v1.jsonl` file to `/upload` using `Content-Type: application/x-ndjson`, then trigger `/classify` and `/summary/{job_id}` manually until this is automated.
 3. **Download** the savings report.
 
+### Manual API workflow
+
+Interact with the backend directly using `curl`:
+
+```bash
+export AUTH_BYPASS=1
+export LLM_PROVIDER=openai        # or gemini
+export OPENAI_API_KEY=sk-your-key # required for OpenAI
+# export GEMINI_API_KEY=your-key  # required for Gemini
+
+JOB_ID=$(curl -s -X POST http://localhost:8000/upload \
+  -H 'Content-Type: application/x-ndjson' \
+  --data-binary @transaction_v1.jsonl | jq -r '.job_id')
+
+curl -s -X POST http://localhost:8000/classify \
+  -H 'Content-Type: application/json' \
+  -d "{\"job_id\": $JOB_ID}" >/dev/null
+
+SUMMARY_URL=$(python - <<PY
+from backend.signing import generate_signed_url
+print(generate_signed_url(f"/download/{JOB_ID}/summary"))
+PY
+)
+curl -L "http://localhost:8000${SUMMARY_URL}" -o summary.txt
+
+REPORT_URL=$(curl -s http://localhost:8000/report/$JOB_ID | jq -r '.url')
+curl -L "http://localhost:8000${REPORT_URL}" -o report.pdf
+```
+
 ### Backend and frontend build
 
 Run the services directly without Docker:

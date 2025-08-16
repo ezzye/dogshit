@@ -377,6 +377,24 @@ def test_download(client: TestClient, tmp_path: Path):
     assert resp.content == b"result"
 
 
+def test_download_tampered(client: TestClient, tmp_path: Path):
+    job_id = client.post(
+        "/upload", data="data", headers={"Content-Type": "text/plain"}
+    ).json()["job_id"]
+    os.environ["STORAGE_DIR"] = str(tmp_path)
+    file_path = tmp_path / f"{job_id}_summary.txt"
+    file_path.write_text("result")
+    url = generate_signed_url(f"/download/{job_id}/summary", expires_in=60)
+    from urllib.parse import urlparse, parse_qs, urlencode
+
+    parts = urlparse(url)
+    params = parse_qs(parts.query)
+    params["signature"] = ["0" * 64]
+    tampered = f"{parts.path}?{urlencode({k: v[0] for k, v in params.items()})}"
+    resp = client.get(tampered)
+    assert resp.status_code == 403
+
+
 def test_download_expired(client: TestClient, tmp_path: Path):
     job_id = client.post(
         "/upload", data="data", headers={"Content-Type": "text/plain"}
