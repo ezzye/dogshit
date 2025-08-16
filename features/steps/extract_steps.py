@@ -10,16 +10,25 @@ FIXTURES = {
     "coop": [
         Path("tests/fixtures/coop/statement_1.pdf"),
         Path("tests/fixtures/coop/statement_2.pdf"),
-    ]
+    ],
+    "barclays": [
+        Path("tests/fixtures/barclays/statement_1.pdf"),
+        Path("tests/fixtures/barclays/statement_2.pdf"),
+    ],
+    "hsbc": [
+        Path("tests/fixtures/hsbc/statement_1.pdf"),
+        Path("tests/fixtures/hsbc/statement_2.pdf"),
+    ],
+    "lloyds": [
+        Path("tests/fixtures/lloyds/statement_1.pdf"),
+        Path("tests/fixtures/lloyds/statement_2.pdf"),
+    ],
 }
 
 
 @given("a sample {bank} statement")
 def step_given_sample(context, bank):
-    fixtures = FIXTURES.get(bank)
-    if not fixtures:
-        context.scenario.skip(f"No fixtures for bank {bank}")
-        return
+    fixtures = FIXTURES[bank]
     context.tmpdir = tempfile.TemporaryDirectory()
     fixture = fixtures[0]
     context.pdf_path = os.path.join(context.tmpdir.name, fixture.name)
@@ -76,10 +85,7 @@ def step_then_check(context, count):
 
 @given("multiple {bank} statements")
 def step_given_multiple(context, bank):
-    fixtures = FIXTURES.get(bank)
-    if not fixtures:
-        context.scenario.skip(f"No fixtures for bank {bank}")
-        return
+    fixtures = FIXTURES[bank]
     context.tmpdir = tempfile.TemporaryDirectory()
     context.pdf_dir = context.tmpdir.name
     for fixture in fixtures[:2]:
