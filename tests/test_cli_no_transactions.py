@@ -14,7 +14,20 @@ def test_cli_exits_when_no_transactions(tmp_path, monkeypatch):
     pdf = tmp_path / "in.pdf"
     pdf.write_bytes(b"%PDF-1.4")
     out = tmp_path / "out.jsonl"
-    result = runner.invoke(cli.app, ["extract", str(pdf), str(out)])
+    result = runner.invoke(
+        cli.app, ["extract", str(pdf), str(out), "--bank", "barclays"]
+    )
     assert result.exit_code != 0
     output = result.stdout + result.stderr
     assert "No transactions extracted" in output
+
+
+def test_cli_requires_bank(tmp_path):
+    runner = CliRunner()
+    pdf = tmp_path / "in.pdf"
+    pdf.write_bytes(b"%PDF-1.4")
+    out = tmp_path / "out.jsonl"
+    result = runner.invoke(cli.app, ["extract", str(pdf), str(out)])
+    assert result.exit_code != 0
+    output = result.stdout + result.stderr
+    assert "Missing option '--bank'" in output

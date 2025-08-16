@@ -43,9 +43,9 @@ def extract(
     ),
     output_jsonl: Path = typer.Argument(..., help="Output JSONL file"),
     bank: str = typer.Option(
-        "barclays",
+        ...,  # type: ignore[arg-type]
         "--bank",
-        help="Bank identifier (barclays, hsbc, lloyds, coop)",
+        help="Bank identifier (barclays, hsbc, lloyds, coop). Required.",
     ),
     mask_names: str = typer.Option("", "--mask-names", help="Comma-separated names to mask"),
 ) -> None:

@@ -70,15 +70,15 @@ can operate on the saved files.
 Run the extractor directly from source or build a self-contained binary:
 
 ```bash
-poetry run bankcleanr extract statement.pdf tx.jsonl
-poetry run bankcleanr parse statement.pdf tx.jsonl  # alias for extract
+poetry run bankcleanr extract statement.pdf tx.jsonl --bank hsbc
+poetry run bankcleanr parse statement.pdf tx.jsonl --bank hsbc  # alias for extract
 poetry run bankcleanr build
 ```
 
 The `extract` command is also available as `parse` for backwards
 compatibility with existing workflows.
 
-The CLI can also process an entire directory of statements in one go:
+The `--bank` option is required to specify which parser to use. The CLI can also process an entire directory of statements in one go:
 
 ```bash
 bankcleanr extract "My Statements/" tx.jsonl --bank coop
@@ -105,7 +105,7 @@ The extractor ships with parsers for a few UK banks:
 - `hsbc`
 - `lloyds`
 
-Select the appropriate parser with the `--bank` option:
+Select the appropriate parser with the required `--bank` option:
 
 ```bash
 poetry run bankcleanr extract statement.pdf tx.jsonl --bank hsbc
