@@ -5,21 +5,14 @@ from pathlib import Path
 from decimal import Decimal
 from typing import Dict, Iterator
 
-from .parsers import PARSER_REGISTRY
+from .parsers import PARSER_REGISTRY, detect_bank
 
 
 def extract_transactions(
-    pdf_path: str, bank: str = "barclays"
+    pdf_path: str, bank: str | None = None
 ) -> Iterator[Dict[str, str | None]]:
     """Yield transactions from a PDF or directory of PDFs using the configured parser."""
-    try:
-        parser_cls = PARSER_REGISTRY[bank]
-    except KeyError as exc:
-        available = ", ".join(sorted(PARSER_REGISTRY))
-        raise ValueError(
-            f"Unsupported bank '{bank}'. Available banks: {available}"
-        ) from exc
-    parser = parser_cls()
+
     path = Path(pdf_path)
 
     def _iter() -> Iterator[Dict[str, str | None]]:
@@ -28,9 +21,29 @@ def extract_transactions(
             if not pdf_files:
                 raise ValueError(f"No PDFs found in directory: {path}")
             for pdf_file in pdf_files:
+                chosen = bank
+                if not chosen or chosen == "auto":
+                    chosen = detect_bank(str(pdf_file))
+                parser_cls = PARSER_REGISTRY.get(chosen)
+                if parser_cls is None:
+                    available = ", ".join(sorted(PARSER_REGISTRY))
+                    raise ValueError(
+                        f"Unsupported bank '{chosen}'. Available banks: {available}"
+                    )
+                parser = parser_cls()
                 for record in parser.parse(str(pdf_file)):
                     yield _ensure_type(record)
         else:
+            chosen = bank
+            if not chosen or chosen == "auto":
+                chosen = detect_bank(str(path))
+            parser_cls = PARSER_REGISTRY.get(chosen)
+            if parser_cls is None:
+                available = ", ".join(sorted(PARSER_REGISTRY))
+                raise ValueError(
+                    f"Unsupported bank '{chosen}'. Available banks: {available}"
+                )
+            parser = parser_cls()
             for record in parser.parse(str(path)):
                 yield _ensure_type(record)
 
