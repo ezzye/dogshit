@@ -28,10 +28,17 @@ def given_fake_adapter(context, label, conf):
 
 @then('the adapter was called {n:d} times')
 def then_adapter_called(context, n):
-    assert context.fake_adapter.calls == n
+    assert context.fake_adapter.calls == n, context.fake_adapter.calls
+
+
+@given("the signature cache is cleared")
+def given_signature_cache_cleared(context):
+    from backend import app as app_module
+    app_module.SIGNATURE_CACHE.clear()
 
 
 @when("I upload NDJSON")
+@when("I upload NDJSON:")
 def when_upload_ndjson(context):
     if not hasattr(context, "client"):
         _setup_client(context)
