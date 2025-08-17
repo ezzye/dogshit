@@ -292,7 +292,7 @@ def test_classify_learns_user_rule_and_reuses(client: TestClient):
 
         def _send(self, prompts):
             self.calls += 1
-            return {"labels": [("coffee", 0.9) for _ in prompts], "usage": {"total_tokens": 0}}
+            return {"labels": [("Groceries", 0.9) for _ in prompts], "usage": {"total_tokens": 0}}
 
     adapter = LearningAdapter()
     app.dependency_overrides[get_adapter] = lambda: adapter
@@ -332,8 +332,8 @@ def test_classify_overwrites_higher_confidence_rule(
         def __init__(self):
             super().__init__("test")
             self.responses = [
-                {"label": "coffee", "confidence": 0.9},
-                {"label": "coffee", "confidence": 0.99},
+                {"label": "Groceries", "confidence": 0.9},
+                {"label": "Groceries", "confidence": 0.99},
             ]
             self.calls = 0
 
@@ -371,6 +371,38 @@ def test_classify_overwrites_higher_confidence_rule(
         assert rule.confidence == pytest.approx(0.99)
         assert rule.version == 2
         assert rule.provenance == "llm"
+
+
+def test_classify_rejects_off_taxonomy_label(client: TestClient):
+    class OffTaxonomyAdapter(AbstractAdapter):
+        def __init__(self):
+            super().__init__("test")
+
+        def _send(self, prompts):
+            return {
+                "labels": [("NonExistingCategory", 0.99) for _ in prompts],
+                "usage": {"total_tokens": 0},
+            }
+
+    adapter = OffTaxonomyAdapter()
+    app.dependency_overrides[get_adapter] = lambda: adapter
+    client.adapter = adapter
+
+    content = json.dumps({"description": "Mystery Shop", "type": "debit"})
+    job_id = client.post(
+        "/upload",
+        data=content,
+        headers={"Content-Type": "application/x-ndjson"},
+    ).json()["job_id"]
+
+    resp = client.post("/classify", json={"job_id": job_id, "user_id": 1})
+    tx = resp.json()["transactions"][0]
+    assert tx["label"] == "unknown"
+    assert tx["classification_type"] == "unknown"
+
+    with Session(client.engine) as session:
+        rules = session.exec(select(UserRule)).all()
+        assert rules == []
 
 
 def test_costs_endpoint_aggregates_entries(client: TestClient):

@@ -297,7 +297,9 @@ def classify(
                 response = SIGNATURE_CACHE[sig]
                 label = response["label"]
                 confidence = response.get("confidence", 0.0)
-                if sig not in processed_signatures and confidence >= 0.85:
+                if label not in CATEGORIES:
+                    label = ""
+                if sig not in processed_signatures and confidence >= 0.85 and label:
                     if sum(c.isalpha() for c in norm(sig)) < 6:
                         processed_signatures.add(sig)
                     else:
