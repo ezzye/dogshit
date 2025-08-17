@@ -192,7 +192,7 @@ def test_low_confidence_prevents_auto_rule(monkeypatch):
             super().__init__("test")
 
         def _send(self, prompts):
-            return {"labels": [("snacks", 0.5)] * len(prompts), "usage": {"total_tokens": 0}}
+            return {"labels": [("Groceries", 0.5)] * len(prompts), "usage": {"total_tokens": 0}}
 
     adapter = LowConfAdapter()
     app.dependency_overrides[get_session] = get_session_override
