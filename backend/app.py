@@ -9,7 +9,7 @@ from .report import router as report_router
 from sqlmodel import Session, select
 from .database import init_db, get_session
 from .auth import auth_dependency
-from .signing import verify_signed_url
+from .signing import verify_signed_url, _canonicalize_path
 from .models import (
     Upload,
     ProcessingJob,
@@ -170,7 +170,8 @@ def download(
         raise HTTPException(status_code=400, detail="Invalid type")
 
     path = request.url.path
-    if not verify_signed_url(path, expires, signature):
+    canonical = _canonicalize_path(path)
+    if canonical != path or not verify_signed_url(canonical, expires, signature):
         raise HTTPException(status_code=403, detail="Invalid or expired URL")
 
     storage_dir = Path(os.environ.get("STORAGE_DIR", "./storage"))
