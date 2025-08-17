@@ -69,6 +69,43 @@ def test_precedence_priority_confidence_version_updated():
     assert merged[0].updated_at == now
 
 
+def test_merge_rules_applies_full_precedence():
+    now = datetime.utcnow()
+    earlier = now - timedelta(days=1)
+    rules = [
+        _base_rule(priority=2, confidence=0.9, version=1, updated_at=earlier,
+                   match={"type": "contains", "pattern": "e", "fields": ["description"]},
+                   action={"label": "low", "category": "Utilities"}),
+        _base_rule(priority=1, confidence=0.8, version=3, updated_at=earlier,
+                   match={"type": "contains", "pattern": "e", "fields": ["description"]},
+                   action={"label": "p1_low", "category": "Utilities"}),
+        _base_rule(priority=1, confidence=0.9, version=2, updated_at=earlier,
+                   match={"type": "contains", "pattern": "e", "fields": ["description"]},
+                   action={"label": "p1_high_v2", "category": "Utilities"}),
+        _base_rule(priority=1, confidence=0.9, version=2, updated_at=now,
+                   match={"type": "contains", "pattern": "e", "fields": ["description"]},
+                   action={"label": "winner", "category": "Utilities"}),
+    ]
+    merged = merge_rules(rules, [])
+    assert len(merged) == 1
+    assert merged[0].action.label == "winner"
+
+
+def test_merge_rules_prefers_higher_version():
+    rules = [
+        _base_rule(version=1,
+                   match={"type": "contains", "pattern": "v", "fields": ["description"]},
+                   action={"label": "old", "category": "Utilities"}),
+        _base_rule(version=2,
+                   match={"type": "contains", "pattern": "v", "fields": ["description"]},
+                   action={"label": "new", "category": "Utilities"}),
+    ]
+    merged = merge_rules(rules, [])
+    assert len(merged) == 1
+    assert merged[0].version == 2
+    assert merged[0].action.label == "new"
+
+
 def test_match_strategies():
     exact_rule = Rule(scope="global", priority=1, version=1, provenance="system", confidence=1.0,
                       match={"type": "exact", "pattern": "Coffee Shop", "fields": ["description"]},

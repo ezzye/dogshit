@@ -284,6 +284,47 @@ def test_classify_uses_cache(client: TestClient):
     assert client.adapter.calls == 1
 
 
+def test_classify_learns_user_rule_and_reuses(client: TestClient):
+    class LearningAdapter(AbstractAdapter):
+        def __init__(self):
+            super().__init__("test")
+            self.calls = 0
+
+        def _send(self, prompts):
+            self.calls += 1
+            return {"labels": [("coffee", 0.9) for _ in prompts], "usage": {"total_tokens": 0}}
+
+    adapter = LearningAdapter()
+    app.dependency_overrides[get_adapter] = lambda: adapter
+    client.adapter = adapter
+
+    content = json.dumps({"description": "Mystery Shop", "type": "debit"})
+    job_id = client.post(
+        "/upload",
+        data=content,
+        headers={"Content-Type": "application/x-ndjson"},
+    ).json()["job_id"]
+
+    resp1 = client.post("/classify", json={"job_id": job_id, "user_id": 1})
+    tx1 = resp1.json()["transactions"][0]
+    assert tx1["classification_type"] == "llm"
+    assert adapter.calls == 1
+    with Session(client.engine) as session:
+        rule = session.exec(select(UserRule)).one()
+        assert rule.provenance == "llm"
+        assert rule.version == 1
+        label = rule.label
+
+    from backend import app as app_module
+
+    app_module.SIGNATURE_CACHE.clear()
+    resp2 = client.post("/classify", json={"job_id": job_id, "user_id": 1})
+    tx2 = resp2.json()["transactions"][0]
+    assert tx2["classification_type"] == "rule"
+    assert tx2["label"] == label
+    assert adapter.calls == 1
+
+
 def test_classify_overwrites_higher_confidence_rule(
     client: TestClient, monkeypatch
 ):
