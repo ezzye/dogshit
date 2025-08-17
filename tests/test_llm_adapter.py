@@ -6,6 +6,7 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 from sqlmodel import SQLModel, Session, create_engine, select
 from sqlalchemy.pool import StaticPool
+from fastapi.testclient import TestClient
 
 from backend.llm_adapter import (
     AbstractAdapter,
@@ -15,7 +16,9 @@ from backend.llm_adapter import (
     get_adapter,
     _adapter_instances,
 )
-from backend.models import LLMCost
+from backend.models import LLMCost, UserRule
+from backend.app import app
+from backend.database import get_session
 
 
 class DummyAdapter(AbstractAdapter):
@@ -169,3 +172,46 @@ def test_provider_selected_via_config(tmp_path, monkeypatch):
     _adapter_instances.clear()
     adapter = get_adapter()
     assert isinstance(adapter, AzureAdapter)
+
+
+def test_low_confidence_prevents_auto_rule(monkeypatch):
+    monkeypatch.setenv("AUTH_BYPASS", "1")
+    engine = create_engine(
+        "sqlite://",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
+    SQLModel.metadata.create_all(engine)
+
+    def get_session_override():
+        with Session(engine) as session:
+            yield session
+
+    class LowConfAdapter(AbstractAdapter):
+        def __init__(self):
+            super().__init__("test")
+
+        def _send(self, prompts):
+            return {"labels": [("snacks", 0.5)] * len(prompts), "usage": {"total_tokens": 0}}
+
+    adapter = LowConfAdapter()
+    app.dependency_overrides[get_session] = get_session_override
+    app.dependency_overrides[get_adapter] = lambda: adapter
+    monkeypatch.setattr("backend.llm_adapter.get_session", get_session_override)
+
+    try:
+        with TestClient(app) as client:
+            content = json.dumps({"description": "Corner Shop 123", "type": "debit"}) + "\n"
+            job_id = client.post(
+                "/upload",
+                data=content,
+                headers={"Content-Type": "application/x-ndjson"},
+            ).json()["job_id"]
+            client.post("/classify", json={"job_id": job_id, "user_id": 1})
+        with Session(engine) as session:
+            assert session.exec(select(UserRule)).first() is None
+    finally:
+        app.dependency_overrides.clear()
+        from backend import app as app_module
+        app_module.SIGNATURE_CACHE.clear()
+        monkeypatch.delenv("AUTH_BYPASS", raising=False)
