@@ -153,10 +153,32 @@ class OpenAIAdapter(AbstractAdapter):
         total_tokens = 0
         for prompt in prompts:
             resp = self.client.chat.completions.create(
-                model=self.model, messages=[{"role": "user", "content": prompt}]
+                model=self.model,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": (
+                            'Respond ONLY with JSON of the form '
+                            '{"label": "<label>", "confidence": <number>}.'
+                        ),
+                    },
+                    {"role": "user", "content": prompt},
+                ],
+                response_format={"type": "json_object"},
             )
             content = resp.choices[0].message.content or ""
-            labels.append((content.strip(), 1.0))
+            try:
+                data = json.loads(content)
+                label = data.get("label", "").strip()
+                confidence = float(data.get("confidence", 0.0))
+            except json.JSONDecodeError:
+                logger.warning("Non-JSON response from model: %s", content)
+                label = content.strip()
+                confidence = 0.0
+            except (TypeError, KeyError, ValueError) as exc:
+                logger.error("Malformed JSON response from model: %s", content)
+                raise ValueError("Malformed model response") from exc
+            labels.append((label, confidence))
             total_tokens += getattr(resp.usage, "total_tokens", 0)
         return {"labels": labels, "usage": {"total_tokens": total_tokens}}
 
