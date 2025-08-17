@@ -37,6 +37,18 @@ Open <http://localhost:5173> and follow the three-click flow (some steps are sti
 2. **Upload** the generated `transaction_v1.jsonl` file to `/upload` using `Content-Type: application/x-ndjson`, then trigger `/classify` and `/summary/{job_id}` manually until this is automated.
 3. **Download** the savings report.
 
+### Demo script
+
+Run a complete extraction and classification round trip with:
+
+```bash
+poetry run python scripts/demo.py "<directory>" --api http://localhost:8000 --user 1
+```
+
+The script uploads transactions, triggers `/classify`, waits for completion and
+fetches `/transactions/{job_id}`. It then repeats the upload to show reduced
+LLM token usage on the second run.
+
 ### Manual API workflow
 
 Interact with the backend directly using `curl`:
