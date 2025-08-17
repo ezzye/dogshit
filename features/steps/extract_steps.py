@@ -23,6 +23,9 @@ FIXTURES = {
         Path("tests/fixtures/lloyds/statement_1.pdf"),
         Path("tests/fixtures/lloyds/statement_2.pdf"),
     ],
+    "placeholder": [
+        Path("tests/fixtures/placeholder/statement_1.pdf"),
+    ],
 }
 
 
