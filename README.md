@@ -25,10 +25,11 @@ command line interface and a small test-suite.
    cd frontend && npm install && cd ..
    ```
 
-2. Start the API and Vite dev server:
+2. Start the API and Vite dev server (set your OpenAI key first):
 
    ```bash
-   docker compose up --build api frontend
+   export OPENAI_API_KEY=sk-your-key
+   podman compose up --build api frontend
    ```
 
 Open <http://localhost:5173> and follow the three-click flow (some steps are still manual):
