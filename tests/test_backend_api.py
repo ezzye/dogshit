@@ -10,8 +10,8 @@ from fastapi.testclient import TestClient
 from sqlmodel import SQLModel, Session, create_engine, select
 from sqlalchemy.pool import StaticPool
 
-from backend.app import app
-from backend.llm_adapter import get_adapter, AbstractAdapter
+from backend.app import app, get_adapter_dependency
+from backend.llm_adapter import AbstractAdapter, _adapter_instances
 from backend.database import get_session
 from backend.signing import generate_signed_url
 from backend.models import LLMCost, UserRule
@@ -50,7 +50,7 @@ def client_fixture(monkeypatch):
         return dummy_adapter
 
     app.dependency_overrides[get_session] = get_session_override
-    app.dependency_overrides[get_adapter] = adapter_override
+    app.dependency_overrides[get_adapter_dependency] = adapter_override
     monkeypatch.setattr("backend.llm_adapter.get_session", get_session_override)
     with TestClient(app) as c:
         c.adapter = dummy_adapter
@@ -160,6 +160,15 @@ def test_classify(client: TestClient):
     # ensure the job status is updated once processing is complete
     status = client.get(f"/status/{job_id}").json()["status"]
     assert status == "completed"
+
+
+def test_classify_missing_api_key(client: TestClient, monkeypatch):
+    app.dependency_overrides.pop(get_adapter_dependency, None)
+    _adapter_instances.clear()
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    resp = client.post("/classify", json={"job_id": 1})
+    assert resp.status_code == 400
+    assert "OPENAI_API_KEY not set" in resp.json()["detail"]
 
 
 def test_summary_endpoints(client: TestClient, tmp_path: Path):
@@ -295,7 +304,7 @@ def test_classify_learns_user_rule_and_reuses(client: TestClient):
             return {"labels": [("Groceries", 0.9) for _ in prompts], "usage": {"total_tokens": 0}}
 
     adapter = LearningAdapter()
-    app.dependency_overrides[get_adapter] = lambda: adapter
+    app.dependency_overrides[get_adapter_dependency] = lambda: adapter
     client.adapter = adapter
 
     content = json.dumps({"description": "Mystery Shop", "type": "debit"})
@@ -346,7 +355,7 @@ def test_classify_overwrites_higher_confidence_rule(
             }
 
     adapter = SeqAdapter()
-    app.dependency_overrides[get_adapter] = lambda: adapter
+    app.dependency_overrides[get_adapter_dependency] = lambda: adapter
     monkeypatch.setattr("backend.app.evaluate", lambda *args, **kwargs: None)
 
     content = json.dumps({"description": "Coffee Shop", "type": "debit"})
@@ -385,7 +394,7 @@ def test_classify_rejects_off_taxonomy_label(client: TestClient):
             }
 
     adapter = OffTaxonomyAdapter()
-    app.dependency_overrides[get_adapter] = lambda: adapter
+    app.dependency_overrides[get_adapter_dependency] = lambda: adapter
     client.adapter = adapter
 
     content = json.dumps({"description": "Mystery Shop", "type": "debit"})
