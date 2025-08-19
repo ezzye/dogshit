@@ -17,7 +17,7 @@ from backend.llm_adapter import (
     _adapter_instances,
 )
 from backend.models import LLMCost, UserRule
-from backend.app import app
+from backend.app import app, get_adapter_dependency
 from backend.database import get_session
 
 
@@ -174,6 +174,14 @@ def test_provider_selected_via_config(tmp_path, monkeypatch):
     assert isinstance(adapter, AzureAdapter)
 
 
+def test_openai_adapter_requires_api_key(monkeypatch):
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    from backend.llm_adapter import OpenAIAdapter
+
+    with pytest.raises(RuntimeError, match="OPENAI_API_KEY not set"):
+        OpenAIAdapter()
+
+
 def test_low_confidence_prevents_auto_rule(monkeypatch):
     monkeypatch.setenv("AUTH_BYPASS", "1")
     engine = create_engine(
@@ -196,7 +204,7 @@ def test_low_confidence_prevents_auto_rule(monkeypatch):
 
     adapter = LowConfAdapter()
     app.dependency_overrides[get_session] = get_session_override
-    app.dependency_overrides[get_adapter] = lambda: adapter
+    app.dependency_overrides[get_adapter_dependency] = lambda: adapter
     monkeypatch.setattr("backend.llm_adapter.get_session", get_session_override)
 
     try:

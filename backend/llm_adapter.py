@@ -146,6 +146,10 @@ class OpenAIAdapter(AbstractAdapter):
 
         super().__init__(model, **kwargs)
         api_key = os.getenv("OPENAI_API_KEY")
+        if not api_key:
+            raise RuntimeError(
+                "OPENAI_API_KEY not set; cannot initialize OpenAIAdapter"
+            )
         self.client = openai.OpenAI(api_key=api_key)
 
     def _send(self, prompts: List[str]) -> Dict:

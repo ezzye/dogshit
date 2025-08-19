@@ -52,6 +52,13 @@ SIGNATURE_CACHE: dict[str, dict] = {}
 app.include_router(report_router)
 
 
+def get_adapter_dependency() -> AbstractAdapter:
+    try:
+        return get_adapter()
+    except RuntimeError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
 def _summary_paths(job_id: int) -> tuple[Path, Path]:
     """Return output paths for a job's summary JSON and CSV files."""
     storage_dir = Path(os.environ.get("STORAGE_DIR", "./storage"))
@@ -234,7 +241,7 @@ def create_rule(
 def classify(
     req: ClassifyRequest,
     session: Session = Depends(get_session),
-    adapter: AbstractAdapter = Depends(get_adapter),
+    adapter: AbstractAdapter = Depends(get_adapter_dependency),
     _: None = Depends(auth_dependency),
 ) -> dict:
     job = session.get(ProcessingJob, req.job_id)
