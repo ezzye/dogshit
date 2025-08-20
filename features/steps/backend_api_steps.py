@@ -8,7 +8,7 @@ from sqlmodel import SQLModel, Session, create_engine
 from sqlalchemy.pool import StaticPool
 from behave import given, when, then  # type: ignore[import-untyped]
 
-from backend.app import app
+from backend.app import app, get_adapter_dependency
 from backend.database import get_session
 from backend.signing import generate_signed_url
 import backend.llm_adapter as llm_adapter
@@ -38,7 +38,7 @@ def _setup_client(context):
     def adapter_override():
         return dummy_adapter
 
-    app.dependency_overrides[llm_adapter.get_adapter] = adapter_override
+    app.dependency_overrides[get_adapter_dependency] = adapter_override
     context.client = TestClient(app)
 
 
