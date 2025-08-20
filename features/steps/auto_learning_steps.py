@@ -1,7 +1,8 @@
 from behave import given, when, then  # type: ignore[import-untyped]
 
 from features.steps.backend_api_steps import _setup_client, app
-from backend.llm_adapter import AbstractAdapter, get_adapter
+from backend.llm_adapter import AbstractAdapter
+from backend.app import get_adapter_dependency
 
 
 @given('a fake adapter returning label "{label}" with confidence {conf:f}')
@@ -23,7 +24,7 @@ def given_fake_adapter(context, label, conf):
     def adapter_override():
         return context.fake_adapter
 
-    app.dependency_overrides[get_adapter] = adapter_override
+    app.dependency_overrides[get_adapter_dependency] = adapter_override
 
 
 @then('the adapter was called {n:d} times')
