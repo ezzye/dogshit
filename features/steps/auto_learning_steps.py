@@ -16,9 +16,9 @@ def given_fake_adapter(context, label, conf):
             self.calls += 1
             return {"labels": [(label, conf)] * len(prompts), "usage": {"total_tokens": 0}}
 
+    context.fake_adapter = FakeAdapter()
     if not hasattr(context, "client"):
         _setup_client(context)
-    context.fake_adapter = FakeAdapter()
     context.preserve_client = True
 
     def adapter_override():
