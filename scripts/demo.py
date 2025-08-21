@@ -95,8 +95,12 @@ def main() -> None:
             print("Token usage reduced on second run – learning successful.")
         else:
             print("Token usage did not decrease; ensure caching is enabled.")
-
         print("Fetched", len(_txs2), "classified transactions.")
+        with open("classified_transactions.json", "w", encoding="utf-8") as f:
+            json.dump(_txs2, f, indent=2)
+        print("Sample classified transactions:")
+        print(json.dumps(_txs2[:5], indent=2))
+        print("Full results written to classified_transactions.json")
 
 
 if __name__ == "__main__":
