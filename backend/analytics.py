@@ -259,6 +259,11 @@ def generate_summary(
         "highlights": {"overspending": overspending, "anomalies": []},
     }
 
+    if not SCHEMA_PATH.exists():
+        raise FileNotFoundError(
+            f"Schema file not found at {SCHEMA_PATH}."
+        )
+
     with SCHEMA_PATH.open() as f:
         schema = json.load(f)
     jsonschema.validate(summary, schema)

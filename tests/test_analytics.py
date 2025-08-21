@@ -2,6 +2,7 @@ from pathlib import Path
 import json
 import sys
 import jsonschema
+import pytest
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
@@ -10,6 +11,7 @@ from backend.analytics import (
     detect_recurring,
     detect_overspending,
     generate_summary,
+    SCHEMA_PATH,
 )
 
 
@@ -68,3 +70,22 @@ def test_detect_overspending(tmp_path: Path):
     jsonschema.validate(summary, schema)
     assert (tmp_path / "summary_v1.json").exists()
     assert (tmp_path / "summary.csv").exists()
+
+
+def test_generate_summary_missing_schema(tmp_path: Path):
+    transactions = [
+        {"date": "2024-01-10", "amount": "10", "merchant_signature": "a", "type": "credit"}
+    ]
+    backup = SCHEMA_PATH.with_suffix(".bak")
+    SCHEMA_PATH.rename(backup)
+    try:
+        with pytest.raises(FileNotFoundError):
+            generate_summary(
+                transactions,
+                job_id="00000000-0000-0000-0000-000000000000",
+                user_id="user",
+                period={"start": "2024-01-01", "end": "2024-01-31"},
+                output_dir=tmp_path,
+            )
+    finally:
+        backup.rename(SCHEMA_PATH)
