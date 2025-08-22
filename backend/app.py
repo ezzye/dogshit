@@ -302,8 +302,8 @@ def classify(
         processed_signatures: set[str] = set()
         enriched: list[dict] = []
         for tx in transactions:
-            label = tx.get("_label")
-            category = tx.get("_category")
+            label = tx.get("_label", "")
+            category = tx.get("_category", "")
             source = "rule" if label else "llm"
             sig = tx["merchant_signature"]
             if not label:
