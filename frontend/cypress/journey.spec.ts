@@ -25,6 +25,12 @@ describe('user can upload file and reach results', () => {
       recurring: [],
     });
     cy.intercept('GET', '/transactions/123', []);
+    cy.intercept('GET', '/costs/123', {
+      tokens_in: 1,
+      tokens_out: 2,
+      total_tokens: 3,
+      estimated_cost_gbp: 0.01,
+    });
 
     const filePath = 'cypress/fixtures/sample.jsonl';
     cy.get('input[type="file"]').selectFile(filePath);
@@ -40,6 +46,7 @@ describe('user can upload file and reach results', () => {
     cy.url().should('include', '/results/123');
     cy.contains('a', /summary/i).should('be.visible');
     cy.contains('a', /report/i).should('be.visible');
+    cy.contains('td', 'Estimated Cost').next().should('contain', '0.01');
   });
 });
 

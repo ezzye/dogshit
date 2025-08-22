@@ -39,12 +39,22 @@ export default function Results() {
   const { jobId } = useParams();
   const [summary, setSummary] = useState<Summary | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [costs, setCosts] = useState<
+    | {
+        tokens_in: number;
+        tokens_out: number;
+        total_tokens: number;
+        estimated_cost_gbp: number;
+      }
+    | null
+  >(null);
 
   useEffect(() => {
     async function loadData() {
-      const [summaryRes, txRes] = await Promise.all([
+      const [summaryRes, txRes, costRes] = await Promise.all([
         fetch(`/summary/${jobId}`),
         fetch(`/transactions/${jobId}`),
+        fetch(`/costs/${jobId}`),
       ]);
 
       if (summaryRes.ok) {
@@ -52,6 +62,9 @@ export default function Results() {
       }
       if (txRes.ok) {
         setTransactions(await txRes.json());
+      }
+      if (costRes.ok) {
+        setCosts(await costRes.json());
       }
     }
     if (jobId) {
@@ -78,6 +91,32 @@ export default function Results() {
           Download Report
         </a>
       </div>
+
+      {costs && (
+        <section>
+          <h2 className="text-xl font-semibold">Costs</h2>
+          <table className="min-w-full text-left">
+            <tbody>
+              <tr>
+                <td className="pr-4">Tokens In</td>
+                <td>{costs.tokens_in}</td>
+              </tr>
+              <tr>
+                <td className="pr-4">Tokens Out</td>
+                <td>{costs.tokens_out}</td>
+              </tr>
+              <tr>
+                <td className="pr-4">Total Tokens</td>
+                <td>{costs.total_tokens}</td>
+              </tr>
+              <tr>
+                <td className="pr-4">Estimated Cost</td>
+                <td>{costs.estimated_cost_gbp}</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+      )}
 
       {summary && (
         <section className="space-y-4">
