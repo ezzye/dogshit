@@ -280,10 +280,15 @@ def classify(
         engine_rules = [_convert_user_rule(r) for r in latest.values()]
         rules = merge_rules(GLOBAL_RULES, engine_rules)
 
-        unknown_signatures = []
+        unknown_signatures: list[str] = []
         for tx in transactions:
-            label = evaluate(tx, rules)
+            result = evaluate(tx, rules)
+            if result:
+                label, category = result
+            else:
+                label = category = ""
             tx["_label"] = label
+            tx["_category"] = category
             if not label:
                 sig = tx["merchant_signature"]
                 if sig not in SIGNATURE_CACHE and sig not in unknown_signatures:
@@ -298,14 +303,17 @@ def classify(
         enriched: list[dict] = []
         for tx in transactions:
             label = tx.get("_label")
+            category = tx.get("_category")
             source = "rule" if label else "llm"
             sig = tx["merchant_signature"]
             if not label:
                 response = SIGNATURE_CACHE[sig]
                 label = response["label"]
+                category = response.get("category", label)
                 confidence = response.get("confidence", 0.0)
-                if label not in CATEGORIES:
+                if category not in CATEGORIES:
                     label = ""
+                    category = ""
                 if sig not in processed_signatures and confidence >= 0.85 and label:
                     if sum(c.isalpha() for c in norm(sig)) < 6:
                         processed_signatures.add(sig)
@@ -349,8 +357,10 @@ def classify(
                 processed_signatures.add(sig)
             if not label:
                 label = "unknown"
+                category = "unknown"
                 source = "unknown"
             tx["label"] = label
+            tx["category"] = category
             tx["classification_type"] = source
             transaction = Transaction(
                 job_id=req.job_id,

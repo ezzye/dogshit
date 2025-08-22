@@ -120,10 +120,22 @@ def test_match_strategies():
                           match={"type": "signature", "pattern": "CoffeeShop", "fields": ["description"]},
                           action={"label": "signature", "category": "Groceries"})
 
-    assert evaluate({"description": "Coffee Shop"}, [exact_rule]) == "exact"
-    assert evaluate({"description": "my coffee"}, [contains_rule]) == "contains"
-    assert evaluate({"description": "Coffee beans"}, [regex_rule]) == "regex"
-    assert evaluate({"description": "coffee-shop"}, [signature_rule]) == "signature"
+    assert evaluate({"description": "Coffee Shop"}, [exact_rule]) == (
+        "exact",
+        "Groceries",
+    )
+    assert evaluate({"description": "my coffee"}, [contains_rule]) == (
+        "contains",
+        "Groceries",
+    )
+    assert evaluate({"description": "Coffee beans"}, [regex_rule]) == (
+        "regex",
+        "Groceries",
+    )
+    assert evaluate({"description": "coffee-shop"}, [signature_rule]) == (
+        "signature",
+        "Groceries",
+    )
 
 
 def test_field_selection():
@@ -131,7 +143,7 @@ def test_field_selection():
                 match={"type": "contains", "pattern": "acme", "fields": ["counterparty"]},
                 action={"label": "vendor", "category": "Fees"})
     data = {"description": "paycheck", "counterparty": "ACME Corp"}
-    assert evaluate(data, [rule]) == "vendor"
+    assert evaluate(data, [rule]) == ("vendor", "Fees")
 
 
 def test_evaluate_uses_precedence():
@@ -143,5 +155,5 @@ def test_evaluate_uses_precedence():
              match={"type": "contains", "pattern": "shop", "fields": ["description"]},
              action={"label": "high", "category": "Utilities"}),
     ]
-    label = evaluate("coffee shop", merge_rules(rules, []))
-    assert label == "high"
+    result = evaluate("coffee shop", merge_rules(rules, []))
+    assert result == ("high", "Utilities")

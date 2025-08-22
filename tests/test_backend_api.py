@@ -156,6 +156,8 @@ def test_classify(client: TestClient):
     data = resp.json()["transactions"]
     labels = [r["label"] for r in data]
     assert labels == ["unknown", "unknown"]
+    categories = [r["category"] for r in data]
+    assert categories == ["unknown", "unknown"]
     assert all(r["type"] == "debit" for r in data)
     # ensure the job status is updated once processing is complete
     status = client.get(f"/status/{job_id}").json()["status"]
@@ -210,7 +212,14 @@ def test_summary_endpoints(client: TestClient, tmp_path: Path):
         "period": {"start": "2024-01-01", "end": "2024-01-02"},
         "currency": "GBP",
         "totals": {"income": 5.0, "expenses": -10.0, "net": -5.0},
-        "categories": [],
+        "categories": [
+            {
+                "name": "Groceries",
+                "total": -10.0,
+                "count": 1,
+                "sample_merchants": ["coffee"],
+            }
+        ],
         "recurring": [],
         "highlights": {"overspending": [], "anomalies": []},
     }
