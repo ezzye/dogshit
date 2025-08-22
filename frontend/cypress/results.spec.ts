@@ -8,6 +8,12 @@ describe('results page summary', () => {
     cy.intercept('GET', '/transactions/123', [
       { date: '2024-01-01', description: 'Coffee', amount: 3, type: 'debit' },
     ]);
+    cy.intercept('GET', '/costs/123', {
+      tokens_in: 10,
+      tokens_out: 20,
+      total_tokens: 30,
+      estimated_cost_gbp: 0.5,
+    });
     cy.visit('/results/123');
     cy.get('a[href="/download/123/summary"]').should('exist');
     cy.get('a[href="/download/123/report"]').should('exist');
@@ -16,5 +22,6 @@ describe('results page summary', () => {
     cy.contains('td', 'Net').next().should('contain', '50');
     cy.contains('td', 'Food').should('be.visible');
     cy.contains('td', 'Coffee').should('be.visible');
+    cy.contains('td', 'Estimated Cost').next().should('contain', '0.5');
   });
 });
