@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Button } from '../components/ui/button';
 import { waitForJobStatus } from '../lib/utils';
+import type { UserRule } from '../lib/types';
 
 export default function Upload() {
   const [file, setFile] = useState<File | null>(null);
-  const [rules, setRules] = useState<string[]>([]);
+  const [rules, setRules] = useState<UserRule[]>([]);
   const [jobId, setJobId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -66,7 +67,9 @@ export default function Upload() {
         </h2>
         <ul className="list-disc pl-4">
           {rules.map((r) => (
-            <li key={r}>{r}</li>
+            <li key={r.id ?? r.pattern}>
+              {r.pattern} → {r.label}
+            </li>
           ))}
         </ul>
       </section>
