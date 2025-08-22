@@ -121,7 +121,17 @@ def _match_text(text: str, match: Match) -> bool:
     return False
 
 
-def evaluate(data: Union[str, dict], rules: Iterable[Rule]) -> Optional[str]:
+def evaluate(
+    data: Union[str, dict], rules: Iterable[Rule]
+) -> Optional[tuple[str, str]]:
+    """Return both the label and category for matching rule.
+
+    Previously this helper only returned a single string representing the
+    category.  Rules now differentiate between an optional ``label`` and a
+    canonical ``category``.  To support this we return a tuple of
+    ``(label, category)`` when a rule matches, or ``None`` if no rule applies.
+    """
+
     if isinstance(data, str):
         record = {"description": data}
     else:
@@ -132,5 +142,7 @@ def evaluate(data: Union[str, dict], rules: Iterable[Rule]) -> Optional[str]:
         for field in rule.match.fields:
             value = record.get(field, "")
             if isinstance(value, str) and _match_text(value, rule.match):
-                return rule.action.label or rule.action.category
+                label = rule.action.label or rule.action.category
+                category = rule.action.category
+                return label, category
     return None
