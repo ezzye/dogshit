@@ -18,7 +18,13 @@ describe('user can upload file and reach results', () => {
     }).as('status');
     cy.intercept('POST', '/classify', {}).as('classify');
     cy.intercept('GET', '/download/123/summary', { body: 'summary' });
-    cy.intercept('GET', '/download/123/details', { body: 'details' });
+    cy.intercept('GET', '/download/123/report', { body: 'report' });
+    cy.intercept('GET', '/summary/123', {
+      totals: { income: 0, expenses: 0, net: 0 },
+      categories: [],
+      recurring: [],
+    });
+    cy.intercept('GET', '/transactions/123', []);
 
     const filePath = 'cypress/fixtures/sample.jsonl';
     cy.get('input[type="file"]').selectFile(filePath);
@@ -33,7 +39,7 @@ describe('user can upload file and reach results', () => {
 
     cy.url().should('include', '/results/123');
     cy.contains('a', /summary/i).should('be.visible');
-    cy.contains('a', /details/i).should('be.visible');
+    cy.contains('a', /report/i).should('be.visible');
   });
 });
 
