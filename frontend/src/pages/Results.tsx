@@ -49,6 +49,9 @@ export default function Results() {
     | null
   >(null);
 
+  const linkClasses =
+    'rounded-md bg-blue-600 px-4 py-2 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500';
+
   useEffect(() => {
     async function loadData() {
       const [summaryRes, txRes, costRes] = await Promise.all([
@@ -78,14 +81,14 @@ export default function Results() {
       <div className="flex gap-4">
         <a
           href={`/download/${jobId}/summary`}
-          className="rounded-md bg-blue-600 px-4 py-2 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
+          className={linkClasses}
           download
         >
           Download Summary
         </a>
         <a
           href={`/download/${jobId}/report`}
-          className="rounded-md bg-blue-600 px-4 py-2 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500"
+          className={linkClasses}
           download
         >
           Download Report
