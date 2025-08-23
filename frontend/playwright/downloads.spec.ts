@@ -52,7 +52,7 @@ test('signed download links trigger downloads', async ({ page }) => {
       body: 'pdf',
       headers: {
         'content-type': 'application/pdf',
-        'content-disposition': 'attachment; filename="report.pdf"',
+        'content-disposition': 'inline; filename="report.pdf"',
       },
     }),
   );
@@ -68,6 +68,13 @@ test('signed download links trigger downloads', async ({ page }) => {
   );
 
   await page.goto('/results/123');
+
+  await page.waitForResponse('**/download/123/report?sig=r123');
+  const viewer = page.locator('iframe[title="Report"]');
+  await expect(viewer).toHaveAttribute(
+    'src',
+    '/download/123/report?sig=r123',
+  );
 
   const [summaryDownload] = await Promise.all([
     page.waitForEvent('download'),
