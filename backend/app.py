@@ -9,7 +9,7 @@ from .report import router as report_router
 from sqlmodel import Session, select
 from .database import init_db, get_session
 from .auth import auth_dependency
-from .signing import verify_signed_url, _canonicalize_path
+from .signing import verify_signed_url, _canonicalize_path, generate_signed_url
 from .models import (
     Upload,
     ProcessingJob,
@@ -167,14 +167,21 @@ def download(
     job_id: int,
     type: str,
     request: Request,
-    expires: int = Query(...),
-    signature: str = Query(...),
+    expires: int | None = Query(None),
+    signature: str | None = Query(None),
     _: None = Depends(auth_dependency),
 ):
-    """Stream a processed file if the signed URL is valid."""
+    """Generate or stream a processed file depending on query parameters."""
 
     if type not in {"summary", "report"}:
         raise HTTPException(status_code=400, detail="Invalid type")
+
+    # When ``expires`` and ``signature`` are absent, return a signed URL.
+    if expires is None or signature is None:
+        if type != "summary":
+            raise HTTPException(status_code=400, detail="Missing signature parameters")
+        url = generate_signed_url(request.url.path)
+        return {"url": url}
 
     path = request.url.path
     canonical = _canonicalize_path(path)

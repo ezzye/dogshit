@@ -48,6 +48,8 @@ export default function Results() {
       }
     | null
   >(null);
+  const [summaryUrl, setSummaryUrl] = useState<string | null>(null);
+  const [reportUrl, setReportUrl] = useState<string | null>(null);
 
   const linkClasses =
     'rounded-md bg-blue-600 px-4 py-2 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500';
@@ -75,19 +77,39 @@ export default function Results() {
     }
   }, [jobId]);
 
+  useEffect(() => {
+    async function loadUrls() {
+      const [reportRes, summaryRes] = await Promise.all([
+        fetch(`/report/${jobId}`),
+        fetch(`/download/${jobId}/summary`),
+      ]);
+      if (reportRes.ok) {
+        const data = await reportRes.json();
+        setReportUrl(data.url);
+      }
+      if (summaryRes.ok) {
+        const data = await summaryRes.json();
+        setSummaryUrl(data.url);
+      }
+    }
+    if (jobId) {
+      loadUrls();
+    }
+  }, [jobId]);
+
   return (
     <main className="p-4 space-y-4">
       <h1 className="text-2xl font-bold">Results</h1>
       <div className="flex gap-4">
         <a
-          href={`/download/${jobId}/summary`}
+          href={summaryUrl ?? '#'}
           className={linkClasses}
           download
         >
           Download Summary
         </a>
         <a
-          href={`/download/${jobId}/report`}
+          href={reportUrl ?? '#'}
           className={linkClasses}
           download
         >
