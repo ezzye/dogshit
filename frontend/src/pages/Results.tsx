@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import ReportViewer from '../components/ReportViewer';
 
 interface Totals {
   income: number;
@@ -116,6 +117,8 @@ export default function Results() {
           Download Report
         </a>
       </div>
+
+      <ReportViewer url={reportUrl} />
 
       {costs && (
         <section>
