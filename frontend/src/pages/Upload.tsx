@@ -68,7 +68,7 @@ export default function Upload() {
         <ul className="list-disc pl-4">
           {rules.map((r) => (
             <li key={r.id ?? r.pattern}>
-              {r.pattern} → {r.label}
+              {`${r.pattern} → ${r.label}`}
             </li>
           ))}
         </ul>
