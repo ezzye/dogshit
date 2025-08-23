@@ -4,11 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --port 5174",
     "build": "vite build",
     "preview": "vite preview",
     "cypress:run": "cypress run",
-    "test": "start-server-and-test dev http://localhost:5173 cypress:run"
+    "test": "CYPRESS_BASE_URL=http://localhost:5174 start-server-and-test dev http://localhost:5174 cypress:run"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.0.2",

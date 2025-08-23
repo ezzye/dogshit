@@ -32,7 +32,7 @@ command line interface and a small test-suite.
    podman compose up --build api frontend
    ```
 
-Open <http://localhost:5173> and follow the three-click flow (some steps are still manual):
+Open <http://localhost:5174> and follow the three-click flow (some steps are still manual):
 
 1. **Download** the desktop extractor from the project's [GitHub releases](https://github.com/OWNER/REPO/releases) page.
 2. **Upload** the generated `transaction_v1.jsonl` file to `/upload` using `Content-Type: application/x-ndjson`, then trigger `/classify` and `/summary/{job_id}` manually until this is automated.
@@ -278,7 +278,7 @@ frontend dev server alongside it with:
 docker compose up frontend
 ```
 
-The Vite dev server will then be available on port 5173 while the API continues
+The Vite dev server will then be available on port 5174 while the API continues
 to listen on port 8000.
 
 When starting with an empty database run the import script once to seed the
