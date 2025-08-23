@@ -14,9 +14,15 @@ describe('results page summary', () => {
       total_tokens: 30,
       estimated_cost_gbp: 0.5,
     });
+    cy.intercept('GET', '/report/123', {
+      url: '/download/123/report?sig=r123',
+    });
+    cy.intercept('GET', '/download/123/summary', {
+      url: '/download/123/summary?sig=s123',
+    });
     cy.visit('/results/123');
-    cy.get('a[href="/download/123/summary"]').should('exist');
-    cy.get('a[href="/download/123/report"]').should('exist');
+    cy.get('a[href="/download/123/summary?sig=s123"]').should('exist');
+    cy.get('a[href="/download/123/report?sig=r123"]').should('exist');
     cy.contains('td', 'Income').next().should('contain', '100');
     cy.contains('td', 'Expenses').next().should('contain', '50');
     cy.contains('td', 'Net').next().should('contain', '50');

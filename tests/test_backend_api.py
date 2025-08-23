@@ -498,6 +498,20 @@ def test_download_expired(client: TestClient, tmp_path: Path):
     assert resp.status_code == 403
 
 
+def test_download_signing_endpoint(client: TestClient, tmp_path: Path):
+    job_id = client.post(
+        "/upload", data="data", headers={"Content-Type": "text/plain"}
+    ).json()["job_id"]
+    os.environ["STORAGE_DIR"] = str(tmp_path)
+    file_path = tmp_path / f"{job_id}_summary.txt"
+    file_path.write_text("result")
+    resp = client.get(f"/download/{job_id}/summary")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["url"].startswith(f"/download/{job_id}/summary?")
+    assert "expires=" in data["url"] and "signature=" in data["url"]
+
+
 def test_upload_rejects_invalid_content_type(client: TestClient):
     resp = client.post(
         "/upload", data="data", headers={"Content-Type": "application/json"}
