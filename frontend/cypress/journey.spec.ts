@@ -19,8 +19,12 @@ describe('user can upload file and reach results', () => {
       }
     }).as('status');
     cy.intercept('POST', '/classify', {}).as('classify');
-    cy.intercept('GET', '/download/123/summary', { body: 'summary' });
-    cy.intercept('GET', '/download/123/report', { body: 'report' });
+    cy.intercept('GET', '/download/123/summary', {
+      url: '/download/123/summary?sig=s123',
+    });
+    cy.intercept('GET', '/report/123', {
+      url: '/download/123/report?sig=r123',
+    });
     cy.intercept('GET', '/summary/123', {
       totals: { income: 0, expenses: 0, net: 0 },
       categories: [],
