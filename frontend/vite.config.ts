@@ -11,8 +11,8 @@ export default defineConfig({
   plugins: [react()],
   server: {
     host: true, // or '0.0.0.0'
-    port: 5174,
-    strictPort: true,
+    port: Number(process.env.PORT) || 5174,
+    strictPort: false,
     allowedHosts,
   },
   test: {
