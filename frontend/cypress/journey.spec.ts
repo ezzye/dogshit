@@ -6,6 +6,8 @@ describe('user can upload file and reach results', () => {
     cy.intercept('GET', '/rules', ['rule one']);
     cy.visit('/');
 
+    cy.contains('a', /upload/i).click();
+
     cy.intercept('POST', '/upload', { job_id: '123' }).as('upload');
     let statusCall = 0;
     cy.intercept('GET', '/status/123', (req) => {
