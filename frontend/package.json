@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "cypress:run": "cypress run",
-    "test": "PORT=${PORT:-5174} CYPRESS_BASE_URL=http://localhost:$PORT start-server-and-test dev http://localhost:$PORT cypress:run",
+    "test": "PORT=${PORT:-5174} CYPRESS_BASE_URL=http://localhost:${PORT:-5174} start-server-and-test dev http://localhost:${PORT:-5174} cypress:run",
     "test:unit": "vitest run"
   },
   "dependencies": {
