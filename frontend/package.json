@@ -4,11 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --port 5174",
+    "dev": "PORT=${PORT:-5174} vite --port $PORT",
     "build": "vite build",
     "preview": "vite preview",
     "cypress:run": "cypress run",
-    "test": "CYPRESS_BASE_URL=http://localhost:5174 start-server-and-test dev http://localhost:5174 cypress:run",
+    "test": "PORT=${PORT:-5174} CYPRESS_BASE_URL=http://localhost:$PORT start-server-and-test dev http://localhost:$PORT cypress:run",
     "test:unit": "vitest run"
   },
   "dependencies": {
