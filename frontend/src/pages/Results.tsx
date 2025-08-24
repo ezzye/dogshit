@@ -80,16 +80,24 @@ export default function Results() {
 
   useEffect(() => {
     async function loadUrls() {
-      const [reportRes, summaryRes] = await Promise.all([
+      const [reportResult, summaryResult] = await Promise.allSettled([
         fetch(`/report/${jobId}`),
         fetch(`/download/${jobId}/summary`),
       ]);
-      if (reportRes.ok) {
-        const data = await reportRes.json();
+
+      if (
+        reportResult.status === 'fulfilled' &&
+        reportResult.value.ok
+      ) {
+        const data = await reportResult.value.json();
         setReportUrl(data.url);
       }
-      if (summaryRes.ok) {
-        const data = await summaryRes.json();
+
+      if (
+        summaryResult.status === 'fulfilled' &&
+        summaryResult.value.ok
+      ) {
+        const data = await summaryResult.value.json();
         setSummaryUrl(data.url);
       }
     }
@@ -102,20 +110,16 @@ export default function Results() {
     <main className="p-4 space-y-4">
       <h1 className="text-2xl font-bold">Results</h1>
       <div className="flex gap-4">
-        <a
-          href={summaryUrl ?? '#'}
-          className={linkClasses}
-          download
-        >
-          Download Summary
-        </a>
-        <a
-          href={reportUrl ?? '#'}
-          className={linkClasses}
-          download
-        >
-          Download Report
-        </a>
+        {summaryUrl && (
+          <a href={summaryUrl} className={linkClasses} download>
+            Download Summary
+          </a>
+        )}
+        {reportUrl && (
+          <a href={reportUrl} className={linkClasses} download>
+            Download Report
+          </a>
+        )}
       </div>
 
       <ReportViewer url={reportUrl} />
