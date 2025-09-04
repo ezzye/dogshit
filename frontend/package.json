@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "PORT=${PORT:-5174} vite --port $PORT",
+    "dev": "PORT=${PORT:-5174} vite --strictPort --port $PORT",
     "build": "vite build",
     "preview": "vite preview",
     "cypress:run": "cypress run",
