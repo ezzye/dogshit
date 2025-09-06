@@ -37,7 +37,7 @@ def client_fixture():
 
 
 def test_create_rule_rejects_short_pattern(client: TestClient):
-    resp = client.post("/rules", json={"label": "x", "pattern": "abcde"})
+    resp = client.post("/rules", json={"user_id": 1, "label": "x", "pattern": "abcde"})
     assert resp.status_code == 400
 
 
