@@ -70,7 +70,7 @@ def then_job_status(context, status):
 
 @when('I create a rule "{text}"')
 def when_create_rule(context, text):
-    context.client.post("/rules", json={"label": text, "pattern": text})
+    context.client.post("/rules", json={"user_id": 1, "label": text, "pattern": text})
 
 
 @then('the rules list contains "{text}"')
