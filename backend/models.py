@@ -19,7 +19,7 @@ class ProcessingJob(SQLModel, table=True):
 
 class UserRule(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: Optional[int] = None
+    user_id: int = Field(..., nullable=False, index=True)
     label: str
     pattern: str
     match_type: str = "contains"

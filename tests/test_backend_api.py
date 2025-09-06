@@ -84,32 +84,39 @@ def test_upload_gzip(client: TestClient):
 
 
 def test_rules(client: TestClient):
-    client.post("/rules", json={"label": "Groceries", "pattern": "allowed"})
+    client.post(
+        "/rules", json={"user_id": 1, "label": "Groceries", "pattern": "allowed"}
+    )
     rules = client.get("/rules").json()
     assert any(r["label"] == "Groceries" for r in rules)
 
 
 def test_rule_rejects_unknown_label(client: TestClient):
-    resp = client.post("/rules", json={"label": "UnknownLabel", "pattern": "allowed"})
+    resp = client.post(
+        "/rules", json={"user_id": 1, "label": "UnknownLabel", "pattern": "allowed"}
+    )
     assert resp.status_code == 400
 
 
 def test_rule_rejects_short_pattern(client: TestClient):
-    resp = client.post("/rules", json={"label": "Groceries", "pattern": "abc"})
+    resp = client.post(
+        "/rules", json={"user_id": 1, "label": "Groceries", "pattern": "abc"}
+    )
     assert resp.status_code == 400
 
 
 def test_rule_rejects_pattern_with_digits(client: TestClient):
     """Digits and symbols should not count toward the minimum pattern length."""
     resp = client.post(
-        "/rules", json={"label": "Groceries", "pattern": "ab12cd"}
+        "/rules", json={"user_id": 1, "label": "Groceries", "pattern": "ab12cd"}
     )
     assert resp.status_code == 400
 
 
 def test_rule_normalises_pattern(client: TestClient):
     resp = client.post(
-        "/rules", json={"label": "Groceries", "pattern": "Coffee-Shop!"}
+        "/rules",
+        json={"user_id": 1, "label": "Groceries", "pattern": "Coffee-Shop!"}
     )
     assert resp.status_code == 200
     assert resp.json()["pattern"] == "coffeeshop"
@@ -119,6 +126,7 @@ def test_rule_overwrites_higher_confidence(client: TestClient):
     low = client.post(
         "/rules",
         json={
+            "user_id": 1,
             "label": "Groceries",
             "pattern": "coffee shop",
             "confidence": 0.5,
@@ -129,6 +137,7 @@ def test_rule_overwrites_higher_confidence(client: TestClient):
     high = client.post(
         "/rules",
         json={
+            "user_id": 1,
             "label": "Groceries",
             "pattern": "coffee shop",
             "confidence": 0.9,
@@ -264,8 +273,10 @@ def test_transactions_endpoint_filters(client: TestClient):
         data=content,
         headers={"Content-Type": "application/x-ndjson"},
     ).json()["job_id"]
-    client.post("/rules", json={"label": "coffee", "pattern": "coffee"})
-    client.post("/classify", json={"job_id": job_id})
+    client.post(
+        "/rules", json={"user_id": 1, "label": "coffee", "pattern": "coffee"}
+    )
+    client.post("/classify", json={"job_id": job_id, "user_id": 1})
     all_txs = client.get(f"/transactions/{job_id}").json()
     assert len(all_txs) == 2
     filtered_desc = client.get(
