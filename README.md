@@ -40,15 +40,48 @@ Open <http://localhost:5174> and follow the three-click flow (some steps are sti
 
 ### Demo script
 
-Run a complete extraction and classification round trip with:
+Run a complete extraction and classification round trip:
 
-```bash
-poetry run python scripts/demo.py "<directory>" --api http://localhost:8000 --user 1
-```
+1. Install backend and frontend dependencies:
 
-The script uploads transactions, triggers `/classify`, waits for completion and
-fetches `/transactions/{job_id}`. It then repeats the upload to show reduced
-LLM token usage on the second run.
+   ```bash
+   poetry install --with dev
+   cd frontend && npm install && cd ..
+   ```
+
+2. Export your API key and optional variables:
+
+   ```bash
+   export OPENAI_API_KEY=sk-your-key
+   export AUTH_BYPASS=1        # optional
+   export LLM_PROVIDER=openai  # optional
+   ```
+
+3. Start the backend:
+
+   ```bash
+   poetry run uvicorn backend.app:app --reload
+   ```
+
+4. Start the frontend:
+
+   ```bash
+   cd frontend && npm run dev
+   ```
+
+5. In another shell, run the demo script from the project root:
+
+   ```bash
+   poetry run python scripts/demo.py "Redacted bank statements" --api http://localhost:8000 --user 1
+   ```
+
+   The script uploads transactions, triggers `/classify`, waits for completion
+   and fetches `/transactions/{job_id}`. It repeats the upload to show reduced
+   LLM token usage on the second run, and writes the full results to
+   `classified_transactions.json`.
+
+After changing the database schema, delete `backend.db` so the tables are
+rebuilt before running the demo again.
 
 ### Manual API workflow
 
