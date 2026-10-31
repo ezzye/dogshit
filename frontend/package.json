@@ -4,11 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "PORT=${PORT:-5174} vite --strictPort --port $PORT",
+    "dev": "vite --strictPort",
     "build": "vite build",
     "preview": "vite preview",
     "cypress:run": "cypress run",
-    "test": "PORT=${PORT:-5174} CYPRESS_BASE_URL=http://localhost:${PORT:-5174} bash -c 'npx kill-port $PORT && start-server-and-test dev http://localhost:$PORT cypress:run'",
+    "test": "node --test scripts/test-e2e.test.mjs && node scripts/test-e2e.mjs",
+    "test:runner": "node --test scripts/test-e2e.test.mjs",
     "test:unit": "vitest run"
   },
   "dependencies": {
@@ -30,9 +31,7 @@
     "autoprefixer": "^10.4.14",
     "cypress": "^13.7.3",
     "jsdom": "^26.1.0",
-    "kill-port": "^2.0.1",
     "postcss": "^8.4.31",
-    "start-server-and-test": "^2.0.13",
     "tailwindcss": "^3.4.4",
     "typescript": "^5.4.5",
     "vite": "^5.2.8",

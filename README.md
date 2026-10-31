@@ -215,7 +215,7 @@ cd frontend && npm test
 
 ### Frontend end-to-end tests
 
-The SPA uses [Playwright](https://playwright.dev/) for browser tests. Install the
+The SPA uses [Cypress](https://www.cypress.io/) for browser tests. Install the
 JavaScript dependencies and run the suite with:
 
 ```bash
@@ -223,6 +223,12 @@ cd frontend
 npm install
 npm test
 ```
+
+The Cypress runner starts its own Vite server on a free local port and closes it
+when the tests finish. You can keep your development server running on port 5174.
+To select a test port explicitly, run `PORT=5175 npm test`; an occupied explicit
+port fails before Cypress starts. Run `npm run test:runner` to check the runner's
+port isolation and cleanup, and `npm run test:unit` for the React unit tests.
 
 ## Troubleshooting
 
